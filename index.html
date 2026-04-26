@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>Bellamona</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f8f4ff;--surf:#ffffff;--card:#fdfbff;--card2:#f3eeff;
+  --bdr:#e2d9f3;--text:#2d1f4e;--muted:#8b7aab;--sub:#ede6ff;
+  --sky:#7eceff;--sky2:#5bb8f5;--sky3:rgba(126,206,255,.15);
+  --lav:#b39ddb;--lav2:#9575cd;--lav3:rgba(179,157,219,.15);
+  --rose:#f48fb1;--rose2:#ec407a;
+  --gold:#ffd54f;--ok:#66bb6a;--danger:#ef5350;--warn:#ffa726;
+  --ins:var(--sky2);--gro:#81c784;--cor:#ce93d8;--oxy:var(--rose);
+  --ins-bg:rgba(91,184,245,.12);--gro-bg:rgba(129,199,132,.12);
+  --cor-bg:rgba(206,147,216,.12);--oxy-bg:rgba(244,143,177,.12);
+  --shadow:0 2px 16px rgba(100,80,160,.08);
+  --shadow2:0 4px 24px rgba(100,80,160,.14);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#e8e0f5;font-family:'Nunito',sans-serif}
+body{display:flex;justify-content:center;align-items:center}
+#phone{width:390px;height:844px;max-height:98vh;background:var(--bg);border-radius:44px;
+  border:10px solid #c5b8e8;
+  box-shadow:0 0 0 2px #b8a8e0,0 40px 100px rgba(80,60,140,.25);
+  position:relative;overflow:hidden;display:flex;flex-direction:column}
+#sb{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr)}
+#screens{flex:1;overflow:hidden;position:relative}
+.scr{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg)}
+.scr.on{display:flex}
+.sc{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px 84px}
+.sc::-webkit-scrollbar{width:4px}
+.sc::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:99px}
+#nav{height:68px;background:var(--surf);border-top:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-around;padding:0 4px 8px;flex-shrink:0;box-shadow:0 -4px 20px rgba(100,80,160,.06)}
+.ni{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:14px;color:var(--muted);transition:all .2s;flex:1}
+.ni.on{color:var(--sky2);background:rgba(91,184,245,.1)}
+.ni svg{width:22px;height:22px}
+.ni span{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.card{background:var(--surf);border-radius:20px;padding:14px;margin-bottom:10px;border:1px solid var(--bdr);box-shadow:var(--shadow)}
+.card2{background:var(--card2);border-radius:14px;padding:12px;border:1px solid var(--bdr)}
+.btn{display:flex;align-items:center;justify-content:center;border:none;border-radius:14px;padding:13px 16px;font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;width:100%}
+.btn-p{background:linear-gradient(135deg,var(--sky2),var(--lav2));color:#fff;box-shadow:0 4px 16px rgba(91,184,245,.35)}
+.btn-o{background:var(--card2);border:1.5px solid var(--bdr);color:var(--text)}
+.btn-sm{width:auto;padding:7px 14px;font-size:12px;border-radius:10px}
+.input{background:var(--card2);border:1.5px solid var(--bdr);border-radius:11px;padding:10px 13px;color:var(--text);font-family:'Nunito',sans-serif;font-size:13px;width:100%;outline:none;transition:border .15s}
+.input:focus{border-color:var(--sky2)}
+.input::placeholder{color:var(--muted)}
+textarea.input{resize:none}
+.cap{font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;font-weight:700}
+.bar-t{background:var(--sub);border-radius:99px;overflow:hidden}
+.bar-f{height:100%;border-radius:99px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.chip{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;border:1.5px solid var(--bdr);background:var(--surf);color:var(--muted);cursor:pointer;white-space:nowrap;display:inline-block;transition:all .15s}
+.chip.on{border-color:var(--sky2);color:var(--sky2);background:var(--sky3)}
+.mov{position:absolute;inset:0;background:rgba(45,31,78,.5);display:none;align-items:flex-end;z-index:300;backdrop-filter:blur(6px)}
+.mov.open{display:flex}
+.msh{background:var(--surf);border-radius:28px 28px 0 0;padding:18px 16px 40px;width:100%;max-height:92%;overflow-y:auto;border-top:2px solid var(--bdr)}
+.msh::-webkit-scrollbar{width:3px}
+.msh::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:99px}
+.mh{width:36px;height:4px;background:var(--bdr);border-radius:99px;margin:0 auto 16px}
+.ck-item{display:flex;align-items:center;gap:11px;padding:12px;background:var(--card2);border-radius:13px;margin-bottom:7px;cursor:pointer;border:1.5px solid var(--bdr);transition:all .15s}
+.ck-item.done{border-color:var(--sky2);background:var(--sky3)}
+.ck-box{width:26px;height:26px;border-radius:8px;border:2px solid var(--bdr);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:13px;background:var(--surf)}
+.ck-box.done{background:var(--sky2);border-color:var(--sky2);color:#fff}
+.rw{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.rl{position:absolute;text-align:center}
+.serif{font-family:'Playfair Display',serif}
+.dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surf);border:1.5px solid var(--bdr);border-radius:14px;z-index:400;max-height:200px;overflow-y:auto;box-shadow:var(--shadow2)}
+.ddi{padding:11px 14px;cursor:pointer;font-size:13px;color:var(--text);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bdr);transition:background .1s}
+.ddi:last-child{border-bottom:none}
+.ddi:hover{background:var(--sky3)}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cdow{font-size:10px;color:var(--muted);text-align:center;padding:5px 0;font-weight:700}
+.cday{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:4px;border-radius:9px;cursor:pointer;font-size:12px;color:var(--text);transition:background .1s;font-weight:600}
+.cday:hover{background:var(--lav3)}
+.cday.today{background:linear-gradient(135deg,var(--sky2),var(--lav2))!important;color:#fff;font-weight:800}
+.cday.per{background:rgba(244,143,177,.25);outline:2px solid rgba(236,64,122,.5);outline-offset:-2px}
+.cday.ovul{background:rgba(244,143,177,.12)}
+.cday.full{background:rgba(102,187,106,.12)}
+.dtr{display:flex;gap:2px;margin-top:2px}
+.d4{width:4px;height:4px;border-radius:50%}
+.mb{background:var(--surf);border-radius:18px;padding:14px;margin-bottom:10px;border:1.5px solid var(--bdr);box-shadow:var(--shadow)}
+.mb.hd{border-color:var(--sky2)}
+.fi{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr)}
+.fi:last-child{border-bottom:none}
+.bg-inp{background:var(--card2);border:1.5px solid var(--bdr);border-radius:9px;padding:7px 5px;color:var(--text);font-size:12px;font-weight:700;text-align:center;width:100%;outline:none;transition:border .15s;font-family:'Nunito',sans-serif}
+.bg-inp:focus{border-color:var(--sky2)}
+.step-dot{width:6px;height:6px;border-radius:50%;background:var(--bdr);transition:all .3s}
+.step-dot.on{background:var(--sky2);width:18px;border-radius:99px}
+.recipe-card{background:var(--surf);border-radius:18px;padding:14px;margin-bottom:10px;border:1.5px solid var(--bdr);box-shadow:var(--shadow);cursor:pointer;transition:all .15s}
+.recipe-card:hover{border-color:var(--sky2);box-shadow:var(--shadow2)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(.9);opacity:0}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+.fu{animation:fadeUp .3s ease both}
+.pop{animation:pop .35s cubic-bezier(.34,1.56,.64,1) both}
+/* Google login */
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;border:1.5px solid var(--bdr);border-radius:14px;padding:14px;cursor:pointer;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;color:var(--text);width:100%;max-width:280px;margin:0 auto;box-shadow:var(--shadow);transition:all .15s}
+.google-btn:hover{box-shadow:var(--shadow2);border-color:var(--sky2)}
+/* Editable routine */
+.routine-edit-btn{background:none;border:1px solid var(--bdr);border-radius:8px;padding:4px 8px;font-size:10px;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700}
+/* Weight chart */
+.wt-bar{display:flex;gap:3px;align-items:flex-end;height:50px}
+/* Exercise calorie input */
+.ex-row{display:flex;align-items:center;gap:8px;padding:8px;background:var(--card2);border-radius:11px;margin-bottom:6px;border:1px solid var(--bdr)}
+</style>
+</head>
+<body>
+<div id="phone">
+<div id="sb">
+  <div style="display:flex;align-items:center;gap:8px">
+    <div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--sky2),var(--lav2));display:flex;align-items:center;justify-content:center">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2C6 2 2 8 2 12s4 10 10 10 10-4 10-10S18 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    </div>
+    <span style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--text)">Bellamona</span>
+  </div>
+  <span style="font-size:14px;font-weight:600;color:var(--text)" id="clk">9:41</span>
+</div>
+<div id="screens">
+
+<!-- ════ GOOGLE LOGIN ════ -->
+<div class="scr on" id="s-login" style="justify-content:center;align-items:center;background:linear-gradient(160deg,#f0eaff 0%,#e8f4ff 50%,#fce4f0 100%)">
+  <div style="text-align:center;padding:0 28px" class="fu">
+    <div style="width:90px;height:90px;border-radius:28px;background:linear-gradient(135deg,var(--sky2),var(--lav2));margin:0 auto 20px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(91,184,245,.4)">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M12 2C6 2 2 8 2 12s4 10 10 10 10-4 10-10S18 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    </div>
+    <div class="serif" style="font-size:42px;font-weight:700;color:var(--text);letter-spacing:-.5px;line-height:1">Bellamona</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;letter-spacing:2px;font-weight:600">벨라모나 · HORMONE BALANCE</div>
+    <div style="font-size:13px;color:var(--muted);margin:16px 0 36px;line-height:1.6">PCOS 여성을 위한<br>AI 호르몬·혈당·감정 통합 관리</div>
+    <button class="google-btn" onclick="doGoogleLogin()">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Google로 계속하기
+    </button>
+    <div style="margin-top:14px;font-size:12px;color:var(--muted)">개인정보는 안전하게 보호됩니다</div>
+  </div>
+</div>
+
+<!-- ════ ONBOARDING ════ -->
+<div class="scr" id="s-onboard">
+  <div style="padding:16px 16px 0;flex-shrink:0">
+    <div style="display:flex;gap:5px;justify-content:center;margin-bottom:16px" id="ob-dots">
+      <div class="step-dot on"></div><div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+  </div>
+  <div class="sc" style="padding-top:0">
+    <div id="ob-p1" class="fu">
+      <div class="serif" style="font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px">안녕하세요 👋</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;font-weight:500">기본 정보를 입력해주세요</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input class="input" placeholder="이름" id="ob-name" value="혜림"/>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <input class="input" placeholder="나이" type="number" value="32"/>
+          <select class="input" style="color:var(--text)"><option>여성</option><option>남성</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <input class="input" placeholder="키 (cm)" type="number" id="ob-h" value="165"/>
+          <input class="input" placeholder="현재 체중 (kg)" type="number" id="ob-cw" value="52"/>
+        </div>
+      </div>
+    </div>
+    <div id="ob-p2" style="display:none" class="fu">
+      <div class="serif" style="font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px">목표 설정 🎯</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;font-weight:500">칼로리 목표를 자동 계산해드려요</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input class="input" placeholder="목표 체중 (kg)" type="number" id="ob-gw" value="48" oninput="calcGoal()"/>
+        <input class="input" placeholder="목표 기간 (개월)" type="number" id="ob-gm" value="3" oninput="calcGoal()"/>
+        <div class="card" style="margin:0;background:var(--sky3);border-color:rgba(91,184,245,.3)">
+          <div class="cap">자동 계산 하루 목표 칼로리</div>
+          <div style="font-size:32px;font-weight:800;color:var(--sky2)" id="ob-cal">1,090</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px" id="ob-cal-d">체중 -4kg ÷ 90일 × 7,700kcal</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="chip on">다낭성난소증후군</span><span class="chip on">임신 준비</span>
+          <span class="chip" onclick="this.classList.toggle('on')">저속노화</span>
+          <span class="chip" onclick="this.classList.toggle('on')">체지방 감량</span>
+        </div>
+      </div>
+    </div>
+    <div id="ob-p3" style="display:none" class="fu">
+      <div class="serif" style="font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px">생리주기 🌸</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;font-weight:500">PCOS 맞춤 분석에 활용돼요</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input class="input" type="date" id="ob-period" value="2026-04-01"/>
+        <input class="input" placeholder="평균 주기 (일, 기본 28)" type="number" id="ob-cycle" value="28"/>
+        <div style="background:rgba(244,143,177,.1);border:1.5px solid rgba(244,143,177,.3);border-radius:13px;padding:12px;font-size:12px;color:var(--rose2);line-height:1.6;font-weight:600">🌸 생리기·배란기 달력 자동 표시 + 황체기 인슐린 감수성 경고</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px">
+      <button class="btn btn-o" id="ob-back" style="display:none" onclick="obPrev()">이전</button>
+      <button class="btn btn-p" id="ob-next" onclick="obNext()">다음</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ HOME ════ -->
+<div class="scr" id="s-home">
+  <div style="padding:14px 14px 10px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="cap" style="margin-bottom:2px">TODAY</div>
+        <div class="serif" style="font-size:20px;font-weight:700;color:var(--text)" id="h-greet">오늘도 빛나는 혜림님 ✨</div>
+      </div>
+      <div style="text-align:right;cursor:pointer" onclick="openWtModal()">
+        <div style="font-size:10px;color:var(--muted);font-weight:600">현재 몸무게</div>
+        <div style="font-size:16px;font-weight:800;color:var(--text)" id="h-wt">52.0 kg</div>
+      </div>
+    </div>
+  </div>
+  <div class="sc" style="padding-top:10px">
+    <!-- Weight progress -->
+    <div class="card" style="border-color:rgba(91,184,245,.25)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="cap" style="margin-bottom:0">몸무게 목표</div>
+        <span style="font-size:11px;color:var(--sky2);font-weight:700" id="h-wt-remain">48kg까지 4.0kg · D-90</span>
+      </div>
+      <div style="display:flex;gap:6px;align-items:flex-end;height:44px;margin-bottom:6px" id="wt-mini-chart"></div>
+      <div class="bar-t" style="height:6px"><div class="bar-f" id="wt-bar" style="height:6px;background:linear-gradient(90deg,var(--sky2),var(--lav2))"></div></div>
+    </div>
+    <!-- Calorie bar -->
+    <div class="card">
+      <div class="cap">오늘 칼로리</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:9px">
+        <div style="text-align:center;background:var(--sky3);border-radius:11px;padding:9px 3px;border:1px solid rgba(91,184,245,.25)"><div style="font-size:15px;font-weight:800;color:var(--sky2)" id="h-intake">0</div><div style="font-size:9px;color:var(--muted);font-weight:600">섭취</div></div>
+        <div style="text-align:center;background:var(--gro-bg);border-radius:11px;padding:9px 3px;border:1px solid rgba(129,199,132,.25)"><div style="font-size:15px;font-weight:800;color:var(--gro)" id="h-burned">0</div><div style="font-size:9px;color:var(--muted);font-weight:600">소모</div></div>
+        <div style="text-align:center;background:var(--card2);border-radius:11px;padding:9px 3px;border:1px solid var(--bdr)"><div style="font-size:15px;font-weight:800" id="h-net">0</div><div style="font-size:9px;color:var(--muted);font-weight:600">NET</div></div>
+        <div style="text-align:center;background:var(--card2);border-radius:11px;padding:9px 3px;border:1.5px solid var(--sky2)"><div style="font-size:15px;font-weight:800;color:var(--text)" id="h-goal">1,090</div><div style="font-size:9px;color:var(--muted);font-weight:600">목표</div></div>
+      </div>
+      <div class="bar-t" style="height:6px;margin-bottom:5px"><div class="bar-f" id="h-calbar" style="height:6px;background:linear-gradient(90deg,var(--sky2),var(--lav2))"></div></div>
+      <div style="font-size:11px;font-weight:600" id="h-calmsg"></div>
+    </div>
+    <!-- Ring -->
+    <div class="card" style="display:flex;gap:14px;align-items:center">
+      <div class="rw">
+        <svg width="74" height="74" style="transform:rotate(-90deg)">
+          <circle cx="37" cy="37" r="29" fill="none" stroke="var(--sub)" stroke-width="6"/>
+          <circle cx="37" cy="37" r="29" fill="none" stroke="url(#hg)" stroke-width="6" stroke-dasharray="0 182" stroke-linecap="round" id="h-ring"/>
+          <defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#5bb8f5"/><stop offset="100%" stop-color="#9575cd"/></linearGradient></defs>
+        </svg>
+        <div class="rl"><div style="font-size:15px;font-weight:800;color:var(--text)" id="h-ring-pct">0%</div></div>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">오늘 저속노화 달성률</div>
+        <div style="font-size:11px;color:var(--muted);margin:3px 0 8px;font-weight:500">루틴 <span id="h-done-cnt">0</span> / <span id="h-total-cnt">16</span> 완료</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <span style="font-size:10px;background:var(--ins-bg);color:var(--ins);padding:2px 8px;border-radius:99px;font-weight:700" id="h-ins-badge">인슐린 0%</span>
+          <span style="font-size:10px;background:var(--gro-bg);color:var(--gro);padding:2px 8px;border-radius:99px;font-weight:700" id="h-gro-badge">성장 0%</span>
+        </div>
+      </div>
+    </div>
+    <!-- 4 cards -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="card2" onclick="goH('insulin')" style="cursor:pointer;border-color:rgba(91,184,245,.3)"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:15px">🩺</span><span style="font-size:12px;font-weight:800;color:var(--sky2)" id="hc-ins">0%</span></div><div style="font-size:12px;font-weight:700;color:var(--text)">인슐린</div><div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">혈당·식단</div><div class="bar-t" style="height:3px"><div class="bar-f" id="bar-ins" style="width:0%;background:var(--sky2)"></div></div></div>
+      <div class="card2" onclick="goH('growth')" style="cursor:pointer;border-color:rgba(129,199,132,.3)"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:15px">💪</span><span style="font-size:12px;font-weight:800;color:var(--gro)" id="hc-gro">0%</span></div><div style="font-size:12px;font-weight:700;color:var(--text)">성장호르몬</div><div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">운동·소모</div><div class="bar-t" style="height:3px"><div class="bar-f" id="bar-gro" style="width:0%;background:var(--gro)"></div></div></div>
+      <div class="card2" onclick="goH('cortisol')" style="cursor:pointer;border-color:rgba(206,147,216,.3)"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:15px">🌿</span><span style="font-size:12px;font-weight:800;color:var(--cor)" id="hc-cor">0%</span></div><div style="font-size:12px;font-weight:700;color:var(--text)">코르티솔</div><div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">스트레스·수면</div><div class="bar-t" style="height:3px"><div class="bar-f" id="bar-cor" style="width:0%;background:var(--cor)"></div></div></div>
+      <div class="card2" onclick="goH('oxytocin')" style="cursor:pointer;border-color:rgba(244,143,177,.3)"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:15px">💗</span><span style="font-size:12px;font-weight:800;color:var(--rose)" id="hc-oxy">0%</span></div><div style="font-size:12px;font-weight:700;color:var(--text)">옥시토신</div><div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">유대·감정</div><div class="bar-t" style="height:3px"><div class="bar-f" id="bar-oxy" style="width:0%;background:var(--rose)"></div></div></div>
+    </div>
+    <div class="card2" onclick="go('s-diet')" style="cursor:pointer;display:flex;align-items:center;gap:10px;border-color:rgba(91,184,245,.25)"><span style="font-size:22px">🥗</span><div><div style="font-size:13px;font-weight:700;color:var(--text)">저당 레시피 보기</div><div style="font-size:11px;color:var(--sky2);font-weight:600">건강한 저혈당 식단 →</div></div></div>
+  </div>
+</div>
+
+<!-- ════ DASHBOARD ════ -->
+<div class="scr" id="s-dash">
+  <div style="padding:14px 14px 8px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center">
+    <div><div class="cap" style="margin-bottom:2px">DASHBOARD</div><div class="serif" style="font-size:20px;font-weight:700;color:var(--text)" id="d-title">2026년 4월 성과</div></div>
+    <div style="display:flex;gap:5px">
+      <button onclick="chgMon(-1)" style="background:var(--card2);border:1.5px solid var(--bdr);border-radius:9px;width:30px;height:30px;color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-weight:700">‹</button>
+      <button onclick="chgMon(1)"  style="background:var(--card2);border:1.5px solid var(--bdr);border-radius:9px;width:30px;height:30px;color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-weight:700">›</button>
+    </div>
+  </div>
+  <div class="sc" style="padding-top:10px">
+    <div class="card" style="background:linear-gradient(135deg,var(--sky3),var(--lav3))">
+      <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">
+        <div class="rw"><svg width="82" height="82" style="transform:rotate(-90deg)"><circle cx="41" cy="41" r="33" fill="none" stroke="var(--sub)" stroke-width="7"/><circle cx="41" cy="41" r="33" fill="none" stroke="url(#dg)" stroke-width="7" stroke-dasharray="155 207" stroke-linecap="round"/><defs><linearGradient id="dg"><stop offset="0%" stop-color="#5bb8f5"/><stop offset="100%" stop-color="#9575cd"/></linearGradient></defs></svg><div class="rl"><div style="font-size:22px;font-weight:800;color:var(--text)">75</div><div style="font-size:9px;color:var(--muted);font-weight:600">/100</div></div></div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">이달 저속노화 점수</div>
+          <div style="font-size:11px;color:var(--ok);margin-top:2px;font-weight:700">생물학적 나이 0.4세 ↓</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500" id="d-wt-prog">목표 -4kg · 현재 -0.0kg</div>
+          <div style="margin-top:6px"><div class="bar-t" style="height:5px"><div class="bar-f" id="d-goal-bar" style="width:0%;background:linear-gradient(90deg,var(--sky2),var(--lav2))"></div></div><div style="font-size:9px;color:var(--muted);margin-top:3px;font-weight:600">목표 달성률 0%</div></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:62px;font-size:11px;color:var(--muted);font-weight:600">🩺 인슐린</span><div class="bar-t" style="flex:1;height:5px"><div class="bar-f" id="d-ins-bar" style="width:0%;background:var(--sky2)"></div></div><span style="font-size:11px;color:var(--sky2);width:28px;text-align:right;font-weight:700" id="d-ins-pct">0%</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:62px;font-size:11px;color:var(--muted);font-weight:600">💪 성장</span><div class="bar-t" style="flex:1;height:5px"><div class="bar-f" id="d-gro-bar" style="width:0%;background:var(--gro)"></div></div><span style="font-size:11px;color:var(--gro);width:28px;text-align:right;font-weight:700" id="d-gro-pct">0%</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:62px;font-size:11px;color:var(--muted);font-weight:600">🌿 코르티솔</span><div class="bar-t" style="flex:1;height:5px"><div class="bar-f" id="d-cor-bar" style="width:0%;background:var(--cor)"></div></div><span style="font-size:11px;color:var(--cor);width:28px;text-align:right;font-weight:700" id="d-cor-pct">0%</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:62px;font-size:11px;color:var(--muted);font-weight:600">💗 옥시토신</span><div class="bar-t" style="flex:1;height:5px"><div class="bar-f" id="d-oxy-bar" style="width:0%;background:var(--rose)"></div></div><span style="font-size:11px;color:var(--rose);width:28px;text-align:right;font-weight:700" id="d-oxy-pct">0%</span></div>
+      </div>
+    </div>
+    <div class="card"><div class="cap" style="margin-bottom:8px">14일 달성 기록</div><div style="display:flex;gap:3px;align-items:flex-end;height:56px;margin-bottom:5px" id="hist-bars"></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600" id="hist-dates"></div></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="cap" style="margin-bottom:0" id="cal-lbl">4월 달력</div>
+        <button onclick="openMod('mod-period')" style="background:rgba(244,143,177,.1);border:1.5px solid rgba(244,143,177,.3);border-radius:8px;padding:3px 9px;font-size:11px;color:var(--rose2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">🌸 생리기 입력</button>
+      </div>
+      <div class="cg" id="dash-cal"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);font-weight:600"><div style="width:9px;height:9px;border-radius:2px;background:rgba(244,143,177,.25);outline:2px solid rgba(236,64,122,.5);outline-offset:-1px"></div>생리기</div>
+        <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);font-weight:600"><div style="width:9px;height:9px;border-radius:2px;background:rgba(244,143,177,.12)"></div>배란기</div>
+        <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);font-weight:600"><div style="width:9px;height:9px;border-radius:2px;background:rgba(102,187,106,.12)"></div>완벽 달성</div>
+      </div>
+    </div>
+    <div class="card" onclick="openMod('mod-report')" style="cursor:pointer;background:linear-gradient(135deg,var(--lav3),rgba(244,143,177,.08));border-color:var(--lav)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-size:13px;font-weight:700;color:var(--lav2)">🤖 AI 통합 리포트</div><div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500">일기 분석 + 호르몬 상관관계 · 3일마다</div></div>
+        <div style="background:linear-gradient(135deg,var(--sky2),var(--lav2));color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px">보기</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ HORMONE DETAIL ════ -->
+<div class="scr" id="s-hormone">
+  <div style="padding:12px 14px 0;flex-shrink:0;display:flex;align-items:center;gap:8px;background:var(--surf);border-bottom:1px solid var(--bdr)">
+    <button onclick="go(S.prev)" style="background:var(--card2);border:1.5px solid var(--bdr);border-radius:9px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><svg width="18" height="18" fill="none" stroke="var(--text)" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div id="h-hdr" style="flex:1"></div>
+    <button onclick="openMod('mod-edit-routine')" style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:8px;padding:4px 10px;font-size:11px;color:var(--sky2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">✏️ 루틴 수정</button>
+  </div>
+  <div class="sc" id="h-body" style="padding-top:10px"></div>
+</div>
+
+<!-- ════ DIET ════ -->
+<div class="scr" id="s-diet">
+  <div style="padding:14px 14px 8px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr)"><div class="cap" style="margin-bottom:2px">DIET</div><div class="serif" style="font-size:20px;font-weight:700;color:var(--text)">저당 레시피 🥗</div></div>
+  <div class="sc" style="padding-top:10px">
+    <div style="margin-bottom:10px">
+      <div class="cap" style="margin-bottom:5px">조리 시간</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <span class="chip" onclick="rfil(this,'time',5)">5분</span><span class="chip" onclick="rfil(this,'time',10)">10분</span><span class="chip" onclick="rfil(this,'time',15)">15분 이상</span>
+      </div>
+      <div class="cap" style="margin-bottom:5px;margin-top:10px">카테고리</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <span class="chip" onclick="rfil(this,'type','간식')">간식</span><span class="chip" onclick="rfil(this,'type','한식')">한식</span><span class="chip" onclick="rfil(this,'type','일식')">일식</span><span class="chip" onclick="rfil(this,'type','양식')">양식</span>
+      </div>
+      <div class="cap" style="margin-bottom:5px;margin-top:10px">비용</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <span class="chip" onclick="rfil(this,'cost',2000)">~2천원</span><span class="chip" onclick="rfil(this,'cost',3000)">~3천원</span><span class="chip" onclick="rfil(this,'cost',4000)">~4천원</span><span class="chip" onclick="rfil(this,'cost',99999)">4천원+</span>
+      </div>
+    </div>
+    <div id="rcp-grid"></div>
+  </div>
+</div>
+
+<!-- ════ PROFILE ════ -->
+<div class="scr" id="s-profile">
+  <div style="padding:14px 14px 8px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr)"><div class="serif" style="font-size:20px;font-weight:700;color:var(--text)">마이페이지</div></div>
+  <div class="sc" style="padding-top:10px">
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="position:relative;width:72px;margin:0 auto 10px">
+        <div id="user-avatar" style="width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,var(--sky2),var(--lav2));display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer" onclick="openMod('mod-avatar')">🦋</div>
+        <div style="position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;border-radius:50%;background:var(--sky2);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer" onclick="openMod('mod-avatar')">✏️</div>
+      </div>
+      <div style="font-size:17px;font-weight:800;color:var(--text)" id="prof-name">혜림님</div>
+      <div style="font-size:11px;color:var(--lav2);margin-top:3px;font-weight:700">Slow Aging Lv.4 · 21일 연속 🔥</div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="cap">이번 달 달성률 · 친구 비교</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px"><span id="prof-avatar-mini" style="font-size:16px">🦋</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)" id="prof-me-name">혜림님 (나)</div><div class="bar-t" style="height:4px;margin-top:3px"><div class="bar-f" id="prof-me-bar" style="width:0%;background:linear-gradient(90deg,var(--sky2),var(--lav2))"></div></div></div><span style="font-size:12px;font-weight:800;color:var(--sky2)" id="prof-me-pct">0%</span></div>
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🦊</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">도파민헌터</div><div class="bar-t" style="height:4px;margin-top:3px"><div class="bar-f" style="width:82%;background:var(--gro)"></div></div></div><span style="font-size:12px;font-weight:800;color:var(--gro)">82%</span></div>
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🐨</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">바이오PM</div><div class="bar-t" style="height:4px;margin-top:3px"><div class="bar-f" style="width:68%;background:var(--lav2)"></div></div></div><span style="font-size:12px;font-weight:800;color:var(--lav2)">68%</span></div>
+      </div>
+    </div>
+    <div class="card" onclick="openMod('mod-cheat')" style="cursor:pointer;background:linear-gradient(135deg,rgba(244,143,177,.08),rgba(255,213,79,.06));border-color:rgba(244,143,177,.3);margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:700;color:var(--rose2)">🍕 치팅데이</div><div style="font-size:11px;color:var(--muted);margin-top:1px;font-weight:500">누적 세이브로 먹기</div></div><div style="font-size:20px;font-weight:800;color:var(--ok)" id="prof-save-val">0 kcal</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="card2" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="openMod('mod-friends')"><span style="font-size:13px;color:var(--text);font-weight:600">👥 친구 연동</span><svg width="15" height="15" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      <div class="card2" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="doExport()"><span style="font-size:13px;color:var(--text);font-weight:600">📊 기록 Excel 내보내기</span><svg width="15" height="15" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      <div class="card2" onclick="openMod('mod-report')" style="display:flex;justify-content:space-between;align-items:center;border-color:var(--lav);cursor:pointer"><span style="font-size:13px;color:var(--lav2);font-weight:700">🤖 AI 통합 리포트</span><span style="font-size:10px;background:var(--lav3);color:var(--lav2);padding:2px 7px;border-radius:99px;font-weight:700">구독 전용</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- NAV -->
+<div id="nav">
+  <div class="ni on" onclick="navTo(this,'s-home')" id="nav-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>홈</span></div>
+  <div class="ni" onclick="navTo(this,'s-dash');renderDash()" id="nav-dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>대시보드</span></div>
+  <div class="ni" onclick="navTo(this,'s-diet');renderRecipes()" id="nav-diet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg><span>레시피</span></div>
+  <div class="ni" onclick="navTo(this,'s-profile')" id="nav-profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>마이</span></div>
+</div>
+
+<!-- MODALS -->
+<div class="mov" id="mod-period"><div class="msh"><div class="mh"></div><div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">🌸 생리기 입력</div><div class="cap" style="margin-bottom:5px">시작일</div><input class="input" type="date" id="per-start" value="2026-04-01" style="margin-bottom:10px"/><div class="cap" style="margin-bottom:5px">지속 일수</div><input class="input" type="number" id="per-days" value="5" style="margin-bottom:14px"/><button class="btn btn-p" onclick="savePeriod()">저장</button></div></div>
+
+<div class="mov" id="mod-workout">
+  <div class="msh">
+    <div class="mh"></div>
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">💪 운동 칼로리 기록</div>
+    <div class="cap" style="margin-bottom:8px">운동별 소모 칼로리 입력</div>
+    <div class="ex-row"><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">🏋️ 근력 운동</span><input type="number" id="ex-strength" placeholder="0" class="bg-inp" style="width:70px" oninput="updateBurned()"/><span style="font-size:11px;color:var(--muted);font-weight:600">kcal</span></div>
+    <div class="ex-row"><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">⚡ HIIT</span><input type="number" id="ex-hiit" placeholder="0" class="bg-inp" style="width:70px" oninput="updateBurned()"/><span style="font-size:11px;color:var(--muted);font-weight:600">kcal</span></div>
+    <div class="ex-row"><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">🌅 공복 유산소</span><input type="number" id="ex-cardio" placeholder="0" class="bg-inp" style="width:70px" oninput="updateBurned()"/><span style="font-size:11px;color:var(--muted);font-weight:600">kcal</span></div>
+    <div class="ex-row"><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">🚶 걷기 / 기타</span><input type="number" id="ex-walk" placeholder="0" class="bg-inp" style="width:70px" oninput="updateBurned()"/><span style="font-size:11px;color:var(--muted);font-weight:600">kcal</span></div>
+    <div style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;margin-top:4px">
+      <span style="font-size:12px;color:var(--muted);font-weight:600">운동 소모 합계</span>
+      <span style="font-size:18px;font-weight:800;color:var(--sky2)" id="ex-total">0 kcal</span>
+    </div>
+    <div class="cap" style="margin-bottom:5px">부위 선택 (근력)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"><span class="chip" onclick="this.classList.toggle('on')">어깨</span><span class="chip" onclick="this.classList.toggle('on')">등</span><span class="chip" onclick="this.classList.toggle('on')">팔</span><span class="chip" onclick="this.classList.toggle('on')">전신</span><span class="chip" onclick="this.classList.toggle('on')">하체</span><span class="chip" onclick="this.classList.toggle('on')">가슴</span></div>
+    <textarea class="input" id="wk-note" placeholder="운동 메모 (예: 스쿼트 3×15, 데드리프트 4×8...)" rows="2" style="margin-bottom:12px"></textarea>
+    <button class="btn btn-p" onclick="saveWorkout()">저장 & 소모 칼로리 반영</button>
+  </div>
+</div>
+
+<div class="mov" id="mod-diary"><div class="msh"><div class="mh"></div><div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">💗 오늘의 일기</div><div style="font-size:11px;color:var(--muted);margin-bottom:12px;font-weight:500">AI가 감정·호르몬 패턴을 분석해요</div><textarea class="input" id="diary-txt" rows="5" style="margin-bottom:12px" placeholder="오늘 어땠나요? 몸 상태, 감정, 감사한 것을 적어보세요..."></textarea><button class="btn btn-p" onclick="saveDiary()">저장 완료</button></div></div>
+
+<div class="mov" id="mod-friends"><div class="msh"><div class="mh"></div><div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">👥 친구 연동</div><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"><div class="card2" style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">🦊</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text)">도파민헌터</div><div style="font-size:11px;color:var(--muted);font-weight:500">오늘 82% · 🔥12일</div></div><span style="font-size:11px;color:var(--sky2);font-weight:700">연결됨</span></div><div class="card2" style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">🐨</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text)">바이오PM</div><div style="font-size:11px;color:var(--muted);font-weight:500">오늘 68% · 🔥7일</div></div><span style="font-size:11px;color:var(--sky2);font-weight:700">연결됨</span></div></div><input class="input" placeholder="친구 코드 입력 (BELLA-XXXX)" style="margin-bottom:10px"/><button class="btn btn-p" onclick="closeMod('mod-friends')">친구 추가</button></div></div>
+
+<div class="mov" id="mod-cheat">
+  <div class="msh">
+    <div class="mh"></div>
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">🍕 치팅데이</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:500">누적 세이브 <span style="color:var(--ok);font-weight:700" id="ch-avail">0</span>kcal 사용 가능</div>
+    <div style="position:relative;margin-bottom:10px"><input class="input" id="cheat-q" placeholder="음식 검색..." oninput="searchCheat(this.value)" autocomplete="off"/><div class="dd" id="cheat-dd" style="display:none"></div></div>
+    <div id="cheat-list" style="display:flex;flex-direction:column;gap:6px"></div>
+    <button class="btn btn-o" style="margin-top:10px" onclick="closeMod('mod-cheat')">닫기</button>
+  </div>
+</div>
+
+<div class="mov" id="mod-notify"><div class="msh"><div class="mh"></div><div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">🎉 친구에게 알리기</div><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="nf1" style="accent-color:var(--sky2)"/><span style="font-size:13px;color:var(--text);font-weight:600">🦊 도파민헌터</span></label><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="nf2" style="accent-color:var(--sky2)"/><span style="font-size:13px;color:var(--text);font-weight:600">🐨 바이오PM</span></label></div><textarea class="input" id="notify-msg" rows="3" style="margin-bottom:12px"></textarea><button class="btn btn-p" onclick="sendNotify()">보내기</button></div></div>
+
+<div class="mov" id="mod-paywall"><div class="msh"><div class="mh"></div><div style="text-align:center;margin-bottom:16px"><div style="font-size:36px;margin-bottom:8px">🔒</div><div style="font-size:16px;font-weight:700;color:var(--text)">AI 통합 리포트</div><div style="font-size:12px;color:var(--muted);margin-top:4px;font-weight:500">구독자 전용 · 3일마다 생성</div></div><div class="card" style="margin-bottom:12px;font-size:13px;color:var(--text);line-height:1.9;font-weight:500">✓ 일기 단어 분석 + 감정-호르몬 상관관계<br>✓ 혈당 추이 + AI 예측 시뮬레이션<br>✓ PCOS 사이클 맞춤 가이드<br>✓ AI 루틴 추천 & 개인화</div><button class="btn btn-p" style="margin-bottom:8px" onclick="S.subscribed=true;closeMod('mod-paywall');renderReport();openMod('mod-report')">월 9,900원 구독하기</button><button class="btn btn-o" onclick="closeMod('mod-paywall')">나중에</button></div></div>
+
+<div class="mov" id="mod-report"><div class="msh" style="max-height:92%"><div class="mh"></div><div id="rep-body"></div></div></div>
+
+<div class="mov" id="mod-food">
+  <div class="msh">
+    <div class="mh"></div>
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px" id="food-title">음식 추가</div>
+    <div style="position:relative;margin-bottom:10px">
+      <input class="input" id="food-q" placeholder="음식 검색 (밥, 닭가슴살, 아보카도...)" oninput="searchFood(this.value)" autocomplete="off"/>
+      <div class="dd" id="food-dd" style="display:none"></div>
+    </div>
+    <div id="pend-list" style="min-height:40px;margin-bottom:10px"></div>
+    <div id="pend-prev" style="display:none;background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:13px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div class="cap" style="margin-bottom:0">이 식사 합계</div><div style="font-size:16px;font-weight:800;color:var(--sky2)" id="pend-cal">0 kcal</div></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
+        <div style="text-align:center;background:var(--surf);border-radius:9px;padding:6px 3px"><div style="font-size:12px;font-weight:800;color:var(--warn)" id="pend-carb">0g</div><div style="font-size:9px;color:var(--muted);font-weight:600">탄수</div></div>
+        <div style="text-align:center;background:var(--surf);border-radius:9px;padding:6px 3px"><div style="font-size:12px;font-weight:800;color:var(--lav2)" id="pend-prot">0g</div><div style="font-size:9px;color:var(--muted);font-weight:600">단백</div></div>
+        <div style="text-align:center;background:var(--surf);border-radius:9px;padding:6px 3px"><div style="font-size:12px;font-weight:800;color:var(--muted)" id="pend-fat">0g</div><div style="font-size:9px;color:var(--muted);font-weight:600">지방</div></div>
+        <div style="text-align:center;background:var(--surf);border-radius:9px;padding:6px 3px"><div style="font-size:12px;font-weight:800" id="pend-gi">—</div><div style="font-size:9px;color:var(--muted);font-weight:600">GI</div></div>
+      </div>
+      <div style="margin-top:8px;padding:8px 10px;border-radius:10px;font-size:12px;font-weight:600" id="pend-pred"></div>
+    </div>
+    <button class="btn btn-p" onclick="confirmFoods()" style="margin-bottom:8px">확인 · 식사에 추가</button>
+    <button class="btn btn-o" onclick="closeMod('mod-food')">취소</button>
+  </div>
+</div>
+
+<div class="mov" id="mod-recipe-detail">
+  <div class="msh" style="max-height:92%">
+    <div class="mh"></div>
+    <div id="recipe-detail-body"></div>
+  </div>
+</div>
+
+<div class="mov" id="mod-wt">
+  <div class="msh">
+    <div class="mh"></div>
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">⚖️ 오늘 몸무게 기록</div>
+    <input class="input" type="number" id="wt-input" step="0.1" placeholder="예: 51.8" style="margin-bottom:14px"/>
+    <button class="btn btn-p" onclick="saveWeight()">저장</button>
+  </div>
+</div>
+
+<div class="mov" id="mod-avatar">
+  <div class="msh">
+    <div class="mh"></div>
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px">🦋 아이콘 선택</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+      ${['🦋','🌸','🌺','🌻','🐝','🦄','🐬','🦢','🌙','⭐','💎','🌿'].map(e=>`<div onclick="setAvatar('${e}')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">${e}</div>`).join('')}
+    </div>
+  </div>
+</div>
+
+<div class="mov" id="mod-edit-routine">
+  <div class="msh">
+    <div class="mh"></div>
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">✏️ 루틴 수정</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;font-weight:500">현재 호르몬의 루틴을 수정할 수 있어요</div>
+    <div id="edit-routine-list"></div>
+    <button class="btn btn-p" style="margin-top:10px;margin-bottom:8px" onclick="saveRoutine()">저장</button>
+    <button class="btn btn-o" onclick="closeMod('mod-edit-routine')">취소</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════ FOOD DB ═══════════════════════
+const FDB=[
+  {n:'백미밥',cal:130,c:28.5,p:2.1,f:0.3,gi:72,unit:'공기',ug:210},
+  {n:'현미밥',cal:111,c:23.5,p:2.5,f:0.8,gi:55,unit:'공기',ug:210},
+  {n:'잡곡밥',cal:108,c:22.8,p:2.8,f:0.9,gi:48,unit:'공기',ug:210},
+  {n:'귀리밥',cal:103,c:17.9,p:3.4,f:1.7,gi:42,unit:'공기',ug:210},
+  {n:'고구마',cal:86,c:20.1,p:1.6,f:0.1,gi:44,unit:'개',ug:130},
+  {n:'감자',cal:66,c:15.4,p:1.6,f:0.1,gi:62,unit:'개',ug:150},
+  {n:'오트밀',cal:68,c:12,p:2.4,f:1.4,gi:55,unit:'그릇',ug:160},
+  {n:'흰빵',cal:265,c:49,p:9,f:3.2,gi:75,unit:'장',ug:30},
+  {n:'통밀빵',cal:247,c:41,p:9,f:3.4,gi:51,unit:'장',ug:30},
+  {n:'닭가슴살',cal:109,c:0,p:23,f:1.2,gi:0,unit:'장',ug:100},
+  {n:'닭다리살',cal:177,c:0,p:18,f:11,gi:0,unit:'개',ug:120},
+  {n:'소고기(등심)',cal:247,c:0,p:19,f:19,gi:0,unit:'인분',ug:150},
+  {n:'돼지고기(삼겹)',cal:331,c:0,p:17,f:29,gi:0,unit:'인분',ug:150},
+  {n:'계란',cal:143,c:0.8,p:12.4,f:9.8,gi:0,unit:'개',ug:60},
+  {n:'삶은계란',cal:155,c:1.1,p:13,f:11,gi:0,unit:'개',ug:60},
+  {n:'두부',cal:76,c:1.7,p:8.1,f:4.2,gi:15,unit:'모',ug:300},
+  {n:'연두부',cal:42,c:1.5,p:4.5,f:2,gi:15,unit:'팩',ug:200},
+  {n:'연어',cal:208,c:0,p:20,f:13,gi:0,unit:'토막',ug:100},
+  {n:'고등어',cal:183,c:0,p:19,f:12,gi:0,unit:'토막',ug:100},
+  {n:'참치통조림',cal:108,c:0,p:24,f:1,gi:0,unit:'캔',ug:100},
+  {n:'새우',cal:85,c:0,p:18,f:0.9,gi:0,unit:'마리',ug:15},
+  {n:'양상추',cal:13,c:2,p:1.3,f:0.2,gi:10,unit:'잎',ug:30},
+  {n:'시금치',cal:23,c:3.6,p:2.9,f:0.4,gi:15,unit:'줌',ug:70},
+  {n:'브로콜리',cal:33,c:6.6,p:2.8,f:0.4,gi:10,unit:'송이',ug:100},
+  {n:'양배추',cal:25,c:5.8,p:1.3,f:0.1,gi:10,unit:'잎',ug:50},
+  {n:'오이',cal:15,c:3.6,p:0.7,f:0.1,gi:15,unit:'개',ug:100},
+  {n:'토마토',cal:18,c:3.9,p:0.9,f:0.2,gi:30,unit:'개',ug:150},
+  {n:'당근',cal:41,c:9.6,p:0.9,f:0.2,gi:35,unit:'개',ug:130},
+  {n:'콜리플라워',cal:25,c:5,p:1.9,f:0.3,gi:15,unit:'송이',ug:100},
+  {n:'아보카도',cal:160,c:9,p:2,f:15,gi:10,unit:'개',ug:150},
+  {n:'바나나',cal:89,c:23,p:1.1,f:0.3,gi:51,unit:'개',ug:120},
+  {n:'사과',cal:52,c:14,p:0.3,f:0.2,gi:36,unit:'개',ug:180},
+  {n:'블루베리',cal:57,c:14.5,p:0.7,f:0.3,gi:25,unit:'줌',ug:100},
+  {n:'딸기',cal:32,c:7.7,p:0.7,f:0.3,gi:40,unit:'개',ug:15},
+  {n:'우유',cal:61,c:4.7,p:3.2,f:3.3,gi:27,unit:'잔',ug:200},
+  {n:'그릭요거트',cal:59,c:3.6,p:10,f:0.4,gi:11,unit:'컵',ug:170},
+  {n:'아몬드',cal:579,c:22,p:21,f:50,gi:15,unit:'알',ug:1.2},
+  {n:'호두',cal:654,c:14,p:15,f:65,gi:15,unit:'알',ug:5},
+  {n:'아메리카노',cal:10,c:1.5,p:0.3,f:0,gi:0,unit:'잔',ug:350},
+  {n:'라떼',cal:130,c:12,p:6.5,f:5.5,gi:30,unit:'잔',ug:350},
+  {n:'단백질쉐이크',cal:150,c:10,p:25,f:2,gi:20,unit:'스쿱',ug:40},
+  {n:'비빔밥',cal:490,c:82,p:18,f:10,gi:60,unit:'그릇',ug:450},
+  {n:'김밥',cal:480,c:73,p:15,f:13,gi:65,unit:'줄',ug:250},
+  {n:'된장찌개',cal:50,c:3.5,p:4,f:2,gi:25,unit:'그릇',ug:300},
+  {n:'순두부찌개',cal:130,c:5,p:10,f:8,gi:20,unit:'그릇',ug:350},
+  {n:'불고기',cal:220,c:8,p:22,f:11,gi:30,unit:'인분',ug:150},
+  {n:'떡볶이',cal:360,c:70,p:9,f:5,gi:72,unit:'인분',ug:250},
+  {n:'샐러드(그린)',cal:25,c:3.5,p:1.5,f:0.5,gi:10,unit:'그릇',ug:150},
+  {n:'스테이크',cal:250,c:0,p:26,f:16,gi:0,unit:'인분',ug:200},
+  {n:'파스타',cal:370,c:65,p:14,f:8,gi:60,unit:'인분',ug:250},
+  {n:'피자(한조각)',cal:285,c:33,p:12,f:11,gi:60,unit:'조각',ug:100},
+  {n:'초콜릿',cal:546,c:60,p:5,f:31,gi:49,unit:'칸',ug:10},
+  {n:'다크초콜릿',cal:598,c:45,p:8,f:43,gi:22,unit:'칸',ug:10},
+  {n:'아이스크림',cal:207,c:23.6,p:3.5,f:11,gi:61,unit:'스쿱',ug:100},
+  {n:'곤약젤리',cal:8,c:2,p:0.1,f:0,gi:0,unit:'개',ug:130},
+  {n:'프로틴바',cal:200,c:22,p:20,f:5,gi:35,unit:'개',ug:60},
+  {n:'김',cal:50,c:8,p:6,f:1,gi:5,unit:'장',ug:3},
+];
+
+// ═══════════════════════ STATE ═══════════════════════
+const S={
+  loggedIn:false, subscribed:false, prev:'s-home', curH:'insulin', obStep:1,
+  name:'혜림', goalCal:1090, baseBurned:380,
+  exBurned:{strength:0,hiit:0,cardio:0,walk:0},
+  savedTotal:0, calMon:{y:2026,m:3},
+  periods:[{start:'2026-04-01',days:5}], cycleLen:28,
+  checks:{i1:false,i2:false,i3:false,i4:false,g1:false,g2:false,g3:false,g4:false,c1:false,c2:false,c3:false,c4:false,o1:false,o2:false,o3:false,o4:false},
+  meals:[
+    {id:0,label:'아침',time:'07:30',foods:[],bgPre:null,bg1h:null,bg2h:null},
+    {id:1,label:'점심',time:'12:30',foods:[],bgPre:null,bg1h:null,bg2h:null},
+    {id:2,label:'저녁',time:'18:45',foods:[],bgPre:null,bg1h:null,bg2h:null},
+  ],
+  nextMealId:3, activeMealId:null, pending:[],
+  diaries:[
+    {d:'04/19',t:'아침에 일어나니 몸이 무겁고 피곤했어요. 운동하고 나니까 상쾌해졌어요. 혈당이 높아서 걱정됐는데 저녁엔 나아졌어요.'},
+    {d:'04/20',t:'오늘은 명상을 했는데 마음이 차분해졌어요. 엄마랑 통화해서 기분 좋았고 행복했어요. 혈당이 낮아서 뿌듯해요.'},
+    {d:'04/21',t:'거꾸로 식사법 실천했어요. 몸이 가볍고 에너지가 좋아요. 친구랑 만나서 즐거웠고 감사한 하루였어요.'},
+    {d:'04/22',t:'오늘도 운동했는데 힘들었지만 뿌듯해요. 혈당이 많이 안정됐어요. 가족이랑 저녁 먹어서 행복했어요.'},
+  ],
+  weights:[{d:'04/19',w:52.3},{d:'04/20',w:52.1},{d:'04/21',w:52.0},{d:'04/22',w:52.0}],
+  initWeight:52, goalWeight:48, goalMonths:3,
+  rFilters:{time:null,type:null,cost:null},
+  avatar:'🦋',
+  routines:{
+    insulin:[
+      {id:'i1',label:'⏱ 간헐적 단식 16시간',sub:'마지막 식사 기준 자동 계산'},
+      {id:'i2',label:'🚶 식후 10분 걷기 / 스쿼트',sub:'식사 직후 10분 알람'},
+      {id:'i3',label:'🥗 거꾸로 식사법',sub:'채소→단백질→탄수화물 순서'},
+      {id:'i4',label:'📊 혈당 기록',sub:'2주 후 AI 개인화 예측 시작'},
+    ],
+    growth:[
+      {id:'g1',label:'👟 하루 7,000보 이상',sub:'자동 감지 · 현재 0보'},
+      {id:'g2',label:'🏋️ 근력 운동',sub:'부위 선택 후 기록'},
+      {id:'g3',label:'⚡ HIIT 20분',sub:'고강도 인터벌 운동'},
+      {id:'g4',label:'🌅 빈속 아침 운동',sub:'오전 9시 이전 + 단식 중'},
+    ],
+    cortisol:[
+      {id:'c1',label:'☀️ 햇볕 30분 쬐기',sub:'자동 감지 · GPS / wearable'},
+      {id:'c2',label:'🚿 취침 전 샤워 + 바디마사지',sub:'알람 21:30'},
+      {id:'c3',label:'🧘 짧은 명상',sub:'5-10분 명상'},
+      {id:'c4',label:'😴 수면 7시간',sub:'자동 기록 · Health Kit 연동'},
+    ],
+    oxytocin:[
+      {id:'o1',label:'🤗 포옹 20초 이상',sub:'가족·친구·반려동물'},
+      {id:'o2',label:'📱 감사·칭찬 표현 1회',sub:'전화·문자·직접 대화'},
+      {id:'o3',label:'🧘 명상하기',sub:'마음챙김 5분 이상'},
+      {id:'o4',label:'📔 일기 쓰기',sub:'하루 마무리 감정 기록'},
+    ],
+  },
+};
+
+// ═══════════════════════ HELPERS ═══════════════════════
+function go(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));const el=document.getElementById(id);if(el)el.classList.add('on');if(id==='s-dash')renderDash();if(id==='s-diet')renderRecipes();updateHome();}
+function navTo(el,id){document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));el.classList.add('on');if(id!=='s-hormone')S.prev=id;go(id);}
+function openMod(id){
+  if(id==='mod-report'&&!S.subscribed){document.getElementById('mod-paywall').classList.add('open');return;}
+  if(id==='mod-report')renderReport();
+  if(id==='mod-cheat'){renderCheat();document.getElementById('ch-avail').textContent=S.savedTotal;}
+  if(id==='mod-edit-routine')renderEditRoutine();
+  document.getElementById(id)?.classList.add('open');
+}
+function closeMod(id){document.getElementById(id).classList.remove('open')}
+function setTxt(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+
+// ═══════════════════════ CALORIE CALCS ═══════════════════════
+function totalBurned(){return S.baseBurned+Object.values(S.exBurned).reduce((a,v)=>a+(v||0),0);}
+function totalIntake(){return S.meals.reduce((a,m)=>a+mCalc(m,'cal'),0);}
+function mCalc(m,k){return m.foods.reduce((a,f)=>a+Math.round(f.food[k==='cal'?'cal':k]*f.g/100),0);}
+function mCarb(m){return mCalc(m,'c');}
+function mProt(m){return mCalc(m,'p');}
+function mFat(m){return mCalc(m,'f');}
+function mGI(m){const cb=mCarb(m);if(!cb)return 0;return Math.round(m.foods.reduce((a,f)=>a+f.food.gi*(f.food.c*f.g/100),0)/cb);}
+function getNet(){return totalIntake()-totalBurned();}
+function getSave(){return S.goalCal-getNet();}
+function predBG(baseBG,gi,carbG){return Math.round((baseBG||90)+(gi*carbG/100)*2.5);}
+
+function hormonePct(hid){
+  const rts=S.routines[hid];if(!rts)return 0;
+  const done=rts.filter(r=>S.checks[r.id]).length;
+  return Math.round(done/rts.length*100);
+}
+function overallPct(){
+  const all=Object.values(S.routines).flat();
+  const done=all.filter(r=>S.checks[r.id]).length;
+  return Math.round(done/all.length*100);
+}
+
+function updateHome(){
+  const intake=totalIntake();const burned=totalBurned();const net=getNet();const save=getSave();
+  const pct=Math.min(Math.round(intake/S.goalCal*100),120);
+  setTxt('h-intake',intake.toLocaleString());setTxt('h-burned',burned.toLocaleString());
+  const netEl=document.getElementById('h-net');if(netEl){netEl.textContent=net.toLocaleString();netEl.style.color=net<=S.goalCal?'var(--ok)':'var(--danger)';}
+  setTxt('h-goal',S.goalCal.toLocaleString());
+  const bar=document.getElementById('h-calbar');if(bar){bar.style.width=Math.min(pct,100)+'%';bar.style.background=pct>100?'linear-gradient(90deg,var(--sky2),var(--danger))':'linear-gradient(90deg,var(--sky2),var(--lav2))';}
+  const msg=document.getElementById('h-calmsg');if(msg){if(save>=0)msg.innerHTML=`<span style="color:var(--ok);font-weight:700">▼ 오늘 ${save}kcal 세이브</span> <span style="color:var(--muted)">· 누적 ${S.savedTotal}kcal</span>`;else msg.innerHTML=`<span style="color:var(--danger);font-weight:700">▲ 목표보다 ${Math.abs(save)}kcal 초과</span>`;}
+  const ring=document.getElementById('h-ring');const op=overallPct();if(ring){const circ=2*Math.PI*29;ring.setAttribute('stroke-dasharray',`${Math.min(op/100*circ,circ)} ${circ}`);}
+  setTxt('h-ring-pct',op+'%');
+  const allRts=Object.values(S.routines).flat();setTxt('h-done-cnt',allRts.filter(r=>S.checks[r.id]).length);setTxt('h-total-cnt',allRts.length);
+  ['ins','gro','cor','oxy'].forEach((k,i)=>{const hids=['insulin','growth','cortisol','oxytocin'];const p=hormonePct(hids[i]);setTxt('hc-'+k,p+'%');const bar=document.getElementById('bar-'+k);if(bar)bar.style.width=p+'%';const b=document.getElementById('h-'+k+'-badge');if(b)b.textContent={ins:'인슐린',gro:'성장',cor:'코르티솔',oxy:'옥시토신'}[k]+' '+p+'%';});
+  S.savedTotal=Math.max(0,S.savedTotal+(save>0?0:0));
+  setTxt('prof-save-val',S.savedTotal+' kcal');
+  // Weight display
+  const lastWt=S.weights.length?S.weights[S.weights.length-1].w:S.initWeight;
+  setTxt('h-wt',lastWt.toFixed(1)+' kg');
+  const wtLost=S.initWeight-lastWt;const wtRemain=Math.max(0,lastWt-S.goalWeight);
+  setTxt('h-wt-remain',`${S.goalWeight}kg까지 ${wtRemain.toFixed(1)}kg · D-${Math.max(0,S.goalMonths*30-4)}`);
+  const wtPct=Math.min(Math.round(wtLost/Math.max(S.initWeight-S.goalWeight,0.1)*100),100);
+  const wtBar=document.getElementById('wt-bar');if(wtBar)wtBar.style.width=wtPct+'%';
+  renderWtMiniChart();
+  // Dashboard sync
+  setTxt('d-wt-prog',`목표 -${(S.initWeight-S.goalWeight).toFixed(1)}kg · 현재 -${wtLost.toFixed(1)}kg`);
+  const dgb=document.getElementById('d-goal-bar');if(dgb)dgb.style.width=wtPct+'%';
+  ['ins','gro','cor','oxy'].forEach((k,i)=>{const hids=['insulin','growth','cortisol','oxytocin'];const p=hormonePct(hids[i]);const db=document.getElementById('d-'+k+'-bar');if(db)db.style.width=p+'%';setTxt('d-'+k+'-pct',p+'%');});
+  // Profile
+  const pmb=document.getElementById('prof-me-bar');if(pmb)pmb.style.width=op+'%';setTxt('prof-me-pct',op+'%');
+  const pname=document.getElementById('prof-me-name');if(pname)pname.textContent=S.name+'님 (나)';
+}
+
+function renderWtMiniChart(){
+  const c=document.getElementById('wt-mini-chart');if(!c)return;c.innerHTML='';
+  const ws=S.weights.map(w=>w.w);if(!ws.length)return;
+  const mn=Math.min(...ws)-.5,mx=Math.max(...ws)+.5;
+  ws.forEach((w,i)=>{const h=Math.max(Math.round((w-mn)/(mx-mn)*40),4);const b=document.createElement('div');const isT=i===ws.length-1;b.style.cssText=`flex:1;border-radius:3px 3px 0 0;height:${h}px;background:${isT?'linear-gradient(180deg,var(--sky2),var(--lav2))':'rgba(91,184,245,.3)'};min-width:4px`;c.appendChild(b);});
+}
+
+// ═══════════════════════ GOOGLE LOGIN ═══════════════════════
+function doGoogleLogin(){
+  S.loggedIn=true;
+  go('s-onboard');
+}
+
+// ═══════════════════════ ONBOARDING ═══════════════════════
+function calcGoal(){
+  const cw=parseFloat(document.getElementById('ob-cw')?.value)||52;
+  const gw=parseFloat(document.getElementById('ob-gw')?.value)||48;
+  const gm=parseFloat(document.getElementById('ob-gm')?.value)||3;
+  const h=parseFloat(document.getElementById('ob-h')?.value)||165;
+  const bmr=Math.round(655+9.563*cw+1.85*h-4.676*32);
+  S.goalCal=Math.max(Math.round(bmr*1.375)-Math.round((cw-gw)*7700/(gm*30)),1000);
+  S.initWeight=cw;S.goalWeight=gw;S.goalMonths=gm;
+  setTxt('ob-cal',S.goalCal.toLocaleString());
+  const d=document.getElementById('ob-cal-d');if(d)d.textContent=`체중 -${(cw-gw).toFixed(1)}kg ÷ ${gm*30}일 × 7,700kcal`;
+}
+function obNext(){
+  if(S.obStep<3){document.getElementById(`ob-p${S.obStep}`).style.display='none';S.obStep++;document.getElementById(`ob-p${S.obStep}`).style.display='block';document.getElementById('ob-back').style.display='flex';if(S.obStep===3)document.getElementById('ob-next').textContent='시작하기 →';if(S.obStep===2)calcGoal();document.querySelectorAll('.step-dot').forEach((d,i)=>d.classList.toggle('on',i===S.obStep-1));}
+  else{S.name=document.getElementById('ob-name')?.value||'혜림';S.cycleLen=parseInt(document.getElementById('ob-cycle')?.value)||28;S.weights=[{d:'오늘',w:S.initWeight}];initMain();}
+}
+function obPrev(){if(S.obStep>1){document.getElementById(`ob-p${S.obStep}`).style.display='none';S.obStep--;document.getElementById(`ob-p${S.obStep}`).style.display='block';if(S.obStep===1)document.getElementById('ob-back').style.display='none';document.getElementById('ob-next').textContent='다음';document.querySelectorAll('.step-dot').forEach((d,i)=>d.classList.toggle('on',i===S.obStep-1));}}
+function initMain(){setTxt('h-greet',`오늘도 빛나는 ${S.name}님 ✨`);setTxt('prof-name',`${S.name}님`);setTxt('prof-me-name',S.name+'님 (나)');go('s-home');document.getElementById('nav-home').click();}
+
+// ═══════════════════════ WEIGHT ═══════════════════════
+function openWtModal(){const el=document.getElementById('wt-input');if(el)el.value='';openMod('mod-wt');}
+function saveWeight(){const v=parseFloat(document.getElementById('wt-input')?.value);if(!v||v<20||v>300){alert('올바른 체중을 입력해주세요');return;}const now=new Date();const d=`${now.getMonth()+1}/${now.getDate()}`;S.weights.push({d,w:v});closeMod('mod-wt');updateHome();}
+
+// ═══════════════════════ HORMONE SCREENS ═══════════════════════
+const HCFG={
+  insulin:{em:'🩺',label:'인슐린',color:'var(--sky2)',bg:'var(--ins-bg)'},
+  growth:{em:'💪',label:'성장호르몬',color:'var(--gro)',bg:'var(--gro-bg)'},
+  cortisol:{em:'🌿',label:'코르티솔',color:'var(--cor)',bg:'var(--cor-bg)'},
+  oxytocin:{em:'💗',label:'옥시토신',color:'var(--rose)',bg:'var(--oxy-bg)'},
+};
+function goH(id){
+  S.prev=document.querySelector('.scr.on')?.id||'s-home';S.curH=id;
+  const h=HCFG[id];
+  document.getElementById('h-hdr').innerHTML=`<div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:${h.color}">${h.em} ${h.label}</div>`;
+  const body=document.getElementById('h-body');
+  if(id==='insulin')body.innerHTML=renderInsulin();
+  else if(id==='growth')body.innerHTML=renderGrowth();
+  else if(id==='cortisol')body.innerHTML=renderCortisol();
+  else body.innerHTML=renderOxytocin();
+  go('s-hormone');
+}
+
+function ckHtml(id,label,sub,color){
+  const done=!!S.checks[id];const c=color||'var(--sky2)';
+  return`<div class="ck-item${done?' done':''}" onclick="doCheck('${id}')" style="${done?`border-color:${c};background:rgba(91,184,245,.08)`:''}" >
+    <div class="ck-box${done?' done':''}" style="${done?`background:${c};border-color:${c}`:''}">${done?'✓':''}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">${label}</div><div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:500">${sub}</div></div>
+  </div>`;
+}
+function doCheck(id){
+  if(id==='o4'){openMod('mod-diary');return;}
+  if(id==='g2'){openMod('mod-workout');return;}
+  S.checks[id]=!S.checks[id];goH(S.curH);updateHome();
+}
+function saveDiary(){S.checks.o4=true;const txt=document.getElementById('diary-txt')?.value;if(txt)S.diaries.push({d:'오늘',t:txt});closeMod('mod-diary');goH('oxytocin');updateHome();}
+
+// ── INSULIN ──
+function renderInsulin(){
+  const intake=totalIntake();const net=getNet();const save=getSave();
+  const lastMealTime=S.meals.filter(m=>m.foods.length>0).map(m=>m.time).sort().pop();
+  let fastHours=0;
+  if(lastMealTime){const[hh,mm]=lastMealTime.split(':').map(Number);const now=new Date();const last=new Date();last.setHours(hh,mm,0,0);if(last>now)last.setDate(last.getDate()-1);fastHours=Math.round((now-last)/3600000*10)/10;}
+  const mHtml=S.meals.map((m,mi)=>{
+    const cal=mCalc(m,'cal');const carb=mCarb(m);const prot=mProt(m);const fat=mFat(m);const gi=mGI(m);const hasFoods=m.foods.length>0;const peak=hasFoods?predBG(m.bgPre,gi,carb):null;const gl=hasFoods?Math.round(gi*carb/100):0;
+    const foodRows=m.foods.map((f,fi)=>`
+      <div class="fi"><span style="flex:1;font-size:12px;color:var(--text);font-weight:600">${f.food.n}</span>
+        <input type="number" min="0.5" step="0.5" value="${f.qty}" onchange="updQty(${m.id},${fi},this.value)" style="width:50px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:8px;padding:4px 5px;color:var(--text);font-size:12px;font-weight:700;text-align:center;outline:none;font-family:'Nunito',sans-serif"/>
+        <span style="font-size:9px;color:var(--muted);width:26px;text-align:center;font-weight:600">${f.food.unit}</span>
+        <span style="font-size:12px;font-weight:800;color:var(--sky2);width:38px;text-align:right">${Math.round(f.food.cal*f.g/100)}</span>
+        <button onclick="rmFood(${m.id},${fi})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px;line-height:1">×</button>
+      </div>`).join('');
+    return`<div class="mb${hasFoods?' hd':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${hasFoods?'10px':'0'}">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:34px;height:34px;border-radius:10px;background:${['rgba(91,184,245,.15)','rgba(129,199,132,.15)','rgba(179,157,219,.15)','rgba(244,143,177,.15)'][mi%4]};display:flex;align-items:center;justify-content:center;font-size:14px">${['🌅','☀️','🌙','🍎'][mi%4]}</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">${m.label}</div>
+            <input type="time" value="${m.time}" onchange="updMealTime(${m.id},this.value)" style="font-size:10px;color:var(--muted);background:transparent;border:none;outline:none;font-family:'Nunito',sans-serif;font-weight:600;cursor:pointer"/>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${hasFoods?`<div style="text-align:right"><div style="font-size:15px;font-weight:800;color:var(--sky2)">${cal}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>`:''}
+          <button onclick="openFoodModal(${m.id})" style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:9px;padding:6px 12px;font-size:12px;color:var(--sky2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">+ 음식</button>
+          <button onclick="delMeal(${m.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0">×</button>
+        </div>
+      </div>
+      ${hasFoods?`
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px">
+        <div style="text-align:center;background:var(--sky3);border-radius:9px;padding:6px 3px;border:1px solid rgba(91,184,245,.2)"><div style="font-size:12px;font-weight:800;color:var(--sky2)">${cal}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
+        <div style="text-align:center;background:rgba(255,167,38,.1);border-radius:9px;padding:6px 3px;border:1px solid rgba(255,167,38,.2)"><div style="font-size:12px;font-weight:800;color:var(--warn)">${carb}g</div><div style="font-size:9px;color:var(--muted);font-weight:600">탄수</div></div>
+        <div style="text-align:center;background:var(--lav3);border-radius:9px;padding:6px 3px;border:1px solid rgba(149,117,205,.2)"><div style="font-size:12px;font-weight:800;color:var(--lav2)">${prot}g</div><div style="font-size:9px;color:var(--muted);font-weight:600">단백</div></div>
+        <div style="text-align:center;background:var(--card2);border-radius:9px;padding:6px 3px;border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:800;color:var(--muted)">${fat}g</div><div style="font-size:9px;color:var(--muted);font-weight:600">지방</div></div>
+      </div>
+      <div style="border-top:1px solid var(--bdr);padding-top:8px;margin-bottom:8px">
+        <div style="display:flex;font-size:9px;color:var(--muted);padding:0 0 5px;gap:8px;font-weight:600"><span style="flex:1">음식</span><span style="width:50px;text-align:center">수량</span><span style="width:26px"></span><span style="width:38px;text-align:right">kcal</span><span style="width:20px"></span></div>
+        ${foodRows}
+      </div>
+      <div style="border-top:1px solid var(--bdr);padding-top:10px;margin-bottom:8px">
+        <div class="cap" style="margin-bottom:6px">혈당 실측 입력</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+          <div style="display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:var(--muted);text-align:center;font-weight:600">공복</div><input class="bg-inp" type="number" placeholder="mg/dL" value="${m.bgPre||''}" onchange="updBG(${m.id},'bgPre',this.value)"/></div>
+          <div style="display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:var(--muted);text-align:center;font-weight:600">식후 1시간</div><input class="bg-inp" type="number" placeholder="mg/dL" value="${m.bg1h||''}" onchange="updBG(${m.id},'bg1h',this.value)"/></div>
+          <div style="display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:var(--muted);text-align:center;font-weight:600">식후 2시간</div><input class="bg-inp" type="number" placeholder="mg/dL" value="${m.bg2h||''}" onchange="updBG(${m.id},'bg2h',this.value)"/></div>
+        </div>
+      </div>
+      ${carb>0?`<div style="background:${peak>180?'rgba(239,83,80,.08)':peak>140?'rgba(255,167,38,.08)':'rgba(91,184,245,.08)'};border:1.5px solid ${peak>180?'rgba(239,83,80,.25)':peak>140?'rgba(255,167,38,.25)':'rgba(91,184,245,.25)'};border-radius:12px;padding:10px 12px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px">
+          <span style="font-size:11px;font-weight:800;padding:2px 9px;border-radius:99px;background:${gl<10?'rgba(102,187,106,.15)':gl<20?'rgba(255,167,38,.15)':'rgba(239,83,80,.15)'};color:${gl<10?'var(--ok)':gl<20?'var(--warn)':'var(--danger)'}">GL ${gl}</span>
+          <span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--lav3);color:var(--lav2)">GI ${gi}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text);font-weight:600">예측 식후 1h: <strong style="color:${peak>180?'var(--danger)':peak>140?'var(--warn)':'var(--sky2)'}">${peak} mg/dL</strong> ${peak>180?'⚠️ 위험':peak>140?'주의':'✓ 양호'}</div>
+        ${!m.bgPre?'<div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">공복 혈당 입력 시 더 정확해져요</div>':''}
+      </div>`:''}
+      `:`<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">+ 음식 버튼으로 식사를 기록하세요</div>`}
+    </div>`;
+  }).join('');
+  return`
+  <div class="card" style="border-color:rgba(91,184,245,.3)">
+    <div class="cap">⏱ 공복 타이머</div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:28px;font-weight:800;color:var(--sky2)">${fastHours ? fastHours+'h' : '—'}</div>
+      <div style="font-size:12px;color:var(--muted);font-weight:500;text-align:right">
+        ${fastHours?`마지막 식사: ${lastMealTime}<br><span style="color:${fastHours>=16?'var(--ok)':'var(--sky2)'};font-weight:700">${fastHours>=16?'✅ 16시간 달성!':'목표까지 '+(16-fastHours).toFixed(1)+'h'}</span>`:'식사를 기록하면 시작돼요'}
+      </div>
+    </div>
+  </div>
+  <div class="card" style="border-color:rgba(91,184,245,.25)">
+    <div class="cap">칼로리 — 인슐린 ↔ 성장호르몬 연동</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div style="background:var(--sky3);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(91,184,245,.2)"><div style="font-size:10px;color:var(--muted);font-weight:600">🩺 섭취</div><div style="font-size:22px;font-weight:800;color:var(--sky2)">${intake}</div><div style="font-size:9px;color:var(--muted);font-weight:600">목표 ${S.goalCal}kcal</div></div>
+      <div style="background:var(--gro-bg);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(129,199,132,.2)"><div style="font-size:10px;color:var(--muted);font-weight:600">💪 소모</div><div style="font-size:22px;font-weight:800;color:var(--gro)">${totalBurned()}</div><div style="font-size:9px;color:var(--muted);font-weight:600">NET ${getNet()}kcal</div></div>
+    </div>
+    ${getSave()>=0?`<div style="font-size:12px;color:var(--ok);background:rgba(102,187,106,.1);border:1.5px solid rgba(102,187,106,.25);border-radius:11px;padding:8px 12px;font-weight:700">✅ 오늘 ${getSave()}kcal 세이브 · 누적 ${S.savedTotal}kcal</div>`:`<div style="font-size:12px;color:var(--danger);background:rgba(239,83,80,.07);border:1.5px solid rgba(239,83,80,.2);border-radius:11px;padding:8px 12px;font-weight:700">⚠️ ${Math.abs(getSave())}kcal 초과 → 💪 운동으로 더 소모하세요</div>`}
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="cap" style="margin-bottom:0">식사 기록</div>
+      <button onclick="addMeal()" style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--sky2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">+ 식사 추가</button>
+    </div>
+    ${mHtml}
+    <div style="border-top:1px solid var(--bdr);padding-top:10px;margin-top:6px">
+      <div class="cap" style="margin-bottom:5px">혈당 추이 (최대 250mg/dL)</div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--sky2);font-weight:700"><div style="width:16px;height:2px;background:var(--sky2);border-radius:1px"></div>실측</div>
+        <div style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--warn);font-weight:700"><div style="width:16px;height:2px;background:var(--warn);border-radius:1px;border-top:1px dashed var(--warn)"></div>예측</div>
+      </div>
+      <svg width="100%" height="90" viewBox="0 0 310 90" id="bg-svg">
+        <rect x="0" y="14" width="310" height="17" fill="rgba(91,184,245,.06)" rx="2"/>
+        <line x1="0" y1="5" x2="310" y2="5" stroke="var(--bdr)" stroke-width=".7" stroke-dasharray="3 2"/>
+        <line x1="0" y1="31" x2="310" y2="31" stroke="var(--bdr)" stroke-width=".7" stroke-dasharray="3 2"/>
+        <line x1="0" y1="56" x2="310" y2="56" stroke="var(--bdr)" stroke-width=".7" stroke-dasharray="3 2"/>
+        <line x1="0" y1="81" x2="310" y2="81" stroke="var(--bdr)" stroke-width=".7" stroke-dasharray="3 2"/>
+        <text x="263" y="8" font-size="8" fill="var(--muted)" font-family="Nunito" font-weight="700">250</text>
+        <text x="263" y="34" font-size="8" fill="var(--muted)" font-family="Nunito" font-weight="700">180</text>
+        <text x="263" y="59" font-size="8" fill="var(--muted)" font-family="Nunito" font-weight="700">140</text>
+        <text x="263" y="84" font-size="8" fill="var(--muted)" font-family="Nunito" font-weight="700">70</text>
+        <g id="bg-line-g"></g><g id="bg-dot-g"></g>
+      </svg>
+    </div>
+  </div>
+  <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크</div>
+  ${S.routines.insulin.map(r=>ckHtml(r.id,r.label,r.sub,'var(--sky2)')).join('')}`;
+}
+
+function updMealTime(id,val){const m=S.meals.find(x=>x.id===id);if(m)m.time=val;goH('insulin');}
+
+function renderBGChart(){
+  const lg=document.getElementById('bg-line-g');const dg=document.getElementById('bg-dot-g');if(!lg||!dg)return;lg.innerHTML='';dg.innerHTML='';
+  const pts=[];
+  S.meals.forEach((m,mi)=>{
+    if(!m.foods.length)return;
+    const x=20+mi*90;const carb=mCarb(m);const gi=mGI(m);const base=m.bgPre||90;const peak=predBG(m.bgPre,gi,carb);
+    // Y mapping: 70–250 range → 81→5px (top)
+    const toY=bg=>81-Math.round((Math.min(Math.max(bg,70),250)-70)/(250-70)*76);
+    if(m.bgPre)pts.push({x,y:toY(m.bgPre),v:m.bgPre,real:true});
+    else pts.push({x,y:toY(base),v:base,real:false});
+    if(carb>0){
+      if(m.bg1h)pts.push({x:x+38,y:toY(m.bg1h),v:m.bg1h,real:true});
+      else pts.push({x:x+38,y:toY(peak),v:peak,real:false});
+      const r2=Math.max(base-5,88);
+      if(m.bg2h)pts.push({x:x+72,y:toY(m.bg2h),v:m.bg2h,real:true});
+      else pts.push({x:x+72,y:toY(r2),v:r2,real:false});
+    }
+  });
+  if(pts.length<2)return;
+  const pD=pts.map((p,i)=>`${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
+  const pl=document.createElementNS('http://www.w3.org/2000/svg','path');pl.setAttribute('d',pD);pl.setAttribute('fill','none');pl.setAttribute('stroke','rgba(255,167,38,.6)');pl.setAttribute('stroke-width','2');pl.setAttribute('stroke-dasharray','4 3');pl.setAttribute('stroke-linecap','round');lg.appendChild(pl);
+  const rPts=pts.filter(p=>p.real);if(rPts.length>=2){const rD=rPts.map((p,i)=>`${i===0?'M':'L'}${p.x},${p.y}`).join(' ');const rl=document.createElementNS('http://www.w3.org/2000/svg','path');rl.setAttribute('d',rD);rl.setAttribute('fill','none');rl.setAttribute('stroke','var(--sky2)');rl.setAttribute('stroke-width','2.5');rl.setAttribute('stroke-linecap','round');lg.appendChild(rl);}
+  pts.forEach(p=>{const col=p.v>180?'var(--danger)':p.v>140?'var(--warn)':p.real?'var(--sky2)':'rgba(255,167,38,.8)';const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r',p.real?'4':'3');if(p.real)c.setAttribute('fill',col);else{c.setAttribute('fill','none');c.setAttribute('stroke',col);c.setAttribute('stroke-width','1.5');}dg.appendChild(c);const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x',p.x);t.setAttribute('y',p.y-7);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','9');t.setAttribute('fill',col);t.setAttribute('font-family','Nunito');t.setAttribute('font-weight','700');t.textContent=p.v;dg.appendChild(t);});
+}
+
+// ── GROWTH ──
+function renderGrowth(){
+  const net=getNet();const save=getSave();const need=save<0?Math.abs(save):0;const burned=totalBurned();
+  const wk=[{done:true,t:'하체'},{done:true,t:'등'},{done:false},{done:true,t:'전신'},{done:true,t:'어깨'},{done:false},{done:true,t:'팔'}];
+  const days=['월','화','수','목','금','토','일'];
+  return`
+  <div class="card" style="border-color:rgba(129,199,132,.3)">
+    <div class="cap">칼로리 소모 현황</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px">
+      <div style="background:var(--gro-bg);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(129,199,132,.2)"><div style="font-size:10px;color:var(--muted);font-weight:600">오늘 소모</div><div style="font-size:22px;font-weight:800;color:var(--gro)">${burned}</div><div style="font-size:9px;color:var(--muted);font-weight:600">기초${S.baseBurned}+운동${burned-S.baseBurned}</div></div>
+      <div style="background:${need>0?'rgba(239,83,80,.08)':'rgba(102,187,106,.08)'};border-radius:12px;padding:10px;text-align:center;border:1px solid ${need>0?'rgba(239,83,80,.2)':'rgba(102,187,106,.2)'}"><div style="font-size:10px;color:var(--muted);font-weight:600">${need>0?'추가 소모 필요':'NET 칼로리'}</div><div style="font-size:22px;font-weight:800;color:${need>0?'var(--danger)':'var(--ok)'}">${need>0?need:net}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
+    </div>
+    ${need>0?`<div style="font-size:12px;color:var(--danger);background:rgba(239,83,80,.07);border:1.5px solid rgba(239,83,80,.2);border-radius:11px;padding:8px 12px;font-weight:600">🔗 인슐린 ${Math.abs(save)}kcal 초과 → 운동으로 ${need}kcal 더 태우면 목표 달성</div>`:`<div style="font-size:12px;color:var(--ok);background:rgba(102,187,106,.07);border:1.5px solid rgba(102,187,106,.2);border-radius:11px;padding:8px 12px;font-weight:700">✅ NET ${net}kcal · 목표 이내</div>`}
+  </div>
+  <div class="card">
+    <div class="cap" style="margin-bottom:8px">이번 주 운동 기록 (7일)</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:8px">
+      ${days.map((d,i)=>`<div onclick="${i===6?'openMod(\'mod-workout\')':''}" style="background:${wk[i].done?'rgba(129,199,132,.1)':'var(--card2)'};border:1.5px solid ${wk[i].done?'rgba(129,199,132,.4)':'var(--bdr)'};border-radius:9px;padding:7px 2px;text-align:center;cursor:pointer"><div style="font-size:9px;color:var(--muted);font-weight:700">${d}</div><div style="font-size:14px;margin:3px 0">${wk[i].done?'🏋️':'—'}</div>${wk[i].done?`<div style="font-size:7px;color:var(--gro);font-weight:700">${wk[i].t}</div>`:''}</div>`).join('')}
+    </div>
+    <button onclick="openMod('mod-workout')" style="width:100%;background:var(--gro-bg);border:1.5px solid rgba(129,199,132,.3);border-radius:10px;padding:10px;font-size:13px;color:var(--gro);font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">+ 운동 소모 칼로리 기록하기</button>
+  </div>
+  <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크</div>
+  ${S.routines.growth.map(r=>ckHtml(r.id,r.label,r.sub,'var(--gro)')).join('')}`;
+}
+
+function updateBurned(){
+  const s=parseInt(document.getElementById('ex-strength')?.value)||0;
+  const h=parseInt(document.getElementById('ex-hiit')?.value)||0;
+  const c=parseInt(document.getElementById('ex-cardio')?.value)||0;
+  const w=parseInt(document.getElementById('ex-walk')?.value)||0;
+  const total=s+h+c+w;setTxt('ex-total',total+' kcal');
+}
+function saveWorkout(){
+  S.exBurned.strength=parseInt(document.getElementById('ex-strength')?.value)||0;
+  S.exBurned.hiit=parseInt(document.getElementById('ex-hiit')?.value)||0;
+  S.exBurned.cardio=parseInt(document.getElementById('ex-cardio')?.value)||0;
+  S.exBurned.walk=parseInt(document.getElementById('ex-walk')?.value)||0;
+  S.checks.g2=true;closeMod('mod-workout');goH('growth');updateHome();
+}
+
+// ── CORTISOL ──
+function renderCortisol(){return`
+  <div class="card" style="border-color:rgba(206,147,216,.3)">
+    <div class="cap">오늘 코르티솔 관리</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+      <div style="background:var(--sky3);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(91,184,245,.2)"><div style="font-size:18px;font-weight:800;color:var(--sky2)">7h20m</div><div style="font-size:9px;color:var(--muted);font-weight:600">어젯밤 수면</div></div>
+      <div style="background:rgba(129,199,132,.1);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(129,199,132,.2)"><div style="font-size:18px;font-weight:800;color:var(--ok)">22분</div><div style="font-size:9px;color:var(--muted);font-weight:600">햇볕 노출</div></div>
+      <div style="background:var(--cor-bg);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(206,147,216,.2)"><div style="font-size:18px;font-weight:800;color:var(--cor)">황체기</div><div style="font-size:9px;color:var(--muted);font-weight:600">21일차</div></div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:var(--cor);background:var(--cor-bg);padding:8px 12px;border-radius:11px;line-height:1.5;font-weight:600">🌿 황체기 중 코르티솔이 상승하기 쉬워요. 명상과 규칙적인 수면이 핵심입니다.</div>
+  </div>
+  <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크</div>
+  ${S.routines.cortisol.map(r=>ckHtml(r.id,r.label,r.sub,'var(--cor)')).join('')}`;}
+
+// ── OXYTOCIN ──
+function renderOxytocin(){return`
+  <div class="card" style="border-color:rgba(244,143,177,.3)">
+    <div class="cap">오늘 옥시토신</div>
+    <div style="font-size:13px;color:var(--text);line-height:1.6;font-weight:500">💗 포옹 20초 → 옥시토신 즉각 분비 · 코르티솔 억제 · 감정 안정</div>
+  </div>
+  <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크</div>
+  ${S.routines.oxytocin.map(r=>ckHtml(r.id,r.label,r.sub,'var(--rose)')).join('')}
+  ${S.checks.o4?`<div class="card" style="background:var(--oxy-bg);border-color:rgba(244,143,177,.3);text-align:center"><div style="font-size:24px;margin-bottom:4px">🎉</div><div style="font-size:14px;font-weight:700;color:var(--rose2)">옥시토신 100% 달성!</div><div style="font-size:11px;color:var(--muted);margin-top:3px;font-weight:500">일기가 AI 리포트에 반영됩니다</div></div>`:''}`;
+}
+
+// ═══════════════════════ EDITABLE ROUTINE ═══════════════════════
+function renderEditRoutine(){
+  const hid=S.curH;const rts=S.routines[hid];
+  document.getElementById('edit-routine-list').innerHTML=rts.map((r,i)=>`
+    <div style="margin-bottom:10px">
+      <div class="cap" style="margin-bottom:4px">루틴 ${i+1}</div>
+      <input class="input" id="edit-r-label-${i}" value="${r.label}" style="margin-bottom:5px"/>
+      <input class="input" id="edit-r-sub-${i}" value="${r.sub}" placeholder="부제목 (알람, 설명 등)"/>
+    </div>`).join('');
+}
+function saveRoutine(){
+  const hid=S.curH;const rts=S.routines[hid];
+  rts.forEach((r,i)=>{const l=document.getElementById(`edit-r-label-${i}`)?.value;const s=document.getElementById(`edit-r-sub-${i}`)?.value;if(l)r.label=l;if(s)r.sub=s;});
+  closeMod('mod-edit-routine');goH(hid);
+}
+
+// ═══════════════════════ FOOD SEARCH ═══════════════════════
+function openFoodModal(mealId){
+  S.activeMealId=mealId;S.pending=[];
+  const m=S.meals.find(x=>x.id===mealId);
+  setTxt('food-title',`${['🌅','☀️','🌙','🍎'][S.meals.indexOf(m)%4]} ${m.label} — 음식 추가`);
+  document.getElementById('food-q').value='';document.getElementById('food-dd').style.display='none';
+  renderPending();openMod('mod-food');
+  setTimeout(()=>document.getElementById('food-q')?.focus(),300);
+}
+function searchFood(q){
+  const dd=document.getElementById('food-dd');if(!q.trim()){dd.style.display='none';return;}
+  const res=FDB.filter(f=>f.n.includes(q)).slice(0,10);if(!res.length){dd.style.display='none';return;}
+  dd.innerHTML=res.map((f,i)=>`<div class="ddi" onclick="addPending(${FDB.indexOf(f)})"><span style="font-weight:600">${f.n}</span><span style="font-size:10px;color:var(--muted);font-weight:600">${f.cal}kcal/100g · ${f.unit}당 ${Math.round(f.cal*f.ug/100)}kcal</span></div>`).join('');
+  dd.style.display='block';
+}
+function addPending(idx){const food=FDB[idx];S.pending.push({food,qty:1,g:food.ug});document.getElementById('food-q').value='';document.getElementById('food-dd').style.display='none';renderPending();}
+function rmPending(i){S.pending.splice(i,1);renderPending();}
+function updPendQty(i,val){const q=parseFloat(val)||0;S.pending[i].qty=q;S.pending[i].g=q*S.pending[i].food.ug;renderPending();}
+function renderPending(){
+  const list=document.getElementById('pend-list');const prev=document.getElementById('pend-prev');if(!S.pending.length){list.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0;font-weight:500">음식을 검색해서 추가하세요 👆</div>';prev.style.display='none';return;}
+  const tC=S.pending.reduce((a,f)=>a+Math.round(f.food.cal*f.g/100),0);const tCb=S.pending.reduce((a,f)=>a+Math.round(f.food.c*f.g/100),0);const tP=S.pending.reduce((a,f)=>a+Math.round(f.food.p*f.g/100),0);const tF=S.pending.reduce((a,f)=>a+Math.round(f.food.f*f.g/100),0);const avgGI=tCb>0?Math.round(S.pending.reduce((a,f)=>a+f.food.gi*(f.food.c*f.g/100),0)/tCb):0;const gl=Math.round(avgGI*tCb/100);const peak=90+Math.round(gl*2.5);
+  list.innerHTML=S.pending.map((f,i)=>{const cal=Math.round(f.food.cal*f.g/100);return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr)"><span style="flex:1;font-size:13px;color:var(--text);font-weight:600">${f.food.n}</span><div style="display:flex;align-items:center;gap:4px"><input type="number" min="0.5" step="0.5" value="${f.qty}" onchange="updPendQty(${i},this.value)" style="width:46px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:8px;padding:4px 5px;color:var(--text);font-size:12px;font-weight:700;text-align:center;outline:none;font-family:'Nunito',sans-serif"/><span style="font-size:9px;color:var(--muted);white-space:nowrap;font-weight:600">${f.food.unit}<br>${Math.round(f.g)}g</span><span style="font-size:13px;font-weight:800;color:var(--sky2);width:36px;text-align:right">${cal}</span><button onclick="rmPending(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0;line-height:1">×</button></div></div>`;}).join('');
+  setTxt('pend-cal',`${tC} kcal`);setTxt('pend-carb',`${tCb}g`);setTxt('pend-prot',`${tP}g`);setTxt('pend-fat',`${tF}g`);
+  const giEl=document.getElementById('pend-gi');if(giEl){giEl.textContent=avgGI||'—';giEl.style.color=avgGI>60?'var(--danger)':avgGI>40?'var(--warn)':'var(--ok)';}
+  const pb=document.getElementById('pend-pred');if(pb){pb.style.cssText=`background:${peak>180?'rgba(239,83,80,.08)':peak>140?'rgba(255,167,38,.08)':'rgba(91,184,245,.08)'};border:1.5px solid ${peak>180?'rgba(239,83,80,.25)':peak>140?'rgba(255,167,38,.25)':'rgba(91,184,245,.25)'};border-radius:11px;padding:8px 11px;font-size:12px;font-weight:700`;pb.innerHTML=`<span style="color:var(--muted);font-weight:500">식후 예측: </span><strong style="color:${peak>180?'var(--danger)':peak>140?'var(--warn)':'var(--sky2)'}">${peak} mg/dL</strong> ${peak>180?'⚠️ 위험':peak>140?'주의':'✓ 안정'} · GL ${gl}`;}
+  prev.style.display='block';
+}
+function confirmFoods(){if(!S.pending.length){closeMod('mod-food');return;}const m=S.meals.find(x=>x.id===S.activeMealId);if(m)S.pending.forEach(f=>m.foods.push({...f}));S.pending=[];closeMod('mod-food');goH('insulin');}
+function addMeal(){const labels=['간식','야식'];const used=S.meals.map(m=>m.label);const label=labels.find(l=>!used.includes(l))||'간식';const now=new Date();const t=`${now.getHours()}:${now.getMinutes()<10?'0':''}${now.getMinutes()}`;S.meals.push({id:S.nextMealId++,label,time:t,foods:[],bgPre:null,bg1h:null,bg2h:null});goH('insulin');}
+function delMeal(id){const i=S.meals.findIndex(m=>m.id===id);if(i>=0)S.meals.splice(i,1);goH('insulin');}
+function rmFood(mealId,fi){const m=S.meals.find(x=>x.id===mealId);if(m){m.foods.splice(fi,1);goH('insulin');}}
+function updQty(mealId,fi,val){const m=S.meals.find(x=>x.id===mealId);if(!m)return;const q=parseFloat(val)||0;m.foods[fi].qty=q;m.foods[fi].g=q*m.foods[fi].food.ug;goH('insulin');}
+function updBG(mealId,key,val){const m=S.meals.find(x=>x.id===mealId);if(m)m[key]=val?parseInt(val):null;renderBGChart();}
+
+// ═══════════════════════ CALENDAR ═══════════════════════
+function getPDays(y,m){const r=[];S.periods.forEach(p=>{const s=new Date(p.start);for(let i=0;i<p.days;i++){const d=new Date(s);d.setDate(d.getDate()+i);if(d.getFullYear()===y&&d.getMonth()===m)r.push(d.getDate());}});return r;}
+function getODays(y,m){const r=[];S.periods.forEach(p=>{const s=new Date(p.start);const os=new Date(s);os.setDate(os.getDate()+S.cycleLen-18);const oe=new Date(s);oe.setDate(oe.getDate()+S.cycleLen-10);const c=new Date(os);while(c<=oe){if(c.getFullYear()===y&&c.getMonth()===m)r.push(c.getDate());c.setDate(c.getDate()+1);}});return r;}
+function renderDash(){
+  const{y,m}=S.calMon;setTxt('d-title',`${y}년 ${m+1}월 성과`);setTxt('cal-lbl',`${m+1}월 달력`);
+  const g=document.getElementById('dash-cal');if(!g)return;g.innerHTML='';
+  ['일','월','화','수','목','금','토'].forEach(d=>{const e=document.createElement('div');e.className='cdow';e.textContent=d;g.appendChild(e);});
+  const first=new Date(y,m,1).getDay();const total=new Date(y,m+1,0).getDate();
+  const perDays=getPDays(y,m);const ovDays=getODays(y,m);const isCur=y===2026&&m===3;const goodDays=[7,8,12,13,19,20];
+  for(let i=0;i<first;i++){const e=document.createElement('div');g.appendChild(e);}
+  for(let d=1;d<=total;d++){
+    const e=document.createElement('div');e.className='cday';const isP=perDays.includes(d);const isO=ovDays.includes(d);
+    if(isCur&&d===22)e.classList.add('today');else if(isP)e.classList.add('per');else if(isO)e.classList.add('ovul');else if(goodDays.includes(d))e.classList.add('full');
+    let inner=`<span>${d}</span>`;
+    if((d>=19&&d<=22&&isCur)&&!isP&&!isO&&d!==22)inner+=`<div class="dtr"><div class="d4" style="background:var(--sky2)"></div><div class="d4" style="background:var(--cor)"></div><div class="d4" style="background:var(--gro)"></div><div class="d4" style="background:var(--rose)"></div></div>`;
+    e.innerHTML=inner;g.appendChild(e);
+  }
+  renderHistBars();updateHome();
+}
+function chgMon(d){S.calMon.m+=d;if(S.calMon.m>11){S.calMon.m=0;S.calMon.y++;}if(S.calMon.m<0){S.calMon.m=11;S.calMon.y--;}renderDash();}
+function savePeriod(){const s=document.getElementById('per-start')?.value;const days=parseInt(document.getElementById('per-days')?.value)||5;if(s)S.periods.push({start:s,days});closeMod('mod-period');renderDash();}
+function renderHistBars(){const c=document.getElementById('hist-bars');if(!c)return;const data=[42,58,71,45,80,65,90,55,78,82,69,75,88,75];c.innerHTML='';data.forEach((v,i)=>{const b=document.createElement('div');const isT=i===data.length-1&&S.calMon.y===2026&&S.calMon.m===3;b.style.cssText=`flex:1;border-radius:4px 4px 0 0;height:${Math.max(v*.8,4)}px;background:${isT?'linear-gradient(180deg,var(--sky2),var(--lav2))':v>=80?'rgba(91,184,245,.5)':v>=60?'rgba(179,157,219,.4)':'rgba(200,200,220,.3)'};transition:height .5s`;c.appendChild(b);});const dd=document.getElementById('hist-dates');const{y,m}=S.calMon;if(dd)dd.innerHTML=`<span>${m+1}/9</span><span>${m+1}/15</span><span>${m+1}/22</span>`;}
+
+// ═══════════════════════ RECIPES ═══════════════════════
+const RCPS=[
+  {n:'아보카도 두부볼',t:5,tp:'간식',cal:120,cost:2500,img:'🥑',ingredients:['아보카도 ½개','두부 100g','레몬즙 1큰술','소금 약간'],steps:['아보카도를 반으로 잘라 씨를 제거해요','두부를 으깨서 아보카도와 섞어요','레몬즙과 소금으로 간을 맞춰요','냉장고에 10분 두면 더 맛있어요'],cpgQ:'유기농 아보카도'},
+  {n:'통밀 에그머핀',t:10,tp:'간식',cal:180,cost:3500,img:'🥚',ingredients:['달걀 3개','통밀가루 50g','베이킹파우더 1작은술','저지방 우유 30ml'],steps:['오븐을 180도로 예열해요','달걀, 우유를 잘 섞어요','통밀가루와 베이킹파우더를 체에 쳐서 넣어요','머핀 틀에 붓고 15분 구워요'],cpgQ:'무항생제 유정란'},
+  {n:'연어 콜리플라워라이스',t:15,tp:'일식',cal:320,cost:8000,img:'🐟',ingredients:['연어 150g','콜리플라워 200g','간장 1큰술','참기름 1작은술','레몬 ½개'],steps:['콜리플라워를 푸드프로세서로 잘게 갈아요','팬에 기름 없이 콜리플라워라이스를 볶아요','연어는 팬에 껍질부터 굽고 반으로 나눠요','간장, 참기름으로 소스를 만들어 곁들여요'],cpgQ:'노르웨이 생연어'},
+  {n:'두부 스테이크 샐러드',t:10,tp:'한식',cal:240,cost:4500,img:'🍱',ingredients:['두부 200g','양상추 100g','방울토마토 10개','들기름 1큰술','된장 ½큰술'],steps:['두부를 1.5cm 두께로 썰어 키친타올로 물기를 제거해요','팬에 기름 두르고 두부를 양면 노릇하게 구워요','된장을 물에 풀어 소스를 만들어요','채소와 함께 담고 소스를 뿌려요'],cpgQ:'국산콩 두부'},
+  {n:'키토 김밥',t:15,tp:'한식',cal:280,cost:5000,img:'🍙',ingredients:['달걀 지단','오이 1개','당근 ½개','햄 3장','참기름','소금'],steps:['달걀을 풀어 지단을 얇게 부쳐요','오이, 당근을 채썰어요','달걀 지단을 펼쳐 재료를 올려 돌돌 말아요','먹기 좋게 잘라요 (밥 없이 저탄수)'],cpgQ:'저탄수 김밥 재료'},
+  {n:'그릭요거트볼',t:5,tp:'간식',cal:150,cost:3000,img:'🍶',ingredients:['그릭요거트 170g','블루베리 30g','아몬드 5알','꿀 ½작은술'],steps:['그릭요거트를 그릇에 담아요','블루베리와 아몬드를 올려요','꿀을 살짝 뿌려요','바로 먹거나 냉장고에 30분 두어도 좋아요'],cpgQ:'무지방 그릭요거트'},
+  {n:'닭가슴살 레몬허브볼',t:10,tp:'양식',cal:260,cost:7000,img:'🌿',ingredients:['닭가슴살 150g','레몬 1개','로즈마리 약간','올리브오일 1큰술','소금·후추'],steps:['닭가슴살에 소금, 후추, 레몬즙을 발라 10분 재워요','팬을 달궈 올리브오일을 두르고 구워요','로즈마리를 올려 향을 입혀요','얇게 썰어 샐러드 위에 올려요'],cpgQ:'슬라이스 닭가슴살'},
+  {n:'훈제연어 샐러드',t:5,tp:'일식',cal:200,cost:9000,img:'🥗',ingredients:['훈제연어 100g','루꼴라 50g','케이퍼 1큰술','레몬즙 1큰술','올리브오일 1큰술'],steps:['루꼴라를 깨끗이 씻어 물기를 제거해요','접시에 루꼴라를 깔아요','훈제연어를 올리고 케이퍼를 뿌려요','레몬즙과 올리브오일을 드레싱으로 뿌려요'],cpgQ:'훈제연어 슬라이스'},
+];
+function rfil(el,k,v){S.rFilters[k]=S.rFilters[k]===v?null:v;document.querySelectorAll(`.chip[dfk="${k}"]`).forEach(c=>{c.classList.remove('on');});el.setAttribute('dfk',k);if(S.rFilters[k])el.classList.add('on');else el.classList.remove('on');renderRecipes();}
+function renderRecipes(){
+  const g=document.getElementById('rcp-grid');if(!g)return;
+  const f=RCPS.filter(r=>{
+    if(S.rFilters.time&&r.t>S.rFilters.time)return false;
+    if(S.rFilters.type&&r.tp!==S.rFilters.type)return false;
+    if(S.rFilters.cost&&r.cost>S.rFilters.cost)return false;
+    return true;
+  });
+  const costLabel=c=>`~${(c/1000).toFixed(0)}천원`;
+  g.innerHTML=f.map(r=>`<div class="recipe-card" onclick="showRecipeDetail(${RCPS.indexOf(r)})">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:32px">${r.img}</span>
+      <div style="flex:1">
+        <div style="font-size:10px;color:var(--sky2);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${r.tp}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">${r.n}</div>
+        <div style="display:flex;gap:5px;margin-top:4px">
+          <span style="font-size:10px;background:var(--sky3);color:var(--sky2);padding:2px 7px;border-radius:99px;font-weight:700">⏱ ${r.t}분</span>
+          <span style="font-size:10px;background:rgba(255,167,38,.1);color:var(--warn);padding:2px 7px;border-radius:99px;font-weight:700">💰 ${costLabel(r.cost)}</span>
+          <span style="font-size:10px;background:var(--card2);color:var(--muted);padding:2px 7px;border-radius:99px;font-weight:700">${r.cal}kcal</span>
+        </div>
+      </div>
+    </div>
+  </div>`).join('');
+}
+function showRecipeDetail(idx){
+  const r=RCPS[idx];
+  document.getElementById('recipe-detail-body').innerHTML=`
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:48px;margin-bottom:10px">${r.img}</div>
+      <div class="serif" style="font-size:22px;font-weight:700;color:var(--text)">${r.n}</div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-top:8px">
+        <span style="font-size:11px;background:var(--sky3);color:var(--sky2);padding:3px 10px;border-radius:99px;font-weight:700">⏱ ${r.t}분</span>
+        <span style="font-size:11px;background:rgba(255,167,38,.1);color:var(--warn);padding:3px 10px;border-radius:99px;font-weight:700">💰 ~${r.cost.toLocaleString()}원</span>
+        <span style="font-size:11px;background:var(--card2);color:var(--muted);padding:3px 10px;border-radius:99px;font-weight:700">${r.cal}kcal</span>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="cap">재료</div>
+      ${r.ingredients.map(ing=>`<div style="padding:6px 0;border-bottom:1px solid var(--bdr);font-size:13px;color:var(--text);font-weight:500">• ${ing}</div>`).join('')}
+      <button onclick="window.open('https://www.coupang.com/np/search?q=${encodeURIComponent(r.cpgQ)}','_blank')" style="width:100%;margin-top:12px;background:linear-gradient(135deg,#ff6400,#ff4500);border:none;border-radius:11px;padding:11px;color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">🛒 쿠팡에서 재료 구매하기</button>
+    </div>
+    <div class="card">
+      <div class="cap">만드는 방법</div>
+      ${r.steps.map((s,i)=>`<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr);align-items:flex-start">
+        <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--sky2),var(--lav2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex-shrink:0">${i+1}</div>
+        <div style="font-size:13px;color:var(--text);font-weight:500;padding-top:3px">${s}</div>
+      </div>`).join('')}
+    </div>
+    <button class="btn btn-o" style="margin-top:8px" onclick="closeMod('mod-recipe-detail')">닫기</button>`;
+  openMod('mod-recipe-detail');
+}
+
+// ═══════════════════════ CHEAT DAY ═══════════════════════
+const CHEATS_ALL=[{n:'피자 한 조각',cal:285,img:'🍕'},{n:'초콜릿 케이크',cal:350,img:'🎂'},{n:'감자튀김',cal:320,img:'🍟'},{n:'아이스크림',cal:270,img:'🍦'},{n:'치킨 윙 4개',cal:290,img:'🍗'},{n:'버블티',cal:380,img:'🧋'},{n:'떡볶이',cal:450,img:'🍢'},{n:'크로와상',cal:240,img:'🥐'},{n:'마카롱 2개',cal:160,img:'🍩'},{n:'팬케이크',cal:310,img:'🥞'}];
+function renderCheat(){
+  const avail=CHEATS_ALL.filter(f=>f.cal<=S.savedTotal).slice(0,5);
+  document.getElementById('cheat-list').innerHTML=avail.length?avail.map((f,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:12px;border:1.5px solid var(--bdr);cursor:pointer;transition:all .15s" onclick="pickCheat(${CHEATS_ALL.indexOf(f)})" onmouseenter="this.style.borderColor='var(--rose)'" onmouseleave="this.style.borderColor='var(--bdr)'"><span style="font-size:24px">${f.img}</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text)">${f.n}</div><div style="font-size:11px;color:var(--muted);font-weight:500">${f.cal}kcal</div></div><div style="font-size:11px;color:var(--ok);font-weight:700">선택</div></div>`).join('')
+  :'<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;font-weight:500">누적 세이브 칼로리가 부족해요<br>루틴을 더 달성해서 세이브를 늘려보세요 💪</div>';
+}
+function searchCheat(q){
+  const dd=document.getElementById('cheat-dd');if(!q.trim()){dd.style.display='none';return;}
+  const res=CHEATS_ALL.filter(f=>f.n.includes(q)).slice(0,6);if(!res.length){dd.style.display='none';return;}
+  dd.innerHTML=res.map(f=>`<div class="ddi" onclick="pickCheat(${CHEATS_ALL.indexOf(f)})"><span style="font-weight:600">${f.img} ${f.n}</span><span style="font-size:11px;color:var(--muted);font-weight:600">${f.cal}kcal ${f.cal<=S.savedTotal?'✓':'세이브 부족'}</span></div>`).join('');
+  dd.style.display='block';
+}
+function pickCheat(i){const f=CHEATS_ALL[i];S.savedTotal=Math.max(0,S.savedTotal-f.cal);updateHome();closeMod('mod-cheat');document.getElementById('notify-msg').value=`🍕 치팅! ${f.n}(${f.cal}kcal) 먹었어요! 같이 내일 열심히 해요 💪`;openMod('mod-notify');}
+function sendNotify(){const msg=document.getElementById('notify-msg')?.value;const who=[];if(document.getElementById('nf1')?.checked)who.push('도파민헌터');if(document.getElementById('nf2')?.checked)who.push('바이오PM');closeMod('mod-notify');if(who.length)alert(`✅ ${who.join(', ')}에게 전송!\n"${msg}"`);}
+
+// ═══════════════════════ AVATAR ═══════════════════════
+function setAvatar(em){S.avatar=em;const el=document.getElementById('user-avatar');if(el)el.textContent=em;const mini=document.getElementById('prof-avatar-mini');if(mini)mini.textContent=em;closeMod('mod-avatar');}
+
+// ═══════════════════════ AI REPORT ═══════════════════════
+function renderReport(){
+  const allText=S.diaries.map(d=>d.t).join(' ');
+  const words=allText.replace(/[.,?!]/g,'').split(/\s+/).filter(w=>w.length>=2);
+  const freq={};words.forEach(w=>{freq[w]=(freq[w]||0)+1;});
+  const top=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,14);
+  const pos=['행복','좋아','뿌듯','상쾌','즐거','감사','가볍','에너지','차분','안정'];
+  const neg=['피곤','무겁','걱정','힘들','무기력','불안'];
+  const health=['혈당','운동','수면','식단','명상','호르몬'];
+  const getColor=w=>{if(pos.some(p=>w.includes(p)))return['rgba(91,184,245,.2)','var(--sky2)'];if(neg.some(p=>w.includes(p)))return['rgba(239,83,80,.15)','var(--danger)'];if(health.some(p=>w.includes(p)))return['rgba(179,157,219,.2)','var(--lav2)'];return['var(--card2)','var(--muted)'];};
+  const wc=top.map(([w,cnt])=>{const[bg,col]=getColor(w);const sz=Math.max(10,Math.min(15,10+cnt*1.5));return`<div style="padding:4px ${sz}px;border-radius:99px;font-size:${sz}px;font-weight:700;background:${bg};color:${col}">${w} <span style="font-size:9px;opacity:.7">${cnt}</span></div>`;}).join('');
+  const intake=totalIntake();const op=overallPct();
+  document.getElementById('rep-body').innerHTML=`
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--sky2),var(--lav2));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🤖</div>
+    <div><div style="font-size:15px;font-weight:700;color:var(--text)">AI 통합 리포트</div><div style="font-size:11px;color:var(--muted);font-weight:500">4일차 · 2026.04.22 · 다음 생성 3일 후</div></div>
+  </div>
+  <div class="card" style="background:linear-gradient(135deg,var(--sky3),var(--lav3));margin-bottom:12px">
+    <div class="cap">저속노화 종합점수</div>
+    <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px">
+      <div class="serif" style="font-size:60px;font-weight:700;color:var(--text);line-height:1">${op>0?Math.max(op,50):74}</div>
+      <div style="margin-bottom:10px;font-size:10px;color:var(--muted);font-weight:600">/100</div>
+      <div style="margin-bottom:12px;margin-left:8px">
+        <div style="font-size:11px;color:var(--ok);font-weight:700">생물학적 나이 0.3세 ↓</div>
+        <div style="font-size:10px;color:var(--lav2);background:var(--lav3);padding:2px 8px;border-radius:99px;margin-top:3px;display:inline-block;font-weight:700">목표 85점까지 +${85-Math.max(op,50)}점</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      ${[['🩺 인슐린','insulin','var(--sky2)'],['💪 성장','growth','var(--gro)'],['🌿 코르티솔','cortisol','var(--cor)'],['💗 옥시토신','oxytocin','var(--rose)']].map(([l,h,c])=>`<div style="display:flex;align-items:center;gap:6px"><span style="width:64px;font-size:11px;color:var(--muted);font-weight:600">${l}</span><div class="bar-t" style="flex:1;height:5px"><div class="bar-f" style="width:${hormonePct(h)}%;background:${c}"></div></div><span style="font-size:11px;width:26px;text-align:right;font-weight:800;color:${c}">${hormonePct(h)}%</span></div>`).join('')}
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:12px;border-color:rgba(244,143,177,.25)">
+    <div class="cap">📔 일기 감정 분석 (${S.diaries.length}일)</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:500">자주 쓴 단어 · 크기 = 빈도</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${wc}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--sky2);font-weight:700"><div style="width:8px;height:8px;border-radius:50%;background:rgba(91,184,245,.2)"></div>긍정</div>
+      <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--danger);font-weight:700"><div style="width:8px;height:8px;border-radius:50%;background:rgba(239,83,80,.15)"></div>부정</div>
+      <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--lav2);font-weight:700"><div style="width:8px;height:8px;border-radius:50%;background:rgba(179,157,219,.2)"></div>건강관련</div>
+    </div>
+    ${[['🩺','혈당 스파이크 → 부정 감정 +40%','1일차 스파이크 시 걱정·무거움 키워드 급증'],['💪','운동 완료일 → 긍정 감정 +35%','상쾌·뿌듯·에너지 키워드 운동일 집중'],['💗','가족·친구 교류 → 평온 +28%','행복·감사·즐거 키워드 동시 등장'],['🌿','수면 7h+ → 다음날 긍정 +22%','차분·가볍다 다음날 증가']].map(([em,t,s])=>`<div style="display:flex;gap:8px;padding:8px;background:var(--card2);border-radius:11px;margin-bottom:6px;border:1px solid var(--bdr)"><span style="font-size:13px;flex-shrink:0">${em}</span><div><div style="font-size:12px;color:var(--text);font-weight:700">${t}</div><div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:500">${s}</div></div></div>`).join('')}
+    <div style="background:var(--oxy-bg);border:1.5px solid rgba(244,143,177,.25);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--text);line-height:1.7;font-weight:500;margin-top:6px">
+      💗 AI 분석: ${S.name}님은 <strong style="color:var(--rose2)">'연결감'</strong>이 감정 안정의 핵심이에요. 가족·친구와 교류한 날 긍정 감정이 평균 31% 높았고, 혈당도 안정적이었어요.
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="cap">칼로리 & 체중 예측</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;text-align:center">
+      <div><div style="font-size:10px;color:var(--muted);font-weight:600">오늘 섭취</div><div style="font-size:18px;font-weight:800;color:var(--sky2)">${intake||0}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
+      <div><div style="font-size:10px;color:var(--muted);font-weight:600">오늘 소모</div><div style="font-size:18px;font-weight:800;color:var(--gro)">${totalBurned()}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
+      <div><div style="font-size:10px;color:var(--muted);font-weight:600">누적 세이브</div><div style="font-size:18px;font-weight:800;color:var(--ok)">${S.savedTotal}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
+    </div>
+    <div style="background:var(--card2);border-radius:12px;padding:10px;font-size:12px">
+      <div style="display:grid;grid-template-columns:42px 1fr 1fr 1fr;gap:4px;color:var(--muted);font-size:10px;text-align:center;margin-bottom:6px;font-weight:700"><span></span><span>낙관</span><span>현실</span><span>보수</span></div>
+      ${[['1개월','-1.8kg','-1.2kg','-0.7kg'],['3개월','-4.2kg','-3.1kg','-2.0kg'],['6개월','-6.8kg','-5.0kg','-3.4kg']].map(([p,...vs])=>`<div style="display:grid;grid-template-columns:42px 1fr 1fr 1fr;gap:4px;text-align:center;margin-bottom:4px"><span style="font-size:10px;color:var(--muted);font-weight:600">${p}</span>${vs.map(v=>`<span style="color:var(--ok);font-weight:800;font-size:12px">${v}</span>`).join('')}</div>`).join('')}
+    </div>
+  </div>
+  <!-- AI 루틴 추천 -->
+  <div class="card" style="background:linear-gradient(135deg,var(--sky3),var(--lav3));margin-bottom:12px;border-color:var(--sky2)">
+    <div class="cap" style="color:var(--sky2)">🤖 AI 루틴 추천</div>
+    <div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">
+      <strong style="color:var(--sky2)">성장호르몬</strong>이 가장 낮아요 (${hormonePct('growth')}%).<br>
+      추천: <span style="color:var(--gro);font-weight:700">빈속 아침 유산소 15분</span>을 루틴에 추가해보세요. 성장호르몬 +8점 예상.<br><br>
+      <strong style="color:var(--cor)">코르티솔</strong> 루틴이 부족해요. 황체기 중 코르티솔 관리가 중요합니다.<br>
+      추천: <span style="color:var(--cor);font-weight:700">취침 전 5분 복식호흡</span>을 추가하면 수면 품질이 향상됩니다.
+    </div>
+  </div>
+  <div class="card" style="border-color:rgba(244,143,177,.3);background:rgba(244,143,177,.05);margin-bottom:12px">
+    <div class="cap" style="color:var(--rose2)">PCOS 맞춤 인사이트</div>
+    <div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">현재 <strong style="color:var(--rose2)">황체기(21일차)</strong>. PCOS 여성은 이 시기 인슐린 저항성이 <strong style="color:var(--danger)">15~20% 높아요</strong>.<br><br>권장: 정제탄수 30% ↓ · 마그네슘(아몬드·시금치) · 저강도 유산소 45분</div>
+  </div>
+  <button class="btn btn-o" style="margin-top:4px" onclick="closeMod('mod-report')">닫기</button>`;
+}
+
+// ═══════════════════════ EXCEL EXPORT ═══════════════════════
+function doExport(){
+  const BOM='\uFEFF';
+  const mealInfo=S.meals.map(m=>`${m.label}:${m.foods.map(f=>`${f.food.n}${f.qty}${f.food.unit}`).join('+')}`).join(' / ');
+  const mealCals=S.meals.map(m=>mCalc(m,'cal'));
+  const bgInfo=S.meals.map(m=>`공복${m.bgPre||'—'}/1h${m.bg1h||'—'}/2h${m.bg2h||'—'}`).join(' | ');
+  const rows=[
+    ['날짜','저속노화점수','인슐린%','성장호르몬%','코르티솔%','옥시토신%','섭취kcal','소모kcal','NET kcal','공복혈당(mg/dL)','식사종류','식사내용','식후혈당기록'],
+    ['2026-04-19',68,75,50,80,75,1380,420,960,88,'아침/점심/저녁','삶은달걀+샐러드/두부찌개/연어구이','공복88/1h142/2h118'],
+    ['2026-04-20',71,75,75,80,100,1290,520,770,85,'아침/점심/저녁','그릭요거트/현미밥+된장찌개/닭가슴살','공복85/1h128/2h108'],
+    ['2026-04-21',74,100,75,60,50,1350,580,770,82,'아침/점심/저녁','오트밀/두부샐러드/고등어구이','공복82/1h115/2h98'],
+    ['2026-04-22',Math.max(overallPct(),50),hormonePct('insulin'),hormonePct('growth'),hormonePct('cortisol'),hormonePct('oxytocin'),totalIntake(),totalBurned(),getNet(),S.meals[0]?.bgPre||'—',S.meals.map(m=>m.label).join('/'),mealInfo,bgInfo],
+  ];
+  const csv=BOM+rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`Bellamona_기록_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  alert('✅ CSV 파일이 다운로드됐어요!\nExcel에서 열면 스프레드시트로 확인할 수 있어요.');
+}
+
+// ═══════════════════════ MISC ═══════════════════════
+document.addEventListener('click',e=>{
+  ['food-dd','cheat-dd'].forEach(id=>{const dd=document.getElementById(id);if(dd&&!dd.contains(e.target)&&e.target.id!==id.replace('-dd','-q'))dd.style.display='none';});
+});
+function tick(){const n=new Date();document.getElementById('clk').textContent=n.getHours()+':'+(n.getMinutes()<10?'0':'')+n.getMinutes();}
+tick();setInterval(tick,30000);
+updateHome();
+</script>
+</body>
+</html>
