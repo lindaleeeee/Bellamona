@@ -33,7 +33,7 @@ window.renderReport = async function () {
       cycleLen: S.cycleLen
     };
 
-    const res = await fetch('http://localhost:8080/api/report', {
+    const res = await fetch(API_BASE + '/report', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

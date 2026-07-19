@@ -1536,7 +1536,17 @@
     };
 
     // ═══════════════════════ HELPERS ═══════════════════════
-    function go(id) { document.querySelectorAll('.scr').forEach(s => s.classList.remove('on')); const el = document.getElementById(id); if (el) el.classList.add('on'); if (id === 's-dash') renderDash(); if (id === 's-diet') renderRecipes(); updateHome(); }
+    function go(id) {
+      if (!localStorage.getItem('token') && id !== 's-login' && id !== 's-onboard') {
+        id = 's-login'; // force login screen if not authenticated
+      }
+      document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+      const el = document.getElementById(id);
+      if (el) el.classList.add('on');
+      if (id === 's-dash') renderDash();
+      if (id === 's-diet') renderRecipes();
+      updateHome();
+    }
     function navTo(el, id) { document.querySelectorAll('.ni').forEach(n => n.classList.remove('on')); el.classList.add('on'); if (id !== 's-hormone') S.prev = id; go(id); }
     function openMod(id) {
       if (id === 'mod-report' && !S.subscribed) { document.getElementById('mod-paywall').classList.add('open'); return; }
