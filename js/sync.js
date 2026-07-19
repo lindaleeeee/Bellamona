@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8080/api'; // 실제 배포 주소로 추후 변경
+const API_BASE = 'https://port-0-bellamona-mkvbnlkhad097f26.sel3.cloudtype.app/api'; // 실제 배포 주소로 추후 변경
 
 // 인증 헤더 생성 함수
 function getAuthHeaders() {
