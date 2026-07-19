@@ -1,0 +1,109 @@
+/* ═══════════════════════════════════════════════════════════
+   Bellamona — styles.css
+   (원본 index.html의 <style> 블록 전체를 그대로 옮긴 것. 변경 없음)
+   ═══════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f8f4ff;--surf:#ffffff;--card:#fdfbff;--card2:#f3eeff;
+  --bdr:#e2d9f3;--text:#2d1f4e;--muted:#8b7aab;--sub:#ede6ff;
+  --sky:#7eceff;--sky2:#5bb8f5;--sky3:rgba(126,206,255,.15);
+  --lav:#b39ddb;--lav2:#9575cd;--lav3:rgba(179,157,219,.15);
+  --rose:#f48fb1;--rose2:#ec407a;
+  --gold:#ffd54f;--ok:#66bb6a;--danger:#ef5350;--warn:#ffa726;
+  --ins:var(--sky2);--gro:#81c784;--cor:#ce93d8;--oxy:var(--rose);
+  --ins-bg:rgba(91,184,245,.12);--gro-bg:rgba(129,199,132,.12);
+  --cor-bg:rgba(206,147,216,.12);--oxy-bg:rgba(244,143,177,.12);
+  --shadow:0 2px 16px rgba(100,80,160,.08);
+  --shadow2:0 4px 24px rgba(100,80,160,.14);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#e8e0f5;font-family:'Nunito',sans-serif}
+body{display:flex;justify-content:center;align-items:center}
+#phone{width:390px;height:844px;max-height:98vh;background:var(--bg);border-radius:44px;
+  border:10px solid #c5b8e8;
+  box-shadow:0 0 0 2px #b8a8e0,0 40px 100px rgba(80,60,140,.25);
+  position:relative;overflow:hidden;display:flex;flex-direction:column}
+#sb{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr)}
+#screens{flex:1;overflow:hidden;position:relative}
+.scr{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg)}
+.scr.on{display:flex}
+.sc{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px 84px}
+.sc::-webkit-scrollbar{width:4px}
+.sc::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:99px}
+#nav{height:68px;background:var(--surf);border-top:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-around;padding:0 4px 8px;flex-shrink:0;box-shadow:0 -4px 20px rgba(100,80,160,.06)}
+.ni{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 10px;border-radius:14px;color:var(--muted);transition:all .2s;flex:1}
+.ni.on{color:var(--sky2);background:rgba(91,184,245,.1)}
+.ni svg{width:22px;height:22px}
+.ni span{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.card{background:var(--surf);border-radius:20px;padding:14px;margin-bottom:10px;border:1px solid var(--bdr);box-shadow:var(--shadow)}
+.card2{background:var(--card2);border-radius:14px;padding:12px;border:1px solid var(--bdr)}
+.btn{display:flex;align-items:center;justify-content:center;border:none;border-radius:14px;padding:13px 16px;font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;width:100%}
+.btn-p{background:linear-gradient(135deg,var(--sky2),var(--lav2));color:#fff;box-shadow:0 4px 16px rgba(91,184,245,.35)}
+.btn-o{background:var(--card2);border:1.5px solid var(--bdr);color:var(--text)}
+.btn-sm{width:auto;padding:7px 14px;font-size:12px;border-radius:10px}
+.input{background:var(--card2);border:1.5px solid var(--bdr);border-radius:11px;padding:10px 13px;color:var(--text);font-family:'Nunito',sans-serif;font-size:13px;width:100%;outline:none;transition:border .15s}
+.input:focus{border-color:var(--sky2)}
+.input::placeholder{color:var(--muted)}
+textarea.input{resize:none}
+.cap{font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;font-weight:700}
+.bar-t{background:var(--sub);border-radius:99px;overflow:hidden}
+.bar-f{height:100%;border-radius:99px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.chip{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;border:1.5px solid var(--bdr);background:var(--surf);color:var(--muted);cursor:pointer;white-space:nowrap;display:inline-block;transition:all .15s}
+.chip.on{border-color:var(--sky2);color:var(--sky2);background:var(--sky3)}
+.mov{position:absolute;inset:0;background:rgba(45,31,78,.5);display:none;align-items:flex-end;z-index:300;backdrop-filter:blur(6px)}
+.mov.open{display:flex}
+.msh{background:var(--surf);border-radius:28px 28px 0 0;padding:18px 16px 40px;width:100%;max-height:92%;overflow-y:auto;border-top:2px solid var(--bdr)}
+.msh::-webkit-scrollbar{width:3px}
+.msh::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:99px}
+.mh{width:36px;height:4px;background:var(--bdr);border-radius:99px;margin:0 auto 16px}
+.ck-item{display:flex;align-items:center;gap:11px;padding:12px;background:var(--card2);border-radius:13px;margin-bottom:7px;cursor:pointer;border:1.5px solid var(--bdr);transition:all .15s}
+.ck-item.done{border-color:var(--sky2);background:var(--sky3)}
+.ck-box{width:26px;height:26px;border-radius:8px;border:2px solid var(--bdr);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:13px;background:var(--surf)}
+.ck-box.done{background:var(--sky2);border-color:var(--sky2);color:#fff}
+.rw{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.rl{position:absolute;text-align:center}
+.serif{font-family:'Playfair Display',serif}
+.dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surf);border:1.5px solid var(--bdr);border-radius:14px;z-index:400;max-height:200px;overflow-y:auto;box-shadow:var(--shadow2)}
+.ddi{padding:11px 14px;cursor:pointer;font-size:13px;color:var(--text);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bdr);transition:background .1s}
+.ddi:last-child{border-bottom:none}
+.ddi:hover{background:var(--sky3)}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cdow{font-size:10px;color:var(--muted);text-align:center;padding:5px 0;font-weight:700}
+.cday{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:4px;border-radius:9px;cursor:pointer;font-size:12px;color:var(--text);transition:background .1s;font-weight:600}
+.cday:hover{background:var(--lav3)}
+.cday.today{background:linear-gradient(135deg,var(--sky2),var(--lav2))!important;color:#fff;font-weight:800}
+.cday.per{background:rgba(244,143,177,.25);outline:2px solid rgba(236,64,122,.5);outline-offset:-2px}
+.cday.ovul{background:rgba(244,143,177,.12)}
+.cday.full{background:rgba(102,187,106,.12)}
+.dtr{display:flex;gap:2px;margin-top:2px}
+.d4{width:4px;height:4px;border-radius:50%}
+.mb{background:var(--surf);border-radius:18px;padding:14px;margin-bottom:10px;border:1.5px solid var(--bdr);box-shadow:var(--shadow)}
+.mb.hd{border-color:var(--sky2)}
+.fi{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr)}
+.fi:last-child{border-bottom:none}
+.bg-inp{background:var(--card2);border:1.5px solid var(--bdr);border-radius:9px;padding:7px 5px;color:var(--text);font-size:12px;font-weight:700;text-align:center;width:100%;outline:none;transition:border .15s;font-family:'Nunito',sans-serif}
+.bg-inp:focus{border-color:var(--sky2)}
+.step-dot{width:6px;height:6px;border-radius:50%;background:var(--bdr);transition:all .3s}
+.step-dot.on{background:var(--sky2);width:18px;border-radius:99px}
+.recipe-card{background:var(--surf);border-radius:18px;padding:14px;margin-bottom:10px;border:1.5px solid var(--bdr);box-shadow:var(--shadow);cursor:pointer;transition:all .15s}
+.recipe-card:hover{border-color:var(--sky2);box-shadow:var(--shadow2)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(.9);opacity:0}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+.fu{animation:fadeUp .3s ease both}
+.pop{animation:pop .35s cubic-bezier(.34,1.56,.64,1) both}
+/* Google login */
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;border:1.5px solid var(--bdr);border-radius:14px;padding:14px;cursor:pointer;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;color:var(--text);width:100%;max-width:280px;margin:0 auto;box-shadow:var(--shadow);transition:all .15s}
+.google-btn:hover{box-shadow:var(--shadow2);border-color:var(--sky2)}
+/* Editable routine */
+.routine-edit-btn{background:none;border:1px solid var(--bdr);border-radius:8px;padding:4px 8px;font-size:10px;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700}
+/* Weight chart */
+.wt-bar{display:flex;gap:3px;align-items:flex-end;height:50px}
+/* Exercise calorie input */
+.ex-row{display:flex;align-items:center;gap:8px;padding:8px;background:var(--card2);border-radius:11px;margin-bottom:6px;border:1px solid var(--bdr)}
+
+/* ═══ 신규: 혈당 예측 신뢰도 배지 (glucose-model.js에서 사용) ═══ */
+.pred-badge{font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;display:inline-block}
+.pred-badge.high{background:rgba(102,187,106,.15);color:var(--ok)}
+.pred-badge.medium{background:rgba(255,167,38,.15);color:var(--warn)}
+.pred-badge.low{background:rgba(139,122,171,.15);color:var(--muted)}
+.pred-method{font-size:9px;color:var(--muted);font-weight:600;margin-left:4px}
+.pred-disclaimer{font-size:9px;color:var(--muted);font-weight:500;margin-top:4px;line-height:1.4;opacity:.85}
