@@ -1420,6 +1420,8 @@
   <script src="js/sync.js"></script>
   <script src="js/report.js"></script>
   <script>
+    // ═══════════════════════ S.calMon dynamic init ═══════════════════════
+    // We will override S.calMon later below.
     // ═══════════════════════ FOOD DB ═══════════════════════
     const FDB = [
       { n: '백미밥', cal: 130, c: 28.5, p: 2.1, f: 0.3, gi: 72, unit: '공기', ug: 210 },
@@ -1845,16 +1847,34 @@
     }
 
     // ── CORTISOL ──
+    function getCycleInfo() {
+      try {
+        const p = S.periods && S.periods.length ? S.periods[S.periods.length - 1] : null;
+        if (!p) return { id: 'unknown', name: '알수없음', day: 0 };
+        const start = new Date(p.start); start.setHours(0, 0, 0, 0);
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const totalDays = Math.floor((today - start) / 86400000);
+        if (totalDays < 0) return { id: 'unknown', name: '알수없음', day: 0 };
+        const dayIdx = totalDays % S.cycleLen;
+        const dayNum = dayIdx + 1;
+        if (dayIdx < p.days) return { id: 'menstrual', name: '생리기', day: dayNum };
+        if (dayIdx >= S.cycleLen - 18 && dayIdx <= S.cycleLen - 10) return { id: 'ovulation', name: '배란기', day: dayNum };
+        if (dayIdx >= S.cycleLen - 9) return { id: 'luteal', name: '황체기', day: dayNum };
+        return { id: 'follicular', name: '난포기', day: dayNum };
+      } catch (e) { return { id: 'unknown', name: '알수없음', day: 0 }; }
+    }
+
     function renderCortisol() {
+      const pc = getCycleInfo();
       return `
   <div class="card" style="border-color:rgba(206,147,216,.3)">
     <div class="cap">오늘 코르티솔 관리</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
       <div style="background:var(--sky3);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(91,184,245,.2)"><div style="font-size:18px;font-weight:800;color:var(--sky2)">7h20m</div><div style="font-size:9px;color:var(--muted);font-weight:600">어젯밤 수면</div></div>
       <div style="background:rgba(129,199,132,.1);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(129,199,132,.2)"><div style="font-size:18px;font-weight:800;color:var(--ok)">22분</div><div style="font-size:9px;color:var(--muted);font-weight:600">햇볕 노출</div></div>
-      <div style="background:var(--cor-bg);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(206,147,216,.2)"><div style="font-size:18px;font-weight:800;color:var(--cor)">황체기</div><div style="font-size:9px;color:var(--muted);font-weight:600">21일차</div></div>
+      <div style="background:var(--cor-bg);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(206,147,216,.2)"><div style="font-size:18px;font-weight:800;color:var(--cor)">${pc.name}</div><div style="font-size:9px;color:var(--muted);font-weight:600">${pc.day}일차</div></div>
     </div>
-    <div style="margin-top:8px;font-size:12px;color:var(--cor);background:var(--cor-bg);padding:8px 12px;border-radius:11px;line-height:1.5;font-weight:600">🌿 황체기 중 코르티솔이 상승하기 쉬워요. 명상과 규칙적인 수면이 핵심입니다.</div>
+    <div style="margin-top:8px;font-size:12px;color:var(--cor);background:var(--cor-bg);padding:8px 12px;border-radius:11px;line-height:1.5;font-weight:600">🌿 ${pc.name} 중 코르티솔이 상승하기 쉬워요. 명상과 규칙적인 수면이 핵심입니다.</div>
   </div>
   <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크</div>
   ${S.routines.cortisol.map(r => ckHtml(r.id, r.label, r.sub, 'var(--cor)')).join('')}`;
@@ -1925,25 +1945,72 @@
     // ═══════════════════════ CALENDAR ═══════════════════════
     function getPDays(y, m) { const r = []; S.periods.forEach(p => { const s = new Date(p.start); for (let i = 0; i < p.days; i++) { const d = new Date(s); d.setDate(d.getDate() + i); if (d.getFullYear() === y && d.getMonth() === m) r.push(d.getDate()); } }); return r; }
     function getODays(y, m) { const r = []; S.periods.forEach(p => { const s = new Date(p.start); const os = new Date(s); os.setDate(os.getDate() + S.cycleLen - 18); const oe = new Date(s); oe.setDate(oe.getDate() + S.cycleLen - 10); const c = new Date(os); while (c <= oe) { if (c.getFullYear() === y && c.getMonth() === m) r.push(c.getDate()); c.setDate(c.getDate() + 1); } }); return r; }
+
+    if (typeof S !== 'undefined' && S.calMon && S.calMon.y === 2026 && S.calMon.m === 3) {
+      const d = new Date();
+      S.calMon = { y: d.getFullYear(), m: d.getMonth() };
+    }
+
     function renderDash() {
       const { y, m } = S.calMon; setTxt('d-title', `${y}년 ${m + 1}월 성과`); setTxt('cal-lbl', `${m + 1}월 달력`);
       const g = document.getElementById('dash-cal'); if (!g) return; g.innerHTML = '';
       ['일', '월', '화', '수', '목', '금', '토'].forEach(d => { const e = document.createElement('div'); e.className = 'cdow'; e.textContent = d; g.appendChild(e); });
       const first = new Date(y, m, 1).getDay(); const total = new Date(y, m + 1, 0).getDate();
-      const perDays = getPDays(y, m); const ovDays = getODays(y, m); const isCur = y === 2026 && m === 3; const goodDays = [7, 8, 12, 13, 19, 20];
+      const perDays = getPDays(y, m); const ovDays = getODays(y, m);
+
+      const today = new Date(); const isCur = y === today.getFullYear() && m === today.getMonth(); const todayDate = today.getDate();
+
+      const goodDays = [];
+      const reqTotal = S.routines ? Object.values(S.routines).flat().length : 16;
+      if (S.checkHistory) {
+        S.checkHistory.forEach(ch => {
+          const d = new Date(ch.date);
+          if (d.getFullYear() === y && d.getMonth() === m) {
+            if (Object.values(ch.checks).filter(Boolean).length >= reqTotal) goodDays.push(d.getDate());
+          }
+        });
+      }
+
       for (let i = 0; i < first; i++) { const e = document.createElement('div'); g.appendChild(e); }
       for (let d = 1; d <= total; d++) {
         const e = document.createElement('div'); e.className = 'cday'; const isP = perDays.includes(d); const isO = ovDays.includes(d);
-        if (isCur && d === 22) e.classList.add('today'); else if (isP) e.classList.add('per'); else if (isO) e.classList.add('ovul'); else if (goodDays.includes(d)) e.classList.add('full');
+        if (isCur && d === todayDate) e.classList.add('today'); else if (isP) e.classList.add('per'); else if (isO) e.classList.add('ovul'); else if (goodDays.includes(d)) e.classList.add('full');
         let inner = `<span>${d}</span>`;
-        if ((d >= 19 && d <= 22 && isCur) && !isP && !isO && d !== 22) inner += `<div class="dtr"><div class="d4" style="background:var(--sky2)"></div><div class="d4" style="background:var(--cor)"></div><div class="d4" style="background:var(--gro)"></div><div class="d4" style="background:var(--rose)"></div></div>`;
+        if ((d >= todayDate - 3 && d <= todayDate && isCur) && !isP && !isO && d !== todayDate) inner += `<div class="dtr"><div class="d4" style="background:var(--sky2)"></div><div class="d4" style="background:var(--cor)"></div><div class="d4" style="background:var(--gro)"></div><div class="d4" style="background:var(--rose)"></div></div>`;
         e.innerHTML = inner; g.appendChild(e);
       }
       renderHistBars(); updateHome();
     }
     function chgMon(d) { S.calMon.m += d; if (S.calMon.m > 11) { S.calMon.m = 0; S.calMon.y++; } if (S.calMon.m < 0) { S.calMon.m = 11; S.calMon.y--; } renderDash(); }
-    function savePeriod() { const s = document.getElementById('per-start')?.value; const days = parseInt(document.getElementById('per-days')?.value) || 5; if (s) S.periods.push({ start: s, days }); closeMod('mod-period'); renderDash(); }
-    function renderHistBars() { const c = document.getElementById('hist-bars'); if (!c) return; const data = [42, 58, 71, 45, 80, 65, 90, 55, 78, 82, 69, 75, 88, 75]; c.innerHTML = ''; data.forEach((v, i) => { const b = document.createElement('div'); const isT = i === data.length - 1 && S.calMon.y === 2026 && S.calMon.m === 3; b.style.cssText = `flex:1;border-radius:4px 4px 0 0;height:${Math.max(v * .8, 4)}px;background:${isT ? 'linear-gradient(180deg,var(--sky2),var(--lav2))' : v >= 80 ? 'rgba(91,184,245,.5)' : v >= 60 ? 'rgba(179,157,219,.4)' : 'rgba(200,200,220,.3)'};transition:height .5s`; c.appendChild(b); }); const dd = document.getElementById('hist-dates'); const { y, m } = S.calMon; if (dd) dd.innerHTML = `<span>${m + 1}/9</span><span>${m + 1}/15</span><span>${m + 1}/22</span>`; }
+    function savePeriod() { const s = document.getElementById('per-start')?.value; const days = parseInt(document.getElementById('per-days')?.value) || 5; if (s) S.periods.push({ start: s, days }); closeMod('mod-period'); renderDash(); if (typeof savePeriodRow === 'function') savePeriodRow(); }
+
+    function renderHistBars() {
+      const c = document.getElementById('hist-bars'); if (!c) return;
+      const data = []; const today = new Date();
+      const reqTotal = S.routines ? Object.values(S.routines).flat().length : 16;
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(today); d.setDate(d.getDate() - i);
+        const dStr = d.toISOString().split('T')[0];
+        const ch = S.checkHistory ? S.checkHistory.find(x => x.date === dStr) : null;
+        let v = 0;
+        if (ch) v = Math.round(Object.values(ch.checks).filter(Boolean).length / reqTotal * 100);
+        else if (i === 0 && S.checks) v = Math.round(Object.values(S.checks).filter(Boolean).length / reqTotal * 100);
+        data.push(v);
+      }
+      c.innerHTML = '';
+      const isCurMonth = S.calMon.y === today.getFullYear() && S.calMon.m === today.getMonth();
+      data.forEach((v, i) => {
+        const b = document.createElement('div'); const isT = i === data.length - 1 && isCurMonth;
+        b.style.cssText = `flex:1;border-radius:4px 4px 0 0;height:${Math.max(v * .8, 4)}px;background:${isT ? 'linear-gradient(180deg,var(--sky2),var(--lav2))' : v >= 80 ? 'rgba(91,184,245,.5)' : v >= 60 ? 'rgba(179,157,219,.4)' : 'rgba(200,200,220,.3)'};transition:height .5s`;
+        c.appendChild(b);
+      });
+      const dd = document.getElementById('hist-dates');
+      if (dd) {
+        const d1 = new Date(today); d1.setDate(today.getDate() - 13);
+        const d2 = new Date(today); d2.setDate(today.getDate() - 6);
+        dd.innerHTML = `<span>${d1.getMonth() + 1}/${d1.getDate()}</span><span>${d2.getMonth() + 1}/${d2.getDate()}</span><span>${today.getMonth() + 1}/${today.getDate()}</span>`;
+      }
+    }
 
     // ═══════════════════════ RECIPES ═══════════════════════
     const RCPS = [
