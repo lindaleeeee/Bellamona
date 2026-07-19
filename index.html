@@ -1611,8 +1611,8 @@
 
     // ═══════════════════════ GOOGLE LOGIN ═══════════════════════
     function doGoogleLogin() {
-      S.loggedIn = true;
-      go('s-onboard');
+      // API_BASE is defined in sync.js which is included in the page
+      window.location.href = API_BASE + '/auth/google';
     }
 
     // ═══════════════════════ ONBOARDING ═══════════════════════
@@ -2124,8 +2124,27 @@
       ['food-dd', 'cheat-dd'].forEach(id => { const dd = document.getElementById(id); if (dd && !dd.contains(e.target) && e.target.id !== id.replace('-dd', '-q')) dd.style.display = 'none'; });
     });
     function tick() { const n = new Date(); document.getElementById('clk').textContent = n.getHours() + ':' + (n.getMinutes() < 10 ? '0' : '') + n.getMinutes(); }
-    tick(); setInterval(tick, 30000);
-    updateHome();
+
+    // JWT Token Login App Initialization
+    async function initApp() {
+      const params = new URLSearchParams(window.location.search);
+      const tk = params.get('token');
+      if (tk) {
+        localStorage.setItem('token', tk);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      if (localStorage.getItem('token') && typeof loadUserData === 'function') {
+        const loaded = await loadUserData();
+        if (loaded) {
+          go('s-home');
+          document.getElementById('nav-home').click();
+        }
+      }
+      tick(); setInterval(tick, 30000);
+      updateHome();
+    }
+
+    initApp();
   </script>
 </body>
 
