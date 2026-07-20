@@ -4,19 +4,19 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
 });
 
 const initDB = async () => {
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-        // UUID extension
-        await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
+    // UUID extension
+    await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
 
-        // 1. users
-        await client.query(`
+    // 1. users
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         google_id VARCHAR(255) UNIQUE NOT NULL,
@@ -27,8 +27,8 @@ const initDB = async () => {
       );
     `);
 
-        // 2. profiles
-        await client.query(`
+    // 2. profiles
+    await client.query(`
       CREATE TABLE IF NOT EXISTS profiles (
         user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         height_cm NUMERIC(5,2),
@@ -41,8 +41,8 @@ const initDB = async () => {
       );
     `);
 
-        // 3. meals
-        await client.query(`
+    // 3. meals
+    await client.query(`
       CREATE TABLE IF NOT EXISTS meals (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -57,8 +57,8 @@ const initDB = async () => {
       );
     `);
 
-        // 4. workouts
-        await client.query(`
+    // 4. workouts
+    await client.query(`
       CREATE TABLE IF NOT EXISTS workouts (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -72,8 +72,8 @@ const initDB = async () => {
       );
     `);
 
-        // 5. routine_checks
-        await client.query(`
+    // 5. routine_checks
+    await client.query(`
       CREATE TABLE IF NOT EXISTS routine_checks (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -84,8 +84,8 @@ const initDB = async () => {
       );
     `);
 
-        // 6. weights
-        await client.query(`
+    // 6. weights
+    await client.query(`
       CREATE TABLE IF NOT EXISTS weights (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -95,8 +95,8 @@ const initDB = async () => {
       );
     `);
 
-        // 7. periods
-        await client.query(`
+    // 7. periods
+    await client.query(`
       CREATE TABLE IF NOT EXISTS periods (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -106,8 +106,8 @@ const initDB = async () => {
       );
     `);
 
-        // 8. diaries
-        await client.query(`
+    // 8. diaries
+    await client.query(`
       CREATE TABLE IF NOT EXISTS diaries (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -117,8 +117,8 @@ const initDB = async () => {
       );
     `);
 
-        // 9. reports
-        await client.query(`
+    // 9. reports
+    await client.query(`
       CREATE TABLE IF NOT EXISTS reports (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -129,8 +129,8 @@ const initDB = async () => {
       );
     `);
 
-        // 10. training_pairs
-        await client.query(`
+    // 10. training_pairs
+    await client.query(`
       CREATE TABLE IF NOT EXISTS training_pairs (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -142,15 +142,15 @@ const initDB = async () => {
       );
     `);
 
-        await client.query('COMMIT');
-        console.log('Database schema created successfully.');
-    } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Error creating database schema:', error);
-    } finally {
-        client.release();
-        pool.end();
-    }
+    await client.query('COMMIT');
+    console.log('Database schema created successfully.');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating database schema:', error);
+  } finally {
+    client.release();
+    pool.end();
+  }
 };
 
-initDB();
+module.exports = { initDB };

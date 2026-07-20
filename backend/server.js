@@ -29,7 +29,17 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Bellamona Backend is running' });
 });
 
-// 서버 실행
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+const { initDB } = require('./init-db');
+
+async function startServer() {
+    try {
+        await initDB();
+        app.listen(port, () => {
+            console.log(`Server is running on port ${port}`);
+        });
+    } catch (err) {
+        console.error("Failed to start server due to DB initialization error:", err);
+    }
+}
+
+startServer();
