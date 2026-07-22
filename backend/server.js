@@ -31,15 +31,11 @@ app.get('/api/health', (req, res) => {
 
 const { initDB } = require('./init-db');
 
-async function startServer() {
-    try {
-        await initDB();
-        app.listen(port, () => {
-            console.log(`Server is running on port ${port}`);
-        });
-    } catch (err) {
-        console.error("Failed to start server due to DB initialization error:", err);
-    }
-}
-
-startServer();
+initDB()
+    .then(() => {
+        app.listen(port, () => console.log(`Server is running on port ${port}`));
+    })
+    .catch((err) => {
+        console.error('DB init failed, server not started:', err);
+        process.exit(1);
+    });

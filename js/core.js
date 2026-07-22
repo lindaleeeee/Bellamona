@@ -18,8 +18,8 @@ function setTxt(id, v) { const e = document.getElementById(id); if (e) e.textCon
 
 // ═══════════════════════ GOOGLE LOGIN ═══════════════════════
 function doGoogleLogin() {
-  S.loggedIn = true;
-  go('s-onboard');
+  // 실제 구글 로그인 백엔드로 리다이렉트 (클라우드타입 주소)
+  window.location.href = "https://port-0-bellamona-mkvbnlkhad097f26.sel3.cloudtype.app/api/auth/google";
 }
 
 // ═══════════════════════ ONBOARDING ═══════════════════════
@@ -49,8 +49,15 @@ function tick() { const n = new Date(); document.getElementById('clk').textConte
 async function initApp() {
   const params = new URLSearchParams(window.location.search);
   const tk = params.get('token');
-  if (tk) { localStorage.setItem('token', tk); window.history.replaceState({}, document.title, window.location.pathname); }
-  if (localStorage.getItem('token') && typeof loadUserData === 'function') await loadUserData();
+  if (tk) {
+    localStorage.setItem('token', tk);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+  if (localStorage.getItem('token')) {
+    S.loggedIn = true;
+    go('s-home'); // 로그인 성공 시 메인 화면으로 이동
+    if (typeof loadUserData === 'function') await loadUserData();
+  }
   tick(); setInterval(tick, 30000);
   updateHome();
 }
