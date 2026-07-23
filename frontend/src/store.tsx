@@ -52,7 +52,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const loadProfile = async (): Promise<boolean> => {
         try {
-            const res = await fetch('http://localhost:8080/api/user/profile', {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await fetch(`${apiUrl}/api/user/profile`, {
                 credentials: 'include'
             });
             if (res.ok) {
@@ -74,7 +75,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const saveProfile = async () => {
         try {
-            await fetch('http://localhost:8080/api/user/onboard', {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            await fetch(`${apiUrl}/api/user/onboard`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

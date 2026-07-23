@@ -1,6 +1,7 @@
 const Login = () => {
     const handleLogin = () => {
-        window.location.href = 'http://localhost:8080/api/auth/google'; // Original redirect
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        window.location.href = `${apiUrl}/api/auth/google`;
     };
 
     return (
