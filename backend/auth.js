@@ -98,8 +98,15 @@ router.get('/google/callback', async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        // index.html의 initApp 로직이 ?token= 파라미터를 파싱하므로 그대로 지원
-        res.redirect(`${FRONTEND_URL}/?token=${token}`);
+        // XSS 방어를 위한 보안 쿠키 발급 (HttpOnly, Secure)
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        res.redirect(`${FRONTEND_URL}/?success=1`);
     } catch (err) {
         // 구글 API 에러는 err.response.data에 진짜 원인이 들어있습니다
         console.error('[AUTH ERROR]', err?.response?.data || err.message, err.stack);

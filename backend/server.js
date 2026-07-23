@@ -4,6 +4,9 @@ const dotenv = require('dotenv');
 const authRoutes = require('./auth');
 const dataRoutes = require('./routes/data');
 const reportRoutes = require('./routes/report');
+const userRoutes = require('./routes/user');
+const authMiddleware = require('./middleware/auth');
+const cookieParser = require('cookie-parser');
 
 // 환경변수 로드
 dotenv.config();
@@ -17,17 +20,33 @@ process.on('unhandledRejection', (r) => console.error('[UNHANDLED REJECTION]', r
 process.on('uncaughtException', (e) => console.error('[UNCAUGHT EXCEPTION]', e));
 
 // 미들웨어 설정
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || '*',
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // 라우트 설정
 app.use('/api/auth', authRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/report', reportRoutes);
+
+// Protected routes
+app.use('/api/user', authMiddleware, userRoutes);
 
 // 기본 헬스체크 라우트
 app.get('/api/health', (req, res) => {
