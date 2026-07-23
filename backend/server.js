@@ -11,6 +11,11 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 8080;
 
+app.set('trust proxy', 1);   // Cloudtype 프록시 뒤에 있으므로
+
+process.on('unhandledRejection', (r) => console.error('[UNHANDLED REJECTION]', r));
+process.on('uncaughtException', (e) => console.error('[UNCAUGHT EXCEPTION]', e));
+
 // 미들웨어 설정
 app.use(cors({
     origin: process.env.FRONTEND_URL || '*',
