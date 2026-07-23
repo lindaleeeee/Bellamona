@@ -19,9 +19,9 @@ const Home = () => {
     const chartData = state.weights && state.weights.length >= 2
         ? state.weights.map((w, i) => ({ name: `D-${i}`, weight: w.w || w }))
         : [
-            { name: '시작', weight: state.initWeight },
-            { name: '최근', weight: state.initWeight - (state.initWeight - state.goalWeight) * 0.2 },
-            { name: '목표', weight: state.goalWeight }
+            { name: '시작', weight: state.initWeight || 55 },
+            { name: '최근', weight: state.initWeight ? state.initWeight - (state.initWeight - state.goalWeight) * 0.2 : 54 },
+            { name: '목표', weight: state.goalWeight || 48 }
         ];
 
     const progressPercent = Math.min(100, Math.max(0, 100 - ((state.initWeight - state.goalWeight) > 0

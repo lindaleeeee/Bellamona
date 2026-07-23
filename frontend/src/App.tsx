@@ -4,6 +4,11 @@ import Login from './components/Login';
 import Home from './components/Home';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
+import Insulin from './components/Insulin';
+import Growth from './components/Growth';
+import Cortisol from './components/Cortisol';
+import Oxytocin from './components/Oxytocin';
+import Diet from './components/Diet';
 
 const MainApp = () => {
     const { state, updateState, api } = useAppContext();
@@ -34,18 +39,11 @@ const MainApp = () => {
             {state.currentScreen === 'onboard' && <Onboarding />}
             {state.currentScreen === 'home' && <Home />}
             {state.currentScreen === 'dashboard' && <Dashboard />}
-            {/* Adding placeholders for hormone detail screens */}
-            {['insulin', 'growth', 'cortisol', 'oxytocin', 'diet'].includes(state.currentScreen) && (
-                <div className="p-4 flex flex-col flex-1 items-center justify-center">
-                    <h2 className="text-xl font-bold">{state.currentScreen.toUpperCase()} Screen</h2>
-                    <button
-                        onClick={() => updateState({ currentScreen: 'home' })}
-                        className="mt-4 px-4 py-2 bg-white rounded-xl shadow border border-gray-200 font-bold"
-                    >
-                        홈으로 돌아가기
-                    </button>
-                </div>
-            )}
+            {state.currentScreen === 'insulin' && <Insulin />}
+            {state.currentScreen === 'growth' && <Growth />}
+            {state.currentScreen === 'cortisol' && <Cortisol />}
+            {state.currentScreen === 'oxytocin' && <Oxytocin />}
+            {state.currentScreen === 'diet' && <Diet />}
         </div>
     );
 };
