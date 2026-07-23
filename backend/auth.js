@@ -8,25 +8,39 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
-const oauth2Client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const oauth2Client = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+);
 
-// Google OAuth 2.0 Token Verification
-router.post('/google/verify', async (req, res) => {
-    const { credential } = req.body;
+// 1. 구글 로그인 페이지로 리다이렉트
+router.get('/google', (req, res) => {
+    const url = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: [
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'https://www.googleapis.com/auth/userinfo.email',
+        ],
+    });
+    res.redirect(url);
+});
 
-    if (!credential) {
-        return res.status(400).json({ error: 'Missing credential token' });
-    }
+// 2. 구글 OAuth 2.0 콜백 처리
+router.get('/google/callback', async (req, res) => {
+    const { code } = req.query;
 
     try {
-        // 프론트엔드로부터 받은 Google JWT 검증
-        const ticket = await oauth2Client.verifyIdToken({
-            idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID,
+        // 엑세스 토큰 받아오기
+        const { tokens } = await oauth2Client.getToken(code);
+        oauth2Client.setCredentials(tokens);
+
+        // 구글 사용자 정보 가져오기
+        const userInfoResponse = await oauth2Client.request({
+            url: 'https://www.googleapis.com/oauth2/v2/userinfo'
         });
 
-        const payload = ticket.getPayload();
-        const { sub: google_id, email, name, picture: avatar } = payload;
+        const { id: google_id, email, name, picture: avatar } = userInfoResponse.data;
 
         const client = await pool.connect();
         try {
@@ -35,37 +49,31 @@ router.post('/google/verify', async (req, res) => {
             let user = result.rows[0];
 
             if (!user) {
-                // 새 사용자 생성 (회원가입 처리)
+                // 새 사용자 생성
                 result = await client.query(
                     'INSERT INTO users (google_id, email, name, avatar) VALUES ($1, $2, $3, $4) RETURNING *',
                     [google_id, email, name, avatar]
                 );
                 user = result.rows[0];
-            } else {
-                // 사용자 정보 업데이트 로직이 필요한 경우 (예: 프로필 사진 갱신)
-                result = await client.query(
-                    'UPDATE users SET name = $1, avatar = $2 WHERE google_id = $3 RETURNING *',
-                    [name, avatar, google_id]
-                );
-                user = result.rows[0];
             }
 
-            // 클라이언트용 자체 JWT 발급
+            // JWT 발급
             const token = jwt.sign(
                 { userId: user.id, email: user.email },
                 process.env.JWT_SECRET,
                 { expiresIn: '7d' }
             );
 
-            // 프론트엔드에 응답 (리다이렉트가 아닌 JSON 응답)
-            res.json({ success: true, token, user });
+            // 클라이언트로 리다이렉트 (JWT를 URL 파라미터로 전달)
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5500';
+            res.redirect(`${frontendUrl}?token=${token}`);
 
         } finally {
             client.release();
         }
     } catch (error) {
-        console.error('Error during Google token verification:', error);
-        res.status(401).json({ error: 'Invalid or expired Google token' });
+        console.error('Error during Google authentication:', error);
+        res.status(500).send(`Authentication failed: ${error.message || error}`);
     }
 });
 

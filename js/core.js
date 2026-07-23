@@ -18,58 +18,10 @@ function setTxt(id, v) { const e = document.getElementById(id); if (e) e.textCon
 function doLogout() { localStorage.removeItem('token'); S.loggedIn = false; window.location.href = window.location.pathname; }
 
 // ═══════════════════════ GOOGLE LOGIN ═══════════════════════
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"; // [필수] 구글 클라이언트 ID 입력 (.env.example 참고)
-
-async function handleGoogleCredentialResponse(response) {
-  try {
-    // 백엔드로 토큰 검증 및 자체 JWT 발급 요청
-    const res = await fetch("https://port-0-bellamona-mkvbnlkhad097f26.sel3.cloudtype.app/api/auth/google/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ credential: response.credential })
-    });
-
-    const data = await res.json();
-    if (res.ok && data.success && data.token) {
-      localStorage.setItem('token', data.token);
-      S.loggedIn = true;
-      if (typeof loadUserData === 'function') await loadUserData();
-      go('s-home');
-      if (document.getElementById('nav-home')) document.getElementById('nav-home').click();
-    } else {
-      alert("로그인 유효성 검증 실패: " + (data.error || "알 수 없는 오류"));
-    }
-  } catch (err) {
-    console.error("Google verify fetch error:", err);
-    alert("백엔드 서버와 통신할 수 없습니다.");
-  }
+function doGoogleLogin() {
+  // 실제 구글 로그인 백엔드로 리다이렉트 (클라우드타입 주소)
+  window.location.href = "https://port-0-bellamona-mkvbnlkhad097f26.sel3.cloudtype.app/api/auth/google";
 }
-
-function initGoogleLogin() {
-  // GSI 스크립트 로드 대기
-  if (typeof google === 'undefined' || !google.accounts) {
-    setTimeout(initGoogleLogin, 100);
-    return;
-  }
-
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogleCredentialResponse
-  });
-
-  const btnContainer = document.getElementById('googleButtonContainer');
-  if (btnContainer) {
-    google.accounts.id.renderButton(btnContainer, {
-      theme: "outline",
-      size: "large",
-      width: 280,
-      shape: "rectangular"
-    });
-  }
-}
-
-// 스크립트 실행 또는 DOMContentLoaded 시 GSI 렌더링 호출
-document.addEventListener("DOMContentLoaded", initGoogleLogin);
 
 // ═══════════════════════ ONBOARDING ═══════════════════════
 function calcGoal() {
