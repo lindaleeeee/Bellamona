@@ -53,10 +53,17 @@ async function initApp() {
     localStorage.setItem('token', tk);
     window.history.replaceState({}, document.title, window.location.pathname);
   }
-  if (localStorage.getItem('token')) {
-    S.loggedIn = true;
-    go('s-home'); // 로그인 성공 시 메인 화면으로 이동
-    if (typeof loadUserData === 'function') await loadUserData();
+  if (localStorage.getItem('token') && typeof loadUserData === 'function') {
+    const loaded = await loadUserData();
+    if (loaded) {
+      S.loggedIn = true;
+      go('s-home'); // 로그인 성공 시 메인 화면으로 이동
+      if (document.getElementById('nav-home')) {
+        document.getElementById('nav-home').click();
+      }
+    } else {
+      localStorage.removeItem('token');
+    }
   }
   tick(); setInterval(tick, 30000);
   updateHome();

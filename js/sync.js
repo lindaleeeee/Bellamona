@@ -11,9 +11,14 @@ function getAuthHeaders() {
 
 async function loadUserData() {
     try {
-        if (!localStorage.getItem('token')) return;
+        if (!localStorage.getItem('token')) return false;
         const res = await fetch(`${API_BASE}/data`, { headers: getAuthHeaders() });
-        if (!res.ok) throw new Error('API fetch error');
+        if (!res.ok) {
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('token');
+            }
+            throw new Error(`API fetch error: ${res.status}`);
+        }
         const d = await res.json();
 
         // S 객체 복원 (기존 로직 보존)
@@ -75,8 +80,10 @@ async function loadUserData() {
 
         if (typeof updateHome === 'function') updateHome();
         if (typeof renderDash === 'function') renderDash();
+        return true;
     } catch (err) {
         console.error('loadUserData error:', err);
+        return false;
     }
 }
 
