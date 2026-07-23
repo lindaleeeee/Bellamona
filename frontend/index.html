@@ -759,7 +759,12 @@
             <div class="serif" style="font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px">생리주기 🌸</div>
             <div style="font-size:13px;color:var(--muted);margin-bottom:20px;font-weight:500">PCOS 맞춤 분석에 활용돼요</div>
             <div style="display:flex;flex-direction:column;gap:10px">
-              <input class="input" type="date" id="ob-period" />
+              <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:-6px">마지막 생리 기간을 입력해주세요</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input class="input" type="date" id="ob-period-start" title="생리 시작일" />
+                <span style="color:var(--muted);font-weight:700">~</span>
+                <input class="input" type="date" id="ob-period-end" title="생리 종료일" />
+              </div>
               <input class="input" placeholder="평균 주기 (일, 기본 28)" type="number" id="ob-cycle" />
               <div
                 style="background:rgba(244,143,177,.1);border:1.5px solid rgba(244,143,177,.3);border-radius:13px;padding:12px;font-size:12px;color:var(--rose2);line-height:1.6;font-weight:600">
@@ -1630,7 +1635,20 @@
     }
     function obNext() {
       if (S.obStep < 3) { document.getElementById(`ob-p${S.obStep}`).style.display = 'none'; S.obStep++; document.getElementById(`ob-p${S.obStep}`).style.display = 'block'; document.getElementById('ob-back').style.display = 'flex'; if (S.obStep === 3) document.getElementById('ob-next').textContent = '시작하기 →'; if (S.obStep === 2) calcGoal(); document.querySelectorAll('.step-dot').forEach((d, i) => d.classList.toggle('on', i === S.obStep - 1)); }
-      else { S.name = document.getElementById('ob-name')?.value || '혜림'; S.cycleLen = parseInt(document.getElementById('ob-cycle')?.value) || 28; S.weights = [{ d: '오늘', w: S.initWeight }]; initMain(); }
+      else {
+        S.name = document.getElementById('ob-name')?.value || '혜림';
+        S.cycleLen = parseInt(document.getElementById('ob-cycle')?.value) || 28;
+        S.weights = [{ d: '오늘', w: S.initWeight }];
+        const ps = document.getElementById('ob-period-start')?.value;
+        const pe = document.getElementById('ob-period-end')?.value;
+        if (ps) {
+          const days = pe ? Math.max(1, Math.round((new Date(pe) - new Date(ps)) / 86400000)) + 1 : 5;
+          S.periods = [{ start: ps, days: days }];
+        } else {
+          S.periods = [];
+        }
+        initMain();
+      }
     }
     function obPrev() { if (S.obStep > 1) { document.getElementById(`ob-p${S.obStep}`).style.display = 'none'; S.obStep--; document.getElementById(`ob-p${S.obStep}`).style.display = 'block'; if (S.obStep === 1) document.getElementById('ob-back').style.display = 'none'; document.getElementById('ob-next').textContent = '다음'; document.querySelectorAll('.step-dot').forEach((d, i) => d.classList.toggle('on', i === S.obStep - 1)); } }
     function initMain() { setTxt('h-greet', `오늘도 빛나는 ${S.name}님 ✨`); setTxt('prof-name', `${S.name}님`); setTxt('prof-me-name', S.name + '님 (나)'); go('s-home'); document.getElementById('nav-home').click(); }
