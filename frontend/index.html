@@ -1116,6 +1116,39 @@
             <div style="font-size:11px;color:var(--lav2);margin-top:3px;font-weight:700">Slow Aging Lv.4 · 21일 연속 🔥
             </div>
           </div>
+
+          <div class="card" style="margin-bottom:10px" id="prof-my-info">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div class="cap" style="margin-bottom:0">내 기본 정보 (온보딩 기록)</div>
+              <span
+                style="font-size:10px;color:var(--sky2);cursor:pointer;font-weight:700;background:var(--sky3);padding:3px 8px;border-radius:6px"
+                onclick="restartOnboard()">수정하기</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <div style="font-size:10px;color:var(--muted);font-weight:600">시작 몸무게</div>
+                <div style="font-size:13px;font-weight:800;color:var(--text)" id="pi-init-w">-</div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--muted);font-weight:600">목표 몸무게</div>
+                <div style="font-size:13px;font-weight:800;color:var(--text)" id="pi-goal-w">-</div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--muted);font-weight:600">목표 기간</div>
+                <div style="font-size:13px;font-weight:800;color:var(--text)" id="pi-goal-m">-</div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--muted);font-weight:600">하루 목표 칼로리</div>
+                <div style="font-size:13px;font-weight:800;color:var(--text)" id="pi-goal-cal">-</div>
+              </div>
+              <div
+                style="grid-column:1/3;background:var(--card2);padding:10px;border-radius:10px;border:1px solid var(--bdr)">
+                <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">생리 및 배란 주기</div>
+                <div style="font-size:13px;font-weight:700;color:var(--rose2)" id="pi-period">-</div>
+              </div>
+            </div>
+          </div>
+
           <div class="card" style="margin-bottom:10px">
             <div class="cap">이번 달 달성률 · 친구 비교</div>
             <div style="display:flex;flex-direction:column;gap:8px">
@@ -1616,6 +1649,12 @@
       // Profile
       const pmb = document.getElementById('prof-me-bar'); if (pmb) pmb.style.width = op + '%'; setTxt('prof-me-pct', op + '%');
       const pname = document.getElementById('prof-me-name'); if (pname) pname.textContent = S.name + '님 (나)';
+      setTxt('pi-init-w', S.initWeight + ' kg');
+      setTxt('pi-goal-w', S.goalWeight + ' kg');
+      setTxt('pi-goal-m', S.goalMonths + '개월');
+      setTxt('pi-goal-cal', S.goalCal.toLocaleString() + ' kcal');
+      if (S.periods && S.periods.length) { setTxt('pi-period', `최근: ${S.periods[0].start}부터 ${S.periods[0].days}일간 / 평균 주기 ${S.cycleLen}일`); }
+      else { setTxt('pi-period', `입력 안됨 / 평균 주기 ${S.cycleLen}일`); }
       saveState();
     }
 
@@ -1741,6 +1780,17 @@
       }
     }
     function obPrev() { if (S.obStep > 1) { document.getElementById(`ob-p${S.obStep}`).style.display = 'none'; S.obStep--; document.getElementById(`ob-p${S.obStep}`).style.display = 'block'; if (S.obStep === 1) document.getElementById('ob-back').style.display = 'none'; document.getElementById('ob-next').textContent = '다음'; document.querySelectorAll('.step-dot').forEach((d, i) => d.classList.toggle('on', i === S.obStep - 1)); } }
+    function restartOnboard() {
+      S.obStep = 1;
+      document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+      document.getElementById('s-onboard').classList.add('on');
+      document.getElementById('ob-p1').style.display = 'block';
+      document.getElementById('ob-p2').style.display = 'none';
+      document.getElementById('ob-p3').style.display = 'none';
+      document.getElementById('ob-back').style.display = 'none';
+      document.getElementById('ob-next').textContent = '다음';
+      document.querySelectorAll('.step-dot').forEach((d, i) => d.classList.toggle('on', i === 0));
+    }
     function initMain() { setTxt('h-greet', `오늘도 빛나는 ${S.name}님 ✨`); setTxt('prof-name', `${S.name}님`); setTxt('prof-me-name', S.name + '님 (나)'); go('s-home'); document.getElementById('nav-home').click(); }
 
     // ═══════════════════════ WEIGHT ═══════════════════════
