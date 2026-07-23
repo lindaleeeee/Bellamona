@@ -721,17 +721,17 @@
             <div class="serif" style="font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px">안녕하세요 👋</div>
             <div style="font-size:13px;color:var(--muted);margin-bottom:20px;font-weight:500">기본 정보를 입력해주세요</div>
             <div style="display:flex;flex-direction:column;gap:10px">
-              <input class="input" placeholder="이름" id="ob-name" value="혜림" />
+              <input class="input" placeholder="이름" id="ob-name" />
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <input class="input" placeholder="나이" type="number" value="32" />
+                <input class="input" placeholder="나이" type="number" />
                 <select class="input" style="color:var(--text)">
                   <option>여성</option>
                   <option>남성</option>
                 </select>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <input class="input" placeholder="키 (cm)" type="number" id="ob-h" value="165" />
-                <input class="input" placeholder="현재 체중 (kg)" type="number" id="ob-cw" value="52" />
+                <input class="input" placeholder="키 (cm)" type="number" id="ob-h" />
+                <input class="input" placeholder="현재 체중 (kg)" type="number" id="ob-cw" />
               </div>
             </div>
           </div>
@@ -739,16 +739,17 @@
             <div class="serif" style="font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px">목표 설정 🎯</div>
             <div style="font-size:13px;color:var(--muted);margin-bottom:20px;font-weight:500">칼로리 목표를 자동 계산해드려요</div>
             <div style="display:flex;flex-direction:column;gap:10px">
-              <input class="input" placeholder="목표 체중 (kg)" type="number" id="ob-gw" value="48" oninput="calcGoal()" />
-              <input class="input" placeholder="목표 기간 (개월)" type="number" id="ob-gm" value="3" oninput="calcGoal()" />
+              <input class="input" placeholder="목표 체중 (kg)" type="number" id="ob-gw" oninput="calcGoal()" />
+              <input class="input" placeholder="목표 기간 (개월)" type="number" id="ob-gm" oninput="calcGoal()" />
               <div class="card" style="margin:0;background:var(--sky3);border-color:rgba(91,184,245,.3)">
                 <div class="cap">자동 계산 하루 목표 칼로리</div>
-                <div style="font-size:32px;font-weight:800;color:var(--sky2)" id="ob-cal">1,090</div>
-                <div style="font-size:11px;color:var(--muted);margin-top:2px" id="ob-cal-d">체중 -4kg ÷ 90일 × 7,700kcal
+                <div style="font-size:32px;font-weight:800;color:var(--sky2)" id="ob-cal">입력 대기중</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px" id="ob-cal-d">신체 조건을 입력해주세요
                 </div>
               </div>
               <div style="display:flex;flex-wrap:wrap;gap:6px">
-                <span class="chip on">다낭성난소증후군</span><span class="chip on">임신 준비</span>
+                <span class="chip on" onclick="this.classList.toggle('on')">다낭성난소증후군</span><span class="chip on"
+                  onclick="this.classList.toggle('on')">임신 준비</span>
                 <span class="chip" onclick="this.classList.toggle('on')">저속노화</span>
                 <span class="chip" onclick="this.classList.toggle('on')">체지방 감량</span>
               </div>
@@ -758,8 +759,8 @@
             <div class="serif" style="font-size:26px;font-weight:700;color:var(--text);margin-bottom:4px">생리주기 🌸</div>
             <div style="font-size:13px;color:var(--muted);margin-bottom:20px;font-weight:500">PCOS 맞춤 분석에 활용돼요</div>
             <div style="display:flex;flex-direction:column;gap:10px">
-              <input class="input" type="date" id="ob-period" value="2026-04-01" />
-              <input class="input" placeholder="평균 주기 (일, 기본 28)" type="number" id="ob-cycle" value="28" />
+              <input class="input" type="date" id="ob-period" />
+              <input class="input" placeholder="평균 주기 (일, 기본 28)" type="number" id="ob-cycle" />
               <div
                 style="background:rgba(244,143,177,.1);border:1.5px solid rgba(244,143,177,.3);border-radius:13px;padding:12px;font-size:12px;color:var(--rose2);line-height:1.6;font-weight:600">
                 🌸 생리기·배란기 달력 자동 표시 + 황체기 인슐린 감수성 경고</div>
