@@ -797,14 +797,12 @@
           <!-- Weight progress -->
           <div class="card" style="border-color:rgba(91,184,245,.25)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <div class="cap" style="margin-bottom:0">몸무게 목표</div>
-              <span style="font-size:11px;color:var(--sky2);font-weight:700" id="h-wt-remain">48kg까지 4.0kg · D-90</span>
+              <div class="cap" style="margin-bottom:0">몸무게 목표 (목표까지 남은 기간)</div>
+              <span style="font-size:11px;color:var(--sky2);font-weight:700" id="h-wt-remain"></span>
             </div>
-            <div style="display:flex;gap:6px;align-items:flex-end;height:44px;margin-bottom:6px" id="wt-mini-chart">
-            </div>
-            <div class="bar-t" style="height:6px">
-              <div class="bar-f" id="wt-bar"
-                style="height:6px;background:linear-gradient(90deg,var(--sky2),var(--lav2))"></div>
+            <div id="wt-mini-chart"
+              style="width:100%;height:100px;margin-bottom:6px;background:var(--card2);border:1px solid var(--bdr);border-radius:14px;position:relative;overflow:hidden">
+              <svg id="wt-svg" width="100%" height="100%" preserveAspectRatio="none"></svg>
             </div>
           </div>
           <!-- Calorie bar -->
@@ -1609,10 +1607,87 @@
     }
 
     function renderWtMiniChart() {
-      const c = document.getElementById('wt-mini-chart'); if (!c) return; c.innerHTML = '';
+      const svg = document.getElementById('wt-svg'); if (!svg) return; svg.innerHTML = '';
       const ws = S.weights.map(w => w.w); if (!ws.length) return;
-      const mn = Math.min(...ws) - .5, mx = Math.max(...ws) + .5;
-      ws.forEach((w, i) => { const h = Math.max(Math.round((w - mn) / (mx - mn) * 40), 4); const b = document.createElement('div'); const isT = i === ws.length - 1; b.style.cssText = `flex:1;border-radius:3px 3px 0 0;height:${h}px;background:${isT ? 'linear-gradient(180deg,var(--sky2),var(--lav2))' : 'rgba(91,184,245,.3)'};min-width:4px`; c.appendChild(b); });
+
+      const W = svg.clientWidth || 330; const H = 100;
+      const totalDays = S.goalMonths * 30;
+
+      // Determine Y scale
+      const maxW = Math.max(S.initWeight, ...ws) + 1;
+      const minW = Math.min(S.goalWeight, ...ws) - 1;
+      const toY = (w) => H - 24 - ((w - minW) / (maxW - minW) * (H - 44));
+
+      // Goal line
+      const gy = toY(S.goalWeight);
+      const gl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      gl.setAttribute("d", `M0,${gy} L${W},${gy}`);
+      gl.setAttribute("stroke", "rgba(102,187,106,0.5)"); gl.setAttribute("stroke-width", "1.5");
+      gl.setAttribute("stroke-dasharray", "4 4"); svg.appendChild(gl);
+
+      const gt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      gt.setAttribute("x", W - 8); gt.setAttribute("y", gy - 6); gt.setAttribute("fill", "var(--ok)");
+      gt.setAttribute("font-size", "10"); gt.setAttribute("font-weight", "800"); gt.setAttribute("text-anchor", "end");
+      gt.textContent = `목표 ${S.goalWeight}kg`; svg.appendChild(gt);
+
+      // Plot dots
+      // Assuming S.weights entries represent 1 day each loosely, scaled across total time.
+      const dCount = Math.max(ws.length, 1);
+      const pts = ws.map((w, i) => {
+        // Assume latest entry is "today", which is dCount days elapsed out of totalDays
+        // Give it a realistic horizontal spread.
+        let pct = i / (totalDays);
+        // fallback if dates exceed goal
+        if (dCount > totalDays) pct = i / dCount;
+        // to prevent overlapping the very left edge:
+        let x = 15 + pct * (W - 30);
+
+        // If there's only 1 point or spacing is too small, fallback to arbitrary spacing
+        if (ws.length < totalDays) {
+          x = 15 + i * (W - 30) / Math.max(totalDays, 1);
+        }
+
+        return { x, y: toY(w), w };
+      });
+
+      if (pts.length > 1) {
+        const pd = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", pd); path.setAttribute("stroke", "var(--sky2)");
+        path.setAttribute("stroke-width", "3"); path.setAttribute("fill", "none");
+        path.setAttribute("stroke-linecap", "round"); path.setAttribute("stroke-linejoin", "round");
+        svg.appendChild(path);
+      }
+
+      pts.forEach(p => {
+        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("cx", p.x); c.setAttribute("cy", p.y); c.setAttribute("r", "5");
+        c.setAttribute("fill", "#fff"); c.setAttribute("stroke", "var(--sky2)"); c.setAttribute("stroke-width", "2.5");
+        svg.appendChild(c);
+
+        const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        txt.setAttribute("x", p.x); txt.setAttribute("y", p.y - 10); txt.setAttribute("fill", "var(--text)");
+        txt.setAttribute("font-size", "9"); txt.setAttribute("font-weight", "800"); txt.setAttribute("text-anchor", "middle");
+        txt.textContent = p.w; svg.appendChild(txt);
+      });
+
+      // Current Progress / Days Remaining indicator
+      const last = pts[pts.length - 1];
+      const progPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      progPath.setAttribute("d", `M${last.x},${last.y} L${W - 15},${gy}`);
+      progPath.setAttribute("stroke", "var(--muted)"); progPath.setAttribute("stroke-width", "1.5");
+      progPath.setAttribute("stroke-dasharray", "3 4"); progPath.setAttribute("fill", "none");
+      svg.appendChild(progPath);
+
+      const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      xAxis.setAttribute("x", W - 15); xAxis.setAttribute("y", H - 6); xAxis.setAttribute("fill", "var(--muted)");
+      xAxis.setAttribute("font-size", "9"); xAxis.setAttribute("font-weight", "700"); xAxis.setAttribute("text-anchor", "end");
+      xAxis.textContent = `${S.goalMonths}개월 목표`; svg.appendChild(xAxis);
+
+      const xStart = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      xStart.setAttribute("x", 15); xStart.setAttribute("y", H - 6); xStart.setAttribute("fill", "var(--muted)");
+      xStart.setAttribute("font-size", "9"); xStart.setAttribute("font-weight", "700"); xStart.setAttribute("text-anchor", "start");
+      xStart.textContent = "시작"; svg.appendChild(xStart);
     }
 
     // ═══════════════════════ GOOGLE LOGIN ═══════════════════════
