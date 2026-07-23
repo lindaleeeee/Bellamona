@@ -18,7 +18,6 @@ const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
 // ── 1) DB 풀
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },   // Cloudtype PG면 거의 필수
     max: 5,
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 5000,
@@ -71,12 +70,12 @@ router.get('/google', async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
-        // 찰나의 순간에 프론트엔드로 즉시 돌려보냄!
-        res.redirect(`${FRONTEND_URL}/?success=1`);
+        // 찰나의 순간에 프론트엔드로 즉시 돌려보냄! (URL 이동 없앰)
+        res.json({ success: true, user });
 
     } catch (err) {
         console.error('[AUTH ERROR]', err);
-        res.redirect(`${FRONTEND_URL}/?error=auth_failed`);
+        res.status(500).json({ error: 'auth_failed' });
     } finally {
         if (client) client.release();
     }

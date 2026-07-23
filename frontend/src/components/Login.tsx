@@ -1,7 +1,23 @@
+import { useAppContext } from '../store';
+
 const Login = () => {
-    const handleLogin = () => {
+    const { updateState, api } = useAppContext();
+
+    const handleLogin = async () => {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-        window.location.href = `${apiUrl}/api/auth/google`;
+        try {
+            const res = await fetch(`${apiUrl}/api/auth/google`, { credentials: 'include' });
+            const data = await res.json();
+            if (data.success) {
+                await api.loadProfile();
+                updateState({ loggedIn: true, currentScreen: 'onboard' });
+            } else {
+                alert('로그인에 실패했습니다.');
+            }
+        } catch (err) {
+            console.error('Auth error', err);
+            alert('서버 연결 문제로 로그인할 수 없습니다.');
+        }
     };
 
     return (
