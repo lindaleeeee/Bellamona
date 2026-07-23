@@ -1542,6 +1542,14 @@
         ],
       },
     };
+    try {
+      const saved = localStorage.getItem('bellamona_data');
+      if (saved) Object.assign(S, JSON.parse(saved));
+    } catch (e) { }
+
+    function saveState() {
+      localStorage.setItem('bellamona_data', JSON.stringify(S));
+    }
 
     // ═══════════════════════ HELPERS ═══════════════════════
     function go(id) { document.querySelectorAll('.scr').forEach(s => s.classList.remove('on')); const el = document.getElementById(id); if (el) el.classList.add('on'); if (id === 's-dash') renderDash(); if (id === 's-diet') renderRecipes(); updateHome(); }
@@ -1608,6 +1616,7 @@
       // Profile
       const pmb = document.getElementById('prof-me-bar'); if (pmb) pmb.style.width = op + '%'; setTxt('prof-me-pct', op + '%');
       const pname = document.getElementById('prof-me-name'); if (pname) pname.textContent = S.name + '님 (나)';
+      saveState();
     }
 
     function renderWtMiniChart() {
@@ -1727,6 +1736,7 @@
         } else {
           S.periods = [];
         }
+        saveState();
         initMain();
       }
     }
