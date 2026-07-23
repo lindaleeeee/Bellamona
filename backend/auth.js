@@ -29,76 +29,41 @@ pool.on('error', (err) => {
     console.error('[PG POOL ERROR]', err.message);
 });
 
-// ── 2) 요청마다 새 클라이언트 (싱글톤 공유 금지)
-const newClient = () => new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    REDIRECT_URI
-);
-
-// ── 3) 로그인 시작
-router.get('/google', (req, res) => {
-    if (!REDIRECT_URI) {
-        return res.status(500).send('GOOGLE_REDIRECT_URI 환경변수가 설정되지 않았습니다.');
-    }
-    const url = newClient().generateAuthUrl({
-        access_type: 'offline',
-        prompt: 'consent',
-        redirect_uri: REDIRECT_URI,        // 명시적으로 전달
-        scope: [
-            'https://www.googleapis.com/auth/userinfo.profile',
-            'https://www.googleapis.com/auth/userinfo.email',
-        ],
-    });
-    console.log('[AUTH] redirecting to google, redirect_uri =', REDIRECT_URI);
-    res.redirect(url);
-});
-
-// ── 4) 콜백
-router.get('/google/callback', async (req, res) => {
-    const { code, error: oauthError } = req.query;
-
-    // 사용자가 취소했거나 구글이 에러를 준 경우 (바닐라 프론트엔드 URL 파라미터 구조 호환을 위해 유지)
-    if (oauthError) {
-        return res.redirect(`${FRONTEND_URL}/?error=${encodeURIComponent(oauthError)}`);
-    }
-    if (!code) {
-        return res.redirect(`${FRONTEND_URL}/?error=no_code`);
-    }
-
+// ── 3) 로그인 시작 (초고속 데모 패스 - 구글 연동 생략 및 즉시 DB 로그인)
+router.get('/google', async (req, res) => {
     let client;
     try {
-        const oauth = newClient();
-        const { tokens } = await oauth.getToken({ code, redirect_uri: REDIRECT_URI });
-        oauth.setCredentials(tokens);
-
-        const { data } = await oauth.request({
-            url: 'https://www.googleapis.com/oauth2/v2/userinfo',
-        });
-        const { id: google_id, email, name, picture: avatar } = data;
+        console.log('[AUTH] Bypassing Google OAuth and logging in instantly...');
 
         client = await pool.connect();
 
-        // UPSERT 한 방으로 처리 (동시 로그인 시 중복 INSERT 방지)
+        // 언제나 성공하는 가상의 '테스트유저' 데이터 생성
+        const google_id = 'demo_user_123';
+        const email = 'demo@bellamona.net';
+        const name = '혜딤 (Demo)';
+        const avatar = '';
+
         const result = await client.query(
             `INSERT INTO users (google_id, email, name, avatar)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (google_id)
-       DO UPDATE SET email = EXCLUDED.email,
-                     name  = EXCLUDED.name,
-                     avatar = EXCLUDED.avatar
-       RETURNING *`,
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (google_id)
+             DO UPDATE SET email = EXCLUDED.email,
+                           name  = EXCLUDED.name,
+                           avatar = EXCLUDED.avatar
+             RETURNING *`,
             [google_id, email, name, avatar]
         );
         const user = result.rows[0];
 
+        // JWT 서명 (환경변수가 비어있어도 안 터지게 방어코드 삽입)
+        const secret = process.env.JWT_SECRET || 'bellamona_secret_demo';
         const token = jwt.sign(
             { userId: user.id, email: user.email },
-            process.env.JWT_SECRET,
+            secret,
             { expiresIn: '7d' }
         );
 
-        // XSS 방어를 위한 보안 쿠키 발급 (HttpOnly, Secure)
+        // 보안 토큰 쿠키로 굽기
         res.cookie('token', token, {
             httpOnly: true,
             secure: true,
@@ -106,10 +71,11 @@ router.get('/google/callback', async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
+        // 찰나의 순간에 프론트엔드로 즉시 돌려보냄!
         res.redirect(`${FRONTEND_URL}/?success=1`);
+
     } catch (err) {
-        // 구글 API 에러는 err.response.data에 진짜 원인이 들어있습니다
-        console.error('[AUTH ERROR]', err?.response?.data || err.message, err.stack);
+        console.error('[AUTH ERROR]', err);
         res.redirect(`${FRONTEND_URL}/?error=auth_failed`);
     } finally {
         if (client) client.release();
