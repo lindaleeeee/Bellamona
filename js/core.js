@@ -15,6 +15,7 @@ function openMod(id) {
 }
 function closeMod(id) { document.getElementById(id).classList.remove('open') }
 function setTxt(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
+function doLogout() { localStorage.removeItem('token'); S.loggedIn = false; window.location.href = window.location.pathname; }
 
 // ═══════════════════════ GOOGLE LOGIN ═══════════════════════
 const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"; // [필수] 구글 클라이언트 ID 입력 (.env.example 참고)
