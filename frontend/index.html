@@ -797,8 +797,12 @@
           <!-- Weight progress -->
           <div class="card" style="border-color:rgba(91,184,245,.25)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <div class="cap" style="margin-bottom:0">몸무게 목표 (목표까지 남은 기간)</div>
-              <span style="font-size:11px;color:var(--sky2);font-weight:700" id="h-wt-remain"></span>
+              <div class="cap" style="margin-bottom:0">몸무게 목표</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:11px;color:var(--sky2);font-weight:700" id="h-wt-remain"></span>
+                <button class="btn btn-sm btn-p" style="padding:4px 10px;font-size:10px" onclick="openWtModal()">+ 체중
+                  기록</button>
+              </div>
             </div>
             <div id="wt-mini-chart"
               style="width:100%;height:100px;margin-bottom:6px;background:var(--card2);border:1px solid var(--bdr);border-radius:14px;position:relative;overflow:hidden">
@@ -1608,10 +1612,14 @@
 
     function renderWtMiniChart() {
       const svg = document.getElementById('wt-svg'); if (!svg) return; svg.innerHTML = '';
-      const ws = S.weights.map(w => w.w); if (!ws.length) return;
-
+      if (!S.weights || !S.weights.length) return;
+      const ws = S.weights.map(w => w.w);
       const W = svg.clientWidth || 330; const H = 100;
-      const totalDays = S.goalMonths * 30;
+
+      if (!S.startDate) S.startDate = new Date().getTime() - (S.weights.length * 86400000);
+      S.weights.forEach((w, i) => { if (!w.t) w.t = S.startDate + i * 86400000; });
+      const totalMs = S.goalMonths * 30 * 86400000;
+      const endMs = S.startDate + totalMs;
 
       // Determine Y scale
       const maxW = Math.max(S.initWeight, ...ws) + 1;
@@ -1625,30 +1633,23 @@
       gl.setAttribute("stroke", "rgba(102,187,106,0.5)"); gl.setAttribute("stroke-width", "1.5");
       gl.setAttribute("stroke-dasharray", "4 4"); svg.appendChild(gl);
 
-      const gt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      gt.setAttribute("x", W - 8); gt.setAttribute("y", gy - 6); gt.setAttribute("fill", "var(--ok)");
-      gt.setAttribute("font-size", "10"); gt.setAttribute("font-weight", "800"); gt.setAttribute("text-anchor", "end");
-      gt.textContent = `목표 ${S.goalWeight}kg`; svg.appendChild(gt);
-
       // Plot dots
-      // Assuming S.weights entries represent 1 day each loosely, scaled across total time.
-      const dCount = Math.max(ws.length, 1);
-      const pts = ws.map((w, i) => {
-        // Assume latest entry is "today", which is dCount days elapsed out of totalDays
-        // Give it a realistic horizontal spread.
-        let pct = i / (totalDays);
-        // fallback if dates exceed goal
-        if (dCount > totalDays) pct = i / dCount;
-        // to prevent overlapping the very left edge:
-        let x = 15 + pct * (W - 30);
-
-        // If there's only 1 point or spacing is too small, fallback to arbitrary spacing
-        if (ws.length < totalDays) {
-          x = 15 + i * (W - 30) / Math.max(totalDays, 1);
-        }
-
-        return { x, y: toY(w), w };
+      const pts = S.weights.map(w => {
+        let pct = (w.t - S.startDate) / totalMs;
+        let x = 20 + pct * (W - 50);
+        return { x, y: toY(w.w), w: w.w, t: w.t };
       });
+      pts.sort((a, b) => a.x - b.x);
+
+      // Current Progress path
+      if (pts.length > 0) {
+        const last = pts[pts.length - 1];
+        const progPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        progPath.setAttribute("d", `M${last.x},${last.y} L${W - 20},${gy}`);
+        progPath.setAttribute("stroke", "var(--muted)"); progPath.setAttribute("stroke-width", "1.5");
+        progPath.setAttribute("stroke-dasharray", "3 4"); progPath.setAttribute("fill", "none");
+        svg.appendChild(progPath);
+      }
 
       if (pts.length > 1) {
         const pd = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
@@ -1659,35 +1660,38 @@
         svg.appendChild(path);
       }
 
-      pts.forEach(p => {
+      let lastTxtX = -999;
+      pts.forEach((p, i) => {
         const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         c.setAttribute("cx", p.x); c.setAttribute("cy", p.y); c.setAttribute("r", "5");
         c.setAttribute("fill", "#fff"); c.setAttribute("stroke", "var(--sky2)"); c.setAttribute("stroke-width", "2.5");
         svg.appendChild(c);
 
-        const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        txt.setAttribute("x", p.x); txt.setAttribute("y", p.y - 10); txt.setAttribute("fill", "var(--text)");
-        txt.setAttribute("font-size", "9"); txt.setAttribute("font-weight", "800"); txt.setAttribute("text-anchor", "middle");
-        txt.textContent = p.w; svg.appendChild(txt);
+        let shouldShow = (p.x - lastTxtX > 32) || (i === pts.length - 1);
+        if (i === pts.length - 1) shouldShow = true;
+
+        if (shouldShow) {
+          lastTxtX = p.x;
+          const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          txt.setAttribute("x", p.x); txt.setAttribute("y", p.y - 12); txt.setAttribute("fill", "var(--text)");
+          txt.setAttribute("font-size", "10"); txt.setAttribute("font-weight", "800"); txt.setAttribute("text-anchor", "middle");
+          txt.textContent = p.w; svg.appendChild(txt);
+        }
       });
 
-      // Current Progress / Days Remaining indicator
-      const last = pts[pts.length - 1];
-      const progPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      progPath.setAttribute("d", `M${last.x},${last.y} L${W - 15},${gy}`);
-      progPath.setAttribute("stroke", "var(--muted)"); progPath.setAttribute("stroke-width", "1.5");
-      progPath.setAttribute("stroke-dasharray", "3 4"); progPath.setAttribute("fill", "none");
-      svg.appendChild(progPath);
+      const dtToStr = (ms) => { const d = new Date(ms); return `${d.getMonth() + 1}/${d.getDate()}`; };
 
-      const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      xAxis.setAttribute("x", W - 15); xAxis.setAttribute("y", H - 6); xAxis.setAttribute("fill", "var(--muted)");
-      xAxis.setAttribute("font-size", "9"); xAxis.setAttribute("font-weight", "700"); xAxis.setAttribute("text-anchor", "end");
-      xAxis.textContent = `${S.goalMonths}개월 목표`; svg.appendChild(xAxis);
-
+      // X-Axis Left (Start)
       const xStart = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      xStart.setAttribute("x", 15); xStart.setAttribute("y", H - 6); xStart.setAttribute("fill", "var(--muted)");
-      xStart.setAttribute("font-size", "9"); xStart.setAttribute("font-weight", "700"); xStart.setAttribute("text-anchor", "start");
-      xStart.textContent = "시작"; svg.appendChild(xStart);
+      xStart.setAttribute("x", 20); xStart.setAttribute("y", H - 6); xStart.setAttribute("fill", "var(--muted)");
+      xStart.setAttribute("font-size", "10"); xStart.setAttribute("font-weight", "700"); xStart.setAttribute("text-anchor", "start");
+      xStart.textContent = `${dtToStr(S.startDate)} (시작 ${S.initWeight}kg)`; svg.appendChild(xStart);
+
+      // X-Axis Right (Goal)
+      const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      xAxis.setAttribute("x", W - 20); xAxis.setAttribute("y", H - 6); xAxis.setAttribute("fill", "var(--ok)");
+      xAxis.setAttribute("font-size", "10"); xAxis.setAttribute("font-weight", "800"); xAxis.setAttribute("text-anchor", "end");
+      xAxis.textContent = `${dtToStr(endMs)} (목표 ${S.goalWeight}kg)`; svg.appendChild(xAxis);
     }
 
     // ═══════════════════════ GOOGLE LOGIN ═══════════════════════
@@ -1713,7 +1717,8 @@
       else {
         S.name = document.getElementById('ob-name')?.value || '혜림';
         S.cycleLen = parseInt(document.getElementById('ob-cycle')?.value) || 28;
-        S.weights = [{ d: '오늘', w: S.initWeight }];
+        S.startDate = new Date().getTime();
+        S.weights = [{ d: '오늘', w: S.initWeight, t: S.startDate }];
         const ps = document.getElementById('ob-period-start')?.value;
         const pe = document.getElementById('ob-period-end')?.value;
         if (ps) {
@@ -1730,7 +1735,7 @@
 
     // ═══════════════════════ WEIGHT ═══════════════════════
     function openWtModal() { const el = document.getElementById('wt-input'); if (el) el.value = ''; openMod('mod-wt'); }
-    function saveWeight() { const v = parseFloat(document.getElementById('wt-input')?.value); if (!v || v < 20 || v > 300) { alert('올바른 체중을 입력해주세요'); return; } const now = new Date(); const d = `${now.getMonth() + 1}/${now.getDate()}`; S.weights.push({ d, w: v }); closeMod('mod-wt'); updateHome(); }
+    function saveWeight() { const v = parseFloat(document.getElementById('wt-input')?.value); if (!v || v < 20 || v > 300) { alert('올바른 체중을 입력해주세요'); return; } const now = new Date(); const d = `${now.getMonth() + 1}/${now.getDate()}`; S.weights.push({ d, w: v, t: now.getTime() }); closeMod('mod-wt'); updateHome(); }
 
     // ═══════════════════════ HORMONE SCREENS ═══════════════════════
     const HCFG = {
