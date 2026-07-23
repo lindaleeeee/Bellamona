@@ -28,20 +28,29 @@ pool.on('error', (err) => {
     console.error('[PG POOL ERROR]', err.message);
 });
 
-// ── 3) 로그인 시작 (초고속 데모 패스 - 구글 연동 생략 및 즉시 DB 로그인)
-router.get('/google', async (req, res) => {
+// ── 3) 팝업 콜백 검증 방식 (제로 리다이렉트 완전한 보안 OAuth)
+router.post('/google/verify', async (req, res) => {
+    const { access_token } = req.body;
+    if (!access_token) return res.status(400).json({ error: 'no_token' });
+
     let client;
     try {
-        console.log('[AUTH] Bypassing Google OAuth and logging in instantly...');
+        console.log('[AUTH] Verifying Google access token securely...');
+
+        // 구글 서버에 직접 통신하여 토큰의 무결성 검증 및 유저 정보 요청
+        const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { Authorization: `Bearer ${access_token}` }
+        });
+        const data = await response.json();
+
+        // 구글이 거부하면 해킹 시도이므로 거절
+        if (!data.id) {
+            return res.status(401).json({ error: 'invalid_google_token' });
+        }
+
+        const { id: google_id, email, name, picture: avatar } = data;
 
         client = await pool.connect();
-
-        // 언제나 성공하는 가상의 '테스트유저' 데이터 생성
-        const google_id = 'demo_user_123';
-        const email = 'demo@bellamona.net';
-        const name = '혜딤 (Demo)';
-        const avatar = '';
-
         const result = await client.query(
             `INSERT INTO users (google_id, email, name, avatar)
              VALUES ($1, $2, $3, $4)
@@ -54,28 +63,26 @@ router.get('/google', async (req, res) => {
         );
         const user = result.rows[0];
 
-        // JWT 서명 (환경변수가 비어있어도 안 터지게 방어코드 삽입)
-        const secret = process.env.JWT_SECRET || 'bellamona_secret_demo';
+        // 혜딤님의 JWT Secret으로 자체 로그인 쿠키 굽기
+        const secret = process.env.JWT_SECRET || 'bellamona_secret_fallback';
         const token = jwt.sign(
             { userId: user.id, email: user.email },
             secret,
             { expiresIn: '7d' }
         );
 
-        // 보안 토큰 쿠키로 굽기
         res.cookie('token', token, {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
-        // 찰나의 순간에 프론트엔드로 즉시 돌려보냄! (URL 이동 없앰)
-        res.json({ success: true, user });
+        res.json({ success: true, user: { name: user.name, email: user.email } });
 
     } catch (err) {
-        console.error('[AUTH ERROR]', err);
-        res.status(500).json({ error: 'auth_failed' });
+        console.error('[AUTH VERIFY ERROR]', err);
+        res.status(500).json({ error: 'auth_verify_failed' });
     } finally {
         if (client) client.release();
     }

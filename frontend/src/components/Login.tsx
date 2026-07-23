@@ -1,24 +1,33 @@
 import { useAppContext } from '../store';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
     const { updateState, api } = useAppContext();
 
-    const handleLogin = async () => {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-        try {
-            const res = await fetch(`${apiUrl}/api/auth/google`, { credentials: 'include' });
-            const data = await res.json();
-            if (data.success) {
-                await api.loadProfile();
-                updateState({ loggedIn: true, currentScreen: 'onboard' });
-            } else {
-                alert('로그인에 실패했습니다.');
+    const login = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            try {
+                const res = await fetch(`${apiUrl}/api/auth/google/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ access_token: tokenResponse.access_token }),
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    await api.loadProfile();
+                    updateState({ loggedIn: true, currentScreen: 'onboard' });
+                } else {
+                    alert('로그인에 실패했습니다 (유효하지 않은 구글 정보).');
+                }
+            } catch (err) {
+                console.error('Auth error', err);
+                alert('서버 연결 문제로 로그인할 수 없습니다.');
             }
-        } catch (err) {
-            console.error('Auth error', err);
-            alert('서버 연결 문제로 로그인할 수 없습니다.');
-        }
-    };
+        },
+        onError: () => alert('구글 로그인 창이 닫혔거나 에러가 발생했습니다.')
+    });
 
     return (
         <div className="w-full flex flex-col items-center pt-[120px]">
@@ -33,7 +42,7 @@ const Login = () => {
             </div>
 
             <button
-                onClick={handleLogin}
+                onClick={() => login()}
                 className="flex items-center justify-center gap-3 w-[280px] h-[48px] bg-white border border-[#eae8e3] rounded-[14px] text-[15px] font-[700] text-[#1d1b1c] hover:bg-gray-50 transition-colors shadow-sm"
             >
                 <svg width="20" height="20" viewBox="0 0 24 24">
