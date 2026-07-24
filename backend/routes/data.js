@@ -35,6 +35,50 @@ const authenticateToken = (req, res, next) => {
 
 router.use(authenticateToken);
 
+// 연속 기록일수 (GET /api/data/streak) - Slow Aging Lv./연속기록 표시용
+router.get('/streak', async (req, res) => {
+    const { userId } = req.user;
+    console.log('[DATA] GET /streak for userId:', userId);
+    try {
+        const recentRes = await pool.query(
+            'SELECT check_date FROM routine_checks WHERE user_id = $1 ORDER BY check_date DESC LIMIT 90',
+            [userId]
+        );
+        const totalRes = await pool.query(
+            'SELECT COUNT(*)::int AS count FROM routine_checks WHERE user_id = $1',
+            [userId]
+        );
+
+        const loggedDates = new Set(recentRes.rows.map(r => r.check_date.toISOString().split('T')[0]));
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        let streakDays = 0;
+        let gapDays = 0;
+
+        if (recentRes.rows.length > 0) {
+            const cursor = new Date(todayStr + 'T00:00:00.000Z');
+            // 오늘 기록을 아직 안 했어도 어제까지 연속이면 스트릭 유지, 오늘 자정 지나면 끊긴 걸로 판단
+            if (!loggedDates.has(todayStr)) cursor.setUTCDate(cursor.getUTCDate() - 1);
+            while (loggedDates.has(cursor.toISOString().split('T')[0])) {
+                streakDays++;
+                cursor.setUTCDate(cursor.getUTCDate() - 1);
+            }
+
+            const lastDateStr = recentRes.rows[0].check_date.toISOString().split('T')[0];
+            const diffMs = new Date(todayStr + 'T00:00:00.000Z') - new Date(lastDateStr + 'T00:00:00.000Z');
+            gapDays = Math.max(Math.round(diffMs / 86400000), 0);
+        }
+
+        const totalLoggedDays = totalRes.rows[0].count;
+        console.log('[DATA] GET /streak result for userId:', userId, { streakDays, gapDays, totalLoggedDays });
+
+        res.json({ streakDays, gapDays, totalLoggedDays });
+    } catch (err) {
+        console.error('[DATA] GET /streak failed for userId:', userId, err);
+        res.status(500).json({ error: 'Failed to compute streak' });
+    }
+});
+
 // 데이터 로드 (GET /api/data)
 router.get('/', async (req, res) => {
     const { userId } = req.user;
@@ -46,7 +90,7 @@ router.get('/', async (req, res) => {
 
         // 프로필 병합
         const profileRes = await client.query('SELECT * FROM profiles WHERE user_id = $1', [userId]);
-        const userRes = await client.query('SELECT name, avatar FROM users WHERE id = $1', [userId]);
+        const userRes = await client.query('SELECT name, avatar, friend_code FROM users WHERE id = $1', [userId]);
 
         // 오늘의 식사
         const mealsRes = await client.query('SELECT * FROM meals WHERE user_id = $1 AND eaten_date = $2', [userId, today]);

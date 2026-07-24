@@ -34,6 +34,10 @@ const initDB = async () => {
     await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;');
     console.log('[DB] users.deleted_at 컬럼 확인 완료');
 
+    // 친구 연동용 초대 코드 (예: BELLA-A1B2)
+    await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS friend_code VARCHAR(16) UNIQUE;');
+    console.log('[DB] users.friend_code 컬럼 확인 완료');
+
     // 2. profiles
     await client.query(`
       CREATE TABLE IF NOT EXISTS profiles (

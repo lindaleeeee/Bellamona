@@ -35,6 +35,16 @@ const maskToken = (token) => {
     return `${token.slice(0, 6)}...${token.slice(-4)} (len=${token.length})`;
 };
 
+// 친구 코드 생성: 혼동하기 쉬운 문자(0/O, 1/I) 제외
+const FRIEND_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const generateFriendCode = () => {
+    let code = '';
+    for (let i = 0; i < 4; i++) {
+        code += FRIEND_CODE_CHARS[Math.floor(Math.random() * FRIEND_CODE_CHARS.length)];
+    }
+    return `BELLA-${code}`;
+};
+
 router.post('/google/verify', async (req, res) => {
     const { access_token } = req.body;
     console.log('[AUTH] POST /google/verify called. access_token:', maskToken(access_token));
@@ -66,17 +76,35 @@ router.post('/google/verify', async (req, res) => {
 
         client = await pool.connect();
         console.log('[AUTH] DB client acquired, upserting user...');
-        const result = await client.query(
-            `INSERT INTO users (google_id, email, name, avatar)
-             VALUES ($1, $2, $3, $4)
-             ON CONFLICT (google_id)
-             DO UPDATE SET email = EXCLUDED.email,
-                           name  = EXCLUDED.name,
-                           avatar = EXCLUDED.avatar,
-                           deleted_at = NULL
-             RETURNING *`,
-            [google_id, email, name, avatar]
-        );
+
+        // 신규 유저에게만 부여될 친구 코드. friend_code에 UNIQUE 제약이 있어
+        // 충돌 시(극히 드묾) 재시도한다. 기존 유저는 ON CONFLICT에서 friend_code를
+        // 건드리지 않으므로 이 값은 무시된다.
+        let result;
+        for (let attempt = 0; attempt < 5; attempt++) {
+            const candidateCode = generateFriendCode();
+            try {
+                result = await client.query(
+                    `INSERT INTO users (google_id, email, name, avatar, friend_code)
+                     VALUES ($1, $2, $3, $4, $5)
+                     ON CONFLICT (google_id)
+                     DO UPDATE SET email = EXCLUDED.email,
+                                   name  = EXCLUDED.name,
+                                   avatar = COALESCE(users.avatar, EXCLUDED.avatar),
+                                   friend_code = COALESCE(users.friend_code, EXCLUDED.friend_code),
+                                   deleted_at = NULL
+                     RETURNING *`,
+                    [google_id, email, name, avatar, candidateCode]
+                );
+                break;
+            } catch (insertErr) {
+                if (insertErr.code === '23505' && insertErr.constraint && insertErr.constraint.includes('friend_code')) {
+                    console.warn('[AUTH] friend_code 충돌, 재시도:', candidateCode);
+                    continue;
+                }
+                throw insertErr;
+            }
+        }
         const user = result.rows[0];
         const isNewUser = new Date(user.created_at).getTime() > Date.now() - 5000;
         console.log('[AUTH] User upserted in DB:', { id: user.id, email: user.email, isNewUser });

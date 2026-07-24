@@ -7,7 +7,28 @@ const pool = new Pool({
     max: 5
 });
 
-// GET /api/user/profile 
+// PATCH /api/user/avatar
+// 이모지 아이콘 저장
+router.patch('/avatar', async (req, res) => {
+    try {
+        const { userId } = req.user;
+        const { avatar } = req.body;
+        console.log('[USER] PATCH /avatar for userId:', userId, 'avatar:', avatar);
+
+        if (!avatar || typeof avatar !== 'string' || avatar.length > 8) {
+            return res.status(400).json({ error: 'Invalid avatar' });
+        }
+
+        await pool.query('UPDATE users SET avatar = $1 WHERE id = $2', [avatar, userId]);
+        console.log('[USER] PATCH /avatar success for userId:', userId);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[PATCH /api/user/avatar error]', error);
+        res.status(500).json({ error: 'Failed to update avatar' });
+    }
+});
+
+// GET /api/user/profile
 // Returns basic user info along with profile settings
 router.get('/profile', async (req, res) => {
     let client;
@@ -95,16 +116,16 @@ router.delete('/withdraw', async (req, res) => {
             console.warn('[USER] DELETE /withdraw - user not found:', userId);
             return res.status(404).json({ error: 'User not found' });
         }
-        const { google_id, email, name, avatar } = existing.rows[0];
+        const { google_id, email, name, avatar, friend_code } = existing.rows[0];
 
         // users 행을 지우면 FK CASCADE로 profiles/meals/workouts/routine_checks/
         // weights/periods/diaries/reports/training_pairs가 전부 함께 삭제된다.
         // 계정 자체의 흔적(탈퇴 시각)은 남겨야 하므로 같은 id/google_id로 즉시 재생성한다.
         await client.query('DELETE FROM users WHERE id = $1', [userId]);
         await client.query(
-            `INSERT INTO users (id, google_id, email, name, avatar, deleted_at)
-             VALUES ($1, $2, $3, $4, $5, NOW())`,
-            [userId, google_id, email, name, avatar]
+            `INSERT INTO users (id, google_id, email, name, avatar, friend_code, deleted_at)
+             VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+            [userId, google_id, email, name, avatar, friend_code]
         );
 
         await client.query('COMMIT');

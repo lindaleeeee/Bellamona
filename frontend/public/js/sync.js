@@ -115,6 +115,12 @@ async function restoreFromServer() {
     const d = await res.json();
 
     if (d.user && d.user.name) S.name = d.user.name;
+    // avatar는 구글 프로필 사진 URL이 기본값으로 들어있을 수 있어(길다),
+    // 사용자가 아이콘 선택 모달에서 고른 짧은 이모지일 때만 적용한다.
+    if (d.user && d.user.avatar && d.user.avatar.length <= 8) {
+      S.avatar = d.user.avatar;
+    }
+    if (d.user && d.user.friend_code) S.friendCode = d.user.friend_code;
 
     if (d.profile) {
       if (d.profile.weight_kg != null) S.initWeight = Number(d.profile.weight_kg);
@@ -160,6 +166,18 @@ async function restoreFromServer() {
       };
     }
 
+    try {
+      const streakRes = await fetchApi(apiUrl('/api/data/streak'), { credentials: 'include' });
+      if (streakRes.ok) {
+        const s = await streakRes.json();
+        S.streakDays = s.streakDays || 0;
+        S.gapDays = s.gapDays || 0;
+        S.totalLoggedDays = s.totalLoggedDays || 0;
+      }
+    } catch (e) {
+      console.error('[restoreFromServer streak]', e);
+    }
+
     S.loggedIn = true;
     saveState();
 
@@ -203,7 +221,17 @@ function saveChecksRow() {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ check_date: todayISO(), checks: S.checks })
-  }).catch(e => console.error('[saveChecksRow]', e));
+  })
+    .then(r => r.ok ? fetchApi(apiUrl('/api/data/streak'), { credentials: 'include' }) : null)
+    .then(r => r && r.ok ? r.json() : null)
+    .then(s => {
+      if (!s) return;
+      S.streakDays = s.streakDays || 0;
+      S.gapDays = s.gapDays || 0;
+      S.totalLoggedDays = s.totalLoggedDays || 0;
+      if (typeof updateProfileHeader === 'function') updateProfileHeader();
+    })
+    .catch(e => console.error('[saveChecksRow]', e));
 }
 
 function saveDiaryRow(entry) {
@@ -249,6 +277,15 @@ function saveMealRow(meal) {
     .then(r => r.ok ? r.json() : null)
     .then(data => { if (data && data.meal) meal.serverId = data.meal.id; })
     .catch(e => console.error('[saveMealRow]', e));
+}
+
+function saveAvatarRow(avatar) {
+  if (!avatar) return;
+  fetchApi(apiUrl('/api/user/avatar'), {
+    method: 'PATCH', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatar })
+  }).catch(e => console.error('[saveAvatarRow]', e));
 }
 
 function deleteMealRow(meal) {
