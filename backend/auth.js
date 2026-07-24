@@ -78,7 +78,7 @@ router.post('/google/verify', async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
-        res.json({ success: true, user: { name: user.name, email: user.email } });
+        res.json({ success: true, token: token, user: { name: user.name, email: user.email } });
 
     } catch (err) {
         // 👇 에러 원인을 백엔드 로그에 정확히 찍어줍니다.

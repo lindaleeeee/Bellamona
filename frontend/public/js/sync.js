@@ -4,6 +4,14 @@
 
 function apiUrl(path) { return API_BASE.replace(/\/+$/, '') + path; }
 
+function fetchApi(url, options = {}) {
+  const token = localStorage.getItem('bellamona_token');
+  if (token) {
+    options.headers = options.headers || {};
+    options.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return fetch(url, options);
+}
 function fmtDateShort(isoDateStr) {
   if (!isoDateStr) return '';
   const d = new Date(isoDateStr);
@@ -55,6 +63,8 @@ async function verifyWithBackend(access_token) {
       body: JSON.stringify({ access_token })
     });
     if (!res.ok) return false;
+    const data = await res.json();
+    if (data.token) localStorage.setItem('bellamona_token', data.token);
     return true;
   } catch (e) {
     console.error('[verifyWithBackend]', e);
@@ -65,7 +75,7 @@ async function verifyWithBackend(access_token) {
 // ── 로그인 후 / 새로고침 시 저장된 정보 복원 ──────────────────────
 async function restoreFromServer() {
   try {
-    const res = await fetch(apiUrl('/api/data'), { credentials: 'include' });
+    const res = await fetchApi(apiUrl('/api/data'), { credentials: 'include' });
     if (!res.ok) return false; // 로그인 안 된 상태 - 로그인 화면 유지
 
     const d = await res.json();
@@ -131,7 +141,7 @@ async function restoreFromServer() {
 
 // ── 개별 저장 훅 (기존 코드의 savePeriodRow 패턴과 동일) ──────────────
 function saveProfileRow() {
-  fetch(apiUrl('/api/data/profiles'), {
+  fetchApi(apiUrl('/api/data/profiles'), {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -147,7 +157,7 @@ function saveProfileRow() {
 
 function saveWeightRow(entry) {
   if (!entry) return;
-  fetch(apiUrl('/api/data/weights'), {
+  fetchApi(apiUrl('/api/data/weights'), {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ logged_date: todayISO(), weight_kg: entry.w })
@@ -155,7 +165,7 @@ function saveWeightRow(entry) {
 }
 
 function saveChecksRow() {
-  fetch(apiUrl('/api/data/checks'), {
+  fetchApi(apiUrl('/api/data/checks'), {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ check_date: todayISO(), checks: S.checks })
@@ -164,7 +174,7 @@ function saveChecksRow() {
 
 function saveDiaryRow(entry) {
   if (!entry) return;
-  fetch(apiUrl('/api/data/diaries'), {
+  fetchApi(apiUrl('/api/data/diaries'), {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ written_date: todayISO(), content: entry.t })
@@ -172,7 +182,7 @@ function saveDiaryRow(entry) {
 }
 
 function saveWorkoutRow() {
-  fetch(apiUrl('/api/data/workouts'), {
+  fetchApi(apiUrl('/api/data/workouts'), {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ performed_date: todayISO(), ...S.exBurned })
@@ -182,7 +192,7 @@ function saveWorkoutRow() {
 function savePeriodRow() {
   const p = S.periods[S.periods.length - 1];
   if (!p) return;
-  fetch(apiUrl('/api/data/periods'), {
+  fetchApi(apiUrl('/api/data/periods'), {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ start_date: p.start, duration_days: p.days })
@@ -191,7 +201,7 @@ function savePeriodRow() {
 
 function saveMealRow(meal) {
   if (!meal) return;
-  fetch(apiUrl('/api/data/meals'), {
+  fetchApi(apiUrl('/api/data/meals'), {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -209,7 +219,7 @@ function saveMealRow(meal) {
 
 function deleteMealRow(meal) {
   if (!meal || !meal.serverId) return;
-  fetch(apiUrl('/api/data/meals/' + meal.serverId), {
+  fetchApi(apiUrl('/api/data/meals/' + meal.serverId), {
     method: 'DELETE', credentials: 'include'
   }).catch(e => console.error('[deleteMealRow]', e));
 }
