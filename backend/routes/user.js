@@ -87,27 +87,38 @@ router.delete('/withdraw', async (req, res) => {
         console.log('[USER] DELETE /withdraw for userId:', userId);
         client = await pool.connect();
 
-        const result = await client.query(
-            'UPDATE users SET deleted_at = NOW() WHERE id = $1 RETURNING email, name',
-            [userId]
-        );
+        await client.query('BEGIN');
 
-        if (result.rows.length === 0) {
+        const existing = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+        if (existing.rows.length === 0) {
+            await client.query('ROLLBACK');
             console.warn('[USER] DELETE /withdraw - user not found:', userId);
             return res.status(404).json({ error: 'User not found' });
         }
+        const { google_id, email, name, avatar } = existing.rows[0];
 
-        const { email, name } = result.rows[0];
+        // users 행을 지우면 FK CASCADE로 profiles/meals/workouts/routine_checks/
+        // weights/periods/diaries/reports/training_pairs가 전부 함께 삭제된다.
+        // 계정 자체의 흔적(탈퇴 시각)은 남겨야 하므로 같은 id/google_id로 즉시 재생성한다.
+        await client.query('DELETE FROM users WHERE id = $1', [userId]);
+        await client.query(
+            `INSERT INTO users (id, google_id, email, name, avatar, deleted_at)
+             VALUES ($1, $2, $3, $4, $5, NOW())`,
+            [userId, google_id, email, name, avatar]
+        );
+
+        await client.query('COMMIT');
 
         res.clearCookie('token', { httpOnly: true, secure: true, sameSite: 'none' });
 
-        console.log('[USER] 회원 탈퇴 처리 완료');
+        console.log('[USER] 회원 탈퇴 처리 완료 (개인 데이터 전체 삭제)');
         console.log(`- 이메일: ${email}`);
         console.log(`- 이름: ${name}`);
         console.log(`- DB 사용자 ID: ${userId}`);
 
         res.json({ success: true });
     } catch (error) {
+        if (client) await client.query('ROLLBACK').catch(() => {});
         console.error('[DELETE /api/user/withdraw error]', error);
         res.status(500).json({ error: 'Failed to withdraw account' });
     } finally {
