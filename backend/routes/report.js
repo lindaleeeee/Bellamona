@@ -2,26 +2,51 @@ const express = require('express');
 const router = express.Router();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const jwt = require('jsonwebtoken');
+const { Pool } = require('pg');
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
 
 // Auth middleware for report
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (token == null) return res.sendStatus(401);
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
         if (err) return res.sendStatus(403);
+
+        try {
+            const { rows } = await pool.query('SELECT deleted_at FROM users WHERE id = $1', [user.userId]);
+            if (rows.length === 0 || rows[0].deleted_at) {
+                console.warn('[REPORT] 탈퇴한 계정의 접근 차단:', user.email);
+                return res.status(403).json({ error: 'account_deleted' });
+            }
+        } catch (dbErr) {
+            console.error('[REPORT] deleted_at 확인 중 DB 오류:', dbErr);
+            return res.sendStatus(500);
+        }
+
         req.user = user;
         next();
     });
 };
 
 router.post('/', authenticateToken, async (req, res) => {
+    console.log('[REPORT] POST / called by userId:', req.user?.userId);
     try {
         const { data } = req.body;
-        if (!data) return res.status(400).json({ success: false, error: 'No data provided' });
+        if (!data) {
+            console.warn('[REPORT] Rejected: no data provided in request body');
+            return res.status(400).json({ success: false, error: 'No data provided' });
+        }
+        console.log('[REPORT] Input data keys:', Object.keys(data));
 
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) return res.status(500).json({ success: false, error: 'API Key not configured' });
+        if (!apiKey) {
+            console.error('[REPORT] GEMINI_API_KEY not configured');
+            return res.status(500).json({ success: false, error: 'API Key not configured' });
+        }
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -55,15 +80,18 @@ router.post('/', authenticateToken, async (req, res) => {
 }
 `;
 
+        console.log('[REPORT] Calling Gemini API, prompt length:', prompt.length);
         const result = await model.generateContent(prompt);
         let rawText = result.response.text();
+        console.log('[REPORT] Gemini raw response length:', rawText.length);
         // Remove markdown blocks if exists
         rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
 
         const reportJSON = JSON.parse(rawText);
+        console.log('[REPORT] Successfully parsed report JSON for userId:', req.user?.userId);
         res.json({ success: true, report: reportJSON });
     } catch (error) {
-        console.error('Gemini API Error:', error);
+        console.error('[REPORT] Gemini API Error for userId:', req.user?.userId, error);
         res.status(500).json({ success: false, error: 'Failed to generate report' });
     }
 });

@@ -26,11 +26,14 @@ const allowedOrigins = [
     process.env.FRONTEND_URL
 ].filter(Boolean);
 
+console.log('[BOOT] Allowed CORS origins:', allowedOrigins);
+
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
+            console.warn('[CORS] Blocked origin:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -39,6 +42,16 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// 요청 로깅 미들웨어
+app.use((req, res, next) => {
+    const start = Date.now();
+    console.log(`[REQ] ${req.method} ${req.originalUrl} from ${req.ip}`);
+    res.on('finish', () => {
+        console.log(`[RES] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - start}ms)`);
+    });
+    next();
+});
 
 // 라우트 설정
 app.use('/api/auth', authRoutes);
@@ -55,11 +68,14 @@ app.get('/api/health', (req, res) => {
 
 const { initDB } = require('./init-db');
 
+console.log('[BOOT] Starting Bellamona backend, initializing DB...');
+
 initDB()
     .then(() => {
-        app.listen(port, () => console.log(`Server is running on port ${port}`));
+        console.log('[BOOT] DB initialized successfully.');
+        app.listen(port, () => console.log(`[BOOT] Server is running on port ${port}`));
     })
     .catch((err) => {
-        console.error('DB init failed, server not started:', err);
+        console.error('[BOOT] DB init failed, server not started:', err);
         process.exit(1);
     });

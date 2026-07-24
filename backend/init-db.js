@@ -8,12 +8,15 @@ const pool = new Pool({
 });
 
 const initDB = async () => {
+  console.log('[DB] Connecting to database...');
   const client = await pool.connect();
+  console.log('[DB] Connected. Beginning schema init transaction...');
   try {
     await client.query('BEGIN');
 
     // UUID extension
     await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
+    console.log('[DB] uuid-ossp extension ensured');
 
     // 1. users
     await client.query(`
@@ -26,6 +29,10 @@ const initDB = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // 회원 탈퇴(소프트 삭제) 지원: NULL이면 활성 계정, 값이 있으면 탈퇴 처리된 계정
+    await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;');
+    console.log('[DB] users.deleted_at 컬럼 확인 완료');
 
     // 2. profiles
     await client.query(`
@@ -142,14 +149,16 @@ const initDB = async () => {
       );
     `);
 
+    console.log('[DB] All tables ensured (users, profiles, meals, workouts, routine_checks, weights, periods, diaries, reports, training_pairs)');
     await client.query('COMMIT');
-    console.log('Database schema created successfully.');
+    console.log('[DB] Database schema created successfully.');
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error creating database schema:', error);
+    console.error('[DB] Error creating database schema:', error);
   } finally {
     client.release();
     pool.end();
+    console.log('[DB] Client released, pool ended.');
   }
 };
 

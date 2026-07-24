@@ -72,6 +72,40 @@ async function verifyWithBackend(access_token) {
   }
 }
 
+// ── 로그아웃 / 회원 탈퇴 ──────────────────────────────────────
+function _clearLocalAuth() {
+  localStorage.removeItem('bellamona_token');
+  localStorage.removeItem('bellamona_data');
+}
+
+async function doLogout() {
+  try {
+    await fetchApi(apiUrl('/api/auth/logout'), { method: 'POST', credentials: 'include' });
+  } catch (e) {
+    console.error('[doLogout]', e);
+  } finally {
+    _clearLocalAuth();
+    location.reload();
+  }
+}
+
+async function doWithdraw() {
+  if (!confirm('정말 탈퇴하시겠습니까? 계정이 비활성화되며 다시 로그인하기 전까지 이용할 수 없습니다.')) return;
+  try {
+    const res = await fetchApi(apiUrl('/api/user/withdraw'), { method: 'DELETE', credentials: 'include' });
+    if (!res.ok) {
+      alert('탈퇴 처리에 실패했습니다. 다시 시도해주세요.');
+      return;
+    }
+  } catch (e) {
+    console.error('[doWithdraw]', e);
+    alert('탈퇴 처리에 실패했습니다. 다시 시도해주세요.');
+    return;
+  }
+  _clearLocalAuth();
+  location.reload();
+}
+
 // ── 로그인 후 / 새로고침 시 저장된 정보 복원 ──────────────────────
 async function restoreFromServer() {
   try {
