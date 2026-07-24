@@ -38,11 +38,11 @@ router.get('/', async (req, res) => {
         // 오늘의 식사
         const mealsRes = await client.query('SELECT * FROM meals WHERE user_id = $1 AND eaten_date = $2', [userId, today]);
 
-        // 운동 전체 (캘린더 연동 대비 옵션)
-        const workoutsRes = await client.query('SELECT * FROM workouts WHERE user_id = $1 ORDER BY performed_date DESC LIMIT 30', [userId]);
+        // 오늘의 운동
+        const workoutsRes = await client.query('SELECT * FROM workouts WHERE user_id = $1 AND performed_date = $2', [userId, today]);
 
-        // 루틴 체크 전체
-        const checksRes = await client.query('SELECT * FROM routine_checks WHERE user_id = $1 ORDER BY check_date ASC', [userId]);
+        // 오늘의 루틴 체크
+        const checksRes = await client.query('SELECT * FROM routine_checks WHERE user_id = $1 AND check_date = $2', [userId, today]);
 
         // 몸무게 전체
         const weightsRes = await client.query('SELECT * FROM weights WHERE user_id = $1 ORDER BY logged_date ASC', [userId]);
@@ -93,16 +93,36 @@ router.post('/profiles', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 식사 저장
+// 식사 저장 (같은 날짜+끼니 라벨이면 UPSERT)
 router.post('/meals', async (req, res) => {
     const { userId } = req.user;
     const { eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h } = req.body;
     try {
         const today = eaten_date || new Date().toISOString().split('T')[0];
-        await pool.query(`
-      INSERT INTO meals (user_id, eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    `, [userId, today, label, time, JSON.stringify(foods), bg_pre, bg_1h, bg_2h]);
+        const exist = await pool.query('SELECT id FROM meals WHERE user_id=$1 AND eaten_date=$2 AND label=$3', [userId, today, label]);
+        let row;
+        if (exist.rows.length > 0) {
+            const r = await pool.query(
+                `UPDATE meals SET time=$1, foods=$2, bg_pre=$3, bg_1h=$4, bg_2h=$5 WHERE id=$6 RETURNING *`,
+                [time, JSON.stringify(foods), bg_pre, bg_1h, bg_2h, exist.rows[0].id]);
+            row = r.rows[0];
+        } else {
+            const r = await pool.query(
+                `INSERT INTO meals (user_id, eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+                [userId, today, label, time, JSON.stringify(foods), bg_pre, bg_1h, bg_2h]);
+            row = r.rows[0];
+        }
+        res.json({ success: true, meal: row });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 식사 슬롯 삭제
+router.delete('/meals/:id', async (req, res) => {
+    const { userId } = req.user;
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM meals WHERE id = $1 AND user_id = $2', [id, userId]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
