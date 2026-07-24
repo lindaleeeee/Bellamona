@@ -81,7 +81,8 @@ router.post('/google/verify', async (req, res) => {
         res.json({ success: true, user: { name: user.name, email: user.email } });
 
     } catch (err) {
-        console.error('[AUTH VERIFY ERROR]', err);
+        // 👇 에러 원인을 백엔드 로그에 정확히 찍어줍니다.
+        console.error('[AUTH ERROR] 구글 토큰 검증 실패:', err);
         res.status(500).json({ error: 'auth_verify_failed' });
     } finally {
         if (client) client.release();
