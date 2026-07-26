@@ -32,77 +32,109 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+// meals 배열의 ai_estimate(있으면)를 근거로 하루 총 매크로를 결정론적으로 합산한다.
+// AI 응답에 맡기지 않는 이유: 같은 입력에 항상 같은 숫자가 나와야 하고, Gemini 호출이 실패해도
+// 이 섹션만은 항상 정확하게 보여야 하기 때문이다(사용자 요청: "데이터가 적어도 정해진 규칙대로 보여야").
+function computeMacroBreakdown(meals) {
+    const totals = (meals || []).reduce((acc, m) => {
+        const est = m.ai_estimate;
+        if (est) {
+            acc.carb_g += est.carb_g || 0;
+            acc.protein_g += est.protein_g || 0;
+            acc.fat_g += est.fat_g || 0;
+            acc.kcal_total += est.kcal_est || 0;
+        }
+        return acc;
+    }, { carb_g: 0, protein_g: 0, fat_g: 0, kcal_total: 0 });
+    return {
+        carb_g: Math.round(totals.carb_g), protein_g: Math.round(totals.protein_g),
+        fat_g: Math.round(totals.fat_g), kcal_total: Math.round(totals.kcal_total),
+    };
+}
+
+// Gemini 호출이 실패하거나(키 누락/네트워크 오류) JSON 파싱에 실패해도 리포트 자체는 항상 정해진
+// 형식으로 보여야 한다는 요구사항에 따른 기본값. degraded:true로 프론트에 "AI 응답 실패, 기본 안내"임을 알린다.
+function fallbackReport(data) {
+    const overall = typeof data.overallRoutinePct === 'number' ? data.overallRoutinePct : 50;
+    return {
+        headline: '오늘도 기록해주셔서 감사해요 — 계속 쌓이면 더 정확한 리포트를 볼 수 있어요',
+        scores: { overall, biological_age_delta: 0 },
+        tomorrow_workout: '아직 추천을 만들 만큼 운동 기록이 충분하지 않아요. 오늘처럼 계속 기록해보세요.',
+        sleep_suggestion: '최근 수면 기록이 쌓이면 적정 수면시간을 제안해드릴게요.',
+        emotion_keywords: [],
+        diary_word_health: data.diaryThatDay ? '일기를 분석하는 데 문제가 있었어요. 잠시 후 다시 시도해주세요.' : '일기를 쓰면 감정 단어 기반 분석을 볼 수 있어요.',
+        insights: ['기록이 쌓일수록 더 구체적인 인사이트를 볼 수 있어요.'],
+        actions: ['오늘도 루틴 체크를 이어가 보세요.'],
+        pcos_insight: null,
+        degraded: true,
+    };
+}
+
 router.post('/', authenticateToken, async (req, res) => {
     console.log('[REPORT] POST / called by userId:', req.user?.userId);
-    try {
-        const { data } = req.body;
-        if (!data) {
-            console.warn('[REPORT] Rejected: no data provided in request body');
-            return res.status(400).json({ success: false, error: 'No data provided' });
-        }
-        console.log('[REPORT] Input data keys:', Object.keys(data));
+    const { data } = req.body;
+    if (!data) {
+        console.warn('[REPORT] Rejected: no data provided in request body');
+        return res.status(400).json({ success: false, error: 'No data provided' });
+    }
+    console.log('[REPORT] Input data keys:', Object.keys(data));
+    const macro_breakdown = computeMacroBreakdown(data.meals);
 
+    try {
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            console.error('[REPORT] GEMINI_API_KEY not configured');
-            return res.status(500).json({ success: false, error: 'API Key not configured' });
-        }
+        if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        // gemini-1.5-flash는 Google이 이후 세대 모델 출시와 함께 단종시켰다 — 실패 원인이 그거였을
+        // 가능성이 높아 현재 지원되는 모델로 교체.
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         const prompt = `
 이 사용자의 건강 데이터를 분석하여 저속노화 및 호르몬 관리를 위한 통찰과 추천을 제공해 주세요.
-반드시 JSON 형식으로만 응답해야 합니다. 의학적 진단은 금지합니다.
+반드시 JSON 형식으로만 응답해야 합니다. 의학적 진단은 금지합니다. 데이터가 부족한 항목은 "기록이 더
+쌓이면 알려드릴게요" 같은 정직한 문구로 채우고, 절대 필드를 비우거나 JSON을 깨뜨리지 마세요.
 
-이 리포트는 5개 섹션으로 구성됩니다: ① 목표 체중 예측(프론트에서 계산하므로 응답 불필요)
-② 인슐린(식단 매크로+혈당) ③ 성장호르몬(내일 운동 추천) ④ 코르티솔(수면) ⑤ 호르몬/일기.
+이 리포트는 5개 섹션으로 구성됩니다: ① 목표 체중 예측(프론트에서 계산) ② 인슐린(식단+혈당, 매크로는
+서버에서 이미 계산함) ③ 성장호르몬(내일 운동 추천) ④ 코르티솔(수면) ⑤ 호르몬/일기.
 
 데이터: ${JSON.stringify(data)}
 
 응답 JSON 형식:
 {
   "headline": "오늘의 한줄 평 (짧고 강력하게)",
-  "scores": {
-    "overall": 80, // 종합 점수 (0-100)
-    "biological_age_delta": -1.2 // 생물학적 나이 변화량 시뮬레이션
-  },
-  "macro_breakdown": {
-    "carb_g": 120, "protein_g": 80, "fat_g": 50, "kcal_total": 1400
-    // meals 배열의 description/ai_estimate를 근거로 하루 총 매크로를 추정 (인슐린 섹션 도넛차트용)
-  },
-  "tomorrow_workout": "오늘 부위/강도 기록을 근거로 내일 추천하는 운동 부위·강도 한두 문장 (예: 오늘 팔+유산소를 했으니 내일은 하체 위주로)",
-  "sleep_suggestion": "최근 수면 패턴을 근거로 내일 목표 수면시간과 이유 한두 문장",
-  "emotion_keywords": [
-    { "word": "뿌듯", "count": 2, "type": "positive" },
-    { "word": "피곤", "count": 1, "type": "negative" }
-  ],
-  "diary_word_health": "일기 속 단어가 건강과 어떤 관련이 있는지 설명 (예: '피곤'이 반복되면 코르티솔 상승/수면 부족과 관련)",
-  "insights": [
-    "통찰력 있는 분석 문장 1",
-    "통찰력 있는 분석 문장 2"
-  ],
-  "actions": [
-    "구체적인 추천 행동 1",
-    "구체적인 추천 행동 2"
-  ],
-  "pcos_insight": "PCOS 맞춤형 통찰 (선택사항, 생리주기 데이터를 기반으로)"
+  "scores": { "overall": 80, "biological_age_delta": -1.2 },
+  "tomorrow_workout": "오늘 강도/부위 기록을 근거로 내일 추천 운동 (기록이 없으면 일반적인 저속노화 운동 팁)",
+  "sleep_suggestion": "최근 수면 패턴을 근거로 내일 목표 수면시간과 이유",
+  "emotion_keywords": [ { "word": "뿌듯", "count": 2, "type": "positive" } ],
+  "diary_word_health": "일기 속 단어가 건강과 어떤 관련이 있는지 설명 (일기 없으면 그렇다고 안내)",
+  "insights": ["통찰력 있는 분석 문장 1", "통찰력 있는 분석 문장 2"],
+  "actions": ["구체적인 추천 행동 1", "구체적인 추천 행동 2"],
+  "pcos_insight": "PCOS 맞춤형 통찰 (선택, 생리주기 데이터 기반)"
 }
 `;
 
         console.log('[REPORT] Calling Gemini API, prompt length:', prompt.length);
         const result = await model.generateContent(prompt);
         let rawText = result.response.text();
-        console.log('[REPORT] Gemini raw response length:', rawText.length);
-        // Remove markdown blocks if exists
         rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
 
-        const reportJSON = JSON.parse(rawText);
+        let reportJSON;
+        try {
+            reportJSON = JSON.parse(rawText);
+        } catch (parseErr) {
+            // Gemini가 JSON 앞뒤로 잡담을 붙이는 경우가 있어, 첫 {...} 블록만 추출해 한 번 더 시도
+            const match = rawText.match(/\{[\s\S]*\}/);
+            if (!match) throw parseErr;
+            reportJSON = JSON.parse(match[0]);
+        }
+        reportJSON.macro_breakdown = macro_breakdown; // 항상 서버 계산값으로 덮어써서 정확성 보장
         console.log('[REPORT] Successfully parsed report JSON for userId:', req.user?.userId);
         res.json({ success: true, report: reportJSON });
     } catch (error) {
-        console.error('[REPORT] Gemini API Error for userId:', req.user?.userId, error);
-        res.status(500).json({ success: false, error: 'Failed to generate report' });
+        console.error('[REPORT] Gemini API failed, returning fallback report for userId:', req.user?.userId, error.message);
+        const report = fallbackReport(data);
+        report.macro_breakdown = macro_breakdown;
+        res.json({ success: true, report });
     }
 });
 

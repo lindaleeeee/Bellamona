@@ -49,7 +49,7 @@ router.post('/predict', authenticateToken, async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' }); // gemini-1.5-flash 단종 대응
 
         const prompt = `
 당신은 PCOS(다낭성난소증후군) 여성을 위한 혈당 관리 앱의 예측 보조 도구입니다.

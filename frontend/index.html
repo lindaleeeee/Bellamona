@@ -209,12 +209,6 @@
       color: var(--text)
     }
 
-    .wk-int-btn.selected {
-      border-color: var(--gro);
-      background: var(--gro-bg);
-      color: var(--gro)
-    }
-
     .btn-sm {
       width: auto;
       padding: 7px 14px;
@@ -1102,11 +1096,7 @@
                 onclick="rfil(this,'time',10)">10분</span><span class="chip" onclick="rfil(this,'time',15)">15분 이상</span>
             </div>
             <div class="cap" style="margin-bottom:5px;margin-top:10px">카테고리</div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap">
-              <span class="chip" onclick="rfil(this,'type','간식')">간식</span><span class="chip"
-                onclick="rfil(this,'type','한식')">한식</span><span class="chip"
-                onclick="rfil(this,'type','일식')">일식</span><span class="chip" onclick="rfil(this,'type','양식')">양식</span>
-            </div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap" id="rcp-category-chips"></div>
             <div class="cap" style="margin-bottom:5px;margin-top:10px">비용</div>
             <div style="display:flex;gap:5px;flex-wrap:wrap">
               <span class="chip" onclick="rfil(this,'cost',2000)">~2천원</span><span class="chip"
@@ -1307,40 +1297,25 @@
       </div>
     </div>
 
-    <div class="mov" id="mod-workout-timing">
-      <div class="msh">
-        <div class="mh"></div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">🍽 식후 운동 타이밍</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:500">식사 후 몇 분 뒤에 운동을 시작했나요?</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn btn-o" onclick="saveWorkoutTiming(0)">식후 직후</button>
-          <button class="btn btn-o" onclick="saveWorkoutTiming(30)">30분 뒤</button>
-          <button class="btn btn-o" onclick="saveWorkoutTiming(60)">1시간 뒤</button>
-        </div>
-      </div>
-    </div>
-
     <div class="mov" id="mod-workout-intensity">
       <div class="msh">
         <div class="mh"></div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">💪 운동 추가</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500">하루에 여러 번 추가할 수 있어요 (예: 아침 산책 + 저녁 크로스핏)</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px" id="wk-log-title">운동 기록</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500">하루에 여러 번 추가할 수 있어요</div>
         <div class="cap" style="margin-bottom:5px">언제 했나요?</div>
         <input class="input" type="time" id="wk-time" style="margin-bottom:14px" />
-        <div class="cap" style="margin-bottom:5px">강도는 어느 정도였나요?</div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px" id="wk-intensity-btns">
-          <button type="button" class="btn btn-o wk-int-btn" data-lv="low" onclick="pickWorkoutIntensity('low')" style="justify-content:flex-start;gap:10px"><span style="font-size:22px">🚶</span><span>저강도 · 땀이 살짝 나는 정도 (산책)</span></button>
-          <button type="button" class="btn btn-o wk-int-btn" data-lv="medium" onclick="pickWorkoutIntensity('medium')" style="justify-content:flex-start;gap:10px"><span style="font-size:22px">🏃</span><span>중강도 · 숨이 조금 차는 정도 (조깅)</span></button>
-          <button type="button" class="btn btn-o wk-int-btn" data-lv="high" onclick="pickWorkoutIntensity('high')" style="justify-content:flex-start;gap:10px"><span style="font-size:22px">🔥</span><span>고강도 · 대화가 힘든 정도 (크로스핏 등)</span></button>
+        <div class="cap" style="margin-bottom:5px">무엇을 했나요? (검색)</div>
+        <div style="position:relative;margin-bottom:12px">
+          <input class="input" id="wk-search" placeholder="운동 종류 검색 또는 직접 입력" oninput="searchExercise(this.value)" autocomplete="off" />
+          <div class="dd" id="wk-search-dd" style="display:none"></div>
         </div>
-        <div class="cap" style="margin-bottom:5px">무엇을 했나요?</div>
-        <input class="input" id="wk-type" placeholder="예: 스쿼트, 러닝, 요가... (근력운동은 여러 번 나눠 추가 가능)" style="margin-bottom:12px" />
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
           <span class="cap" style="margin-bottom:0">운동 시간</span>
           <span id="wk-duration-label" style="font-size:13px;font-weight:800;color:var(--gro)">20분</span>
         </div>
         <input type="range" id="wk-duration" min="0" max="60" step="5" value="20" oninput="onWorkoutDurationInput(this.value)" style="width:100%;margin-bottom:6px;accent-color:var(--gro)" />
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-bottom:14px"><span>0분</span><span>30분</span><span>60분</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-bottom:10px"><span>0분</span><span>30분</span><span>60분</span></div>
+        <div style="background:var(--gro-bg);border:1.5px solid rgba(129,199,132,.3);border-radius:11px;padding:9px 12px;margin-bottom:14px;font-size:13px;font-weight:700;color:var(--gro)" id="wk-kcal-preview">약 0kcal 소모</div>
         <button class="btn btn-p" onclick="saveWorkoutEntry()">저장</button>
       </div>
     </div>
@@ -1530,6 +1505,8 @@
   <script src="/js/data-cheat-foods.js"></script>
   <script src="/js/data-meal-plans.js"></script>
   <script src="/js/data-glucose-example.js"></script>
+  <script src="/js/data-exercises.js"></script>
+  <script src="/js/data-recipes.js"></script>
   <script>
     // js/sync.js가 쓰는 백엔드 연결 설정. Vite가 빌드/개발 시 frontend/.env 값으로 치환한다.
     const API_BASE = "%VITE_API_URL%";
@@ -1635,9 +1612,9 @@
           { id: 'i4', label: '📊 혈당 기록', sub: '2주 후 AI 개인화 예측 시작' },
         ],
         growth: [
-          { id: 'g1', label: '🍽 식후 운동 타이밍', sub: '식사 후 몇 분 뒤 운동했나요?' },
-          { id: 'g2', label: '🏋️ 오늘 운동 기록', sub: '자동 감지 · 아래 "+ 운동 추가"로 기록' },
-          { id: 'g3', label: '⏱ 공복시간', sub: '마지막 식사 기준 자동 계산' },
+          { id: 'g1', label: '🚶 저강도 운동', sub: '땀이 살짝 나는 정도 (산책 등)' },
+          { id: 'g2', label: '🏃 중강도 운동', sub: '숨이 조금 차는 정도 (조깅 등)' },
+          { id: 'g3', label: '🔥 고강도 운동', sub: '대화가 힘든 정도 (크로스핏 등)' },
         ],
         cortisol: [
           { id: 'c1', label: '😴 수면시간 기록', sub: '취침·기상 시간 입력' },
@@ -1656,7 +1633,7 @@
     // 코드에서 "하루 7,000보/HIIT 20분/빈속 아침운동"을 지워도 이미 그 구조를 저장해둔 기기에서는
     // 계속 옛날 루틴이 보이는 버그가 있었다. 스키마 버전이 바뀌면 routines/checks/exBurned만 새
     // 기본값으로 리셋하고 이름·몸무게·식단 등 실제 사용자 데이터는 그대로 유지한다.
-    const SCHEMA_VERSION = 3;
+    const SCHEMA_VERSION = 4;
     try {
       const saved = localStorage.getItem('bellamona_data');
       if (saved) {
@@ -1702,15 +1679,24 @@
     // ═══════════════════════ CALORIE CALCS ═══════════════════════
     // 운동 소모 칼로리: 사용자가 kcal을 직접 입력하지 않고 강도(저/중/고)×시간으로 자동 추정한다.
     // MET(대사당량) 공식: kcal = MET * 3.5 * 체중(kg) / 200 * 시간(분)
+    // 검색해서 구체적인 운동을 고르면 그 운동의 실제 MET(EXERCISE_DB, data-exercises.js)를 쓰고,
+    // 직접 입력해 목록에 없으면 강도 구간의 평균 MET로 대체한다.
     const INTENSITY_MET = { low: 3, medium: 6, high: 9 };
-    function exerciseKcal(intensity, durationMin) {
-      const met = INTENSITY_MET[intensity] || 0;
+    function exerciseKcal(intensity, durationMin, met) {
+      const m = met || INTENSITY_MET[intensity] || 0;
       const bw = (S.weights && S.weights.length ? S.weights[S.weights.length - 1].w : S.initWeight) || 55;
-      return Math.round(met * 3.5 * bw / 200 * (durationMin || 0));
+      return Math.round(m * 3.5 * bw / 200 * (durationMin || 0));
     }
     // 오늘 하루 저/중/고강도 운동을 여러 번 기록할 수 있으므로(식사 기록과 동일한 리스트 구조) 모두 합산한다.
     function todayWorkoutEntries() { const t = todayISOLocal(); return S.workoutLogs.filter(w => w.date === t); }
-    function todayWorkoutKcal() { return todayWorkoutEntries().reduce((a, w) => a + exerciseKcal(w.intensity, w.durationMin), 0); }
+    // 마지막 식사 이후 경과 시간(공복 시간) — 인슐린 화면 "공복 타이머" 카드에서 쓴다.
+    function fastingHours() {
+      const lastMealTime = S.meals.filter(m => m.foods.length > 0 || m.text).map(m => m.time).sort().pop();
+      if (!lastMealTime) return null;
+      const [hh, mm] = lastMealTime.split(':').map(Number); const now = new Date(); const last = new Date(); last.setHours(hh, mm, 0, 0); if (last > now) last.setDate(last.getDate() - 1);
+      return Math.round((now - last) / 3600000 * 10) / 10;
+    }
+    function todayWorkoutKcal() { return todayWorkoutEntries().reduce((a, w) => a + exerciseKcal(w.intensity, w.durationMin, w.met), 0); }
     function totalBurned() { return S.baseBurned + todayWorkoutKcal(); }
     function totalIntake() { return S.meals.reduce((a, m) => a + mCalc(m, 'cal'), 0); }
     // 자유 텍스트 식단은 m.foods가 비어있는 대신 AI가 추정한 매크로(m.aiEstimate)를 쓴다.
@@ -2014,9 +2000,9 @@
     function doCheck(id) {
       if (id === 'c3') { openMod('mod-diary'); return; }
       if (id === 'c1') { openMod('mod-sleep'); return; }
-      if (id === 'g1') { openMod('mod-workout-timing'); return; }
-      if (id === 'g2') { return; } // 오늘 운동 기록 1건 이상이면 자동 체크 — "+ 운동 추가" 버튼으로 기록
-      if (id === 'g3') { S._showFastDetail = !S._showFastDetail; goH(S.curH); return; } // 공복시간은 실시간 자동계산, 수동 체크 아님
+      if (id === 'g1') { openWorkoutLogModal('low'); return; }
+      if (id === 'g2') { openWorkoutLogModal('medium'); return; }
+      if (id === 'g3') { openWorkoutLogModal('high'); return; }
       S.checks[id] = !S.checks[id]; goH(S.curH); updateHome(); if (typeof saveChecksRow === 'function') saveChecksRow();
     }
     function saveDiary() { S.checks.c3 = true; const txt = document.getElementById('diary-txt')?.value; let entry = null; if (txt) { entry = { d: '오늘', t: txt }; S.diaries.push(entry); } closeMod('mod-diary'); goH('cortisol'); updateHome(); if (typeof saveChecksRow === 'function') saveChecksRow(); if (entry && typeof saveDiaryRow === 'function') saveDiaryRow(entry); }
@@ -2258,86 +2244,83 @@
   </div>`;
     }
     function renderGrowth() {
-      const net = getNet(); const save = getSave(); const need = save < 0 ? Math.abs(save) : 0;
-      const today = todayWorkoutEntries();
-      S.checks.g2 = today.length > 0; // 오늘 운동 기록 1건 이상이면 자동 체크
-      S.checks.g3 = (fastingHours() || 0) >= 16; // 공복 16시간 이상이면 자동 체크
+      const burned = totalBurned(); const today = todayWorkoutEntries();
+      // 루틴 체크는 오늘 그 강도로 1건이라도 기록했으면 자동 체크(수동 토글 아님)
+      S.routines.growth.forEach((r, i) => { S.checks[r.id] = today.some(w => w.intensity === ['low', 'medium', 'high'][i]); });
       const entryRows = today.map(w => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr)">
       <span style="font-size:20px">${INTENSITY_ICON[w.intensity]}</span>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:700;color:var(--text)">${INTENSITY_LABEL[w.intensity]} · ${w.exerciseType || '운동'}</div>
-        <div style="font-size:10px;color:var(--muted);font-weight:600">${w.time} · ${w.durationMin}분 · 약 ${exerciseKcal(w.intensity, w.durationMin)}kcal</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600">${w.time} · ${w.durationMin}분 · 약 ${exerciseKcal(w.intensity, w.durationMin, w.met)}kcal</div>
       </div>
       <button onclick="removeWorkoutEntry('${w.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
-    </div>`).join('') || `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">+ 운동 추가 버튼으로 기록하세요</div>`;
+    </div>`).join('') || `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">아래 루틴 체크에서 강도를 눌러 기록하세요</div>`;
       return `
   <div class="card" style="border-color:rgba(129,199,132,.3)">
     <div class="cap">칼로리 소모 현황</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px">
-      <div style="background:var(--gro-bg);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(129,199,132,.2)">
-        <div style="font-size:10px;color:var(--muted);font-weight:600">오늘 운동</div>
-        <div style="font-size:22px;font-weight:800;color:var(--gro)">${today.length}건</div>
-        <div style="font-size:9px;color:var(--muted);font-weight:600">${todayWorkoutKcal()}kcal 소모</div>
-      </div>
-      <div style="background:${need > 0 ? 'rgba(239,83,80,.08)' : 'rgba(102,187,106,.08)'};border-radius:12px;padding:10px;text-align:center;border:1px solid ${need > 0 ? 'rgba(239,83,80,.2)' : 'rgba(102,187,106,.2)'}"><div style="font-size:10px;color:var(--muted);font-weight:600">${need > 0 ? '추가 소모 필요' : 'NET 칼로리'}</div><div style="font-size:22px;font-weight:800;color:${need > 0 ? 'var(--danger)' : 'var(--ok)'}">${need > 0 ? need : net}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
+    <div style="text-align:center;background:var(--gro-bg);border-radius:12px;padding:10px;border:1px solid rgba(129,199,132,.2);margin-bottom:8px">
+      <div style="font-size:10px;color:var(--muted);font-weight:600">오늘 총 소모 (기초대사 + 운동)</div>
+      <div style="font-size:24px;font-weight:800;color:var(--gro)">${burned}kcal</div>
+      <div style="font-size:9px;color:var(--muted);font-weight:600">기초 ${S.baseBurned} + 운동 ${todayWorkoutKcal()} · 인슐린 화면과 동일한 값이에요</div>
     </div>
-    ${need > 0 ? `<div style="font-size:12px;color:var(--danger);background:rgba(239,83,80,.07);border:1.5px solid rgba(239,83,80,.2);border-radius:11px;padding:8px 12px;font-weight:600">🔗 인슐린 ${Math.abs(save)}kcal 초과 → 운동으로 ${need}kcal 더 태우면 목표 달성</div>` : `<div style="font-size:12px;color:var(--ok);background:rgba(102,187,106,.07);border:1.5px solid rgba(102,187,106,.2);border-radius:11px;padding:8px 12px;font-weight:700">✅ NET ${net}kcal · 목표 이내</div>`}
   </div>
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div class="cap" style="margin-bottom:0">오늘 운동 기록</div>
-      <button onclick="openAddWorkoutModal()" style="background:var(--gro-bg);border:1.5px solid rgba(129,199,132,.3);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--gro);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">+ 운동 추가</button>
-    </div>
+    <div class="cap" style="margin-bottom:8px">오늘 운동 기록</div>
     ${entryRows}
   </div>
   <div class="card">
     <div class="cap" style="margin-bottom:8px">이번 주 운동 기록 (7일)</div>
     ${weekWorkoutGrid()}
   </div>
-  <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크</div>
-  ${S.routines.growth.map(r => r.id === 'g3' ? ckHtml(r.id, r.label, r.sub, 'var(--gro)') + fastDetailHtml() : ckHtml(r.id, r.label, r.sub, 'var(--gro)')).join('')}`;
+  <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크 · 눌러서 기록</div>
+  ${S.routines.growth.map(r => ckHtml(r.id, r.label, r.sub, 'var(--gro)')).join('')}`;
     }
-    function fastDetailHtml() {
-      if (!S._showFastDetail) return '';
-      const h = fastingHours();
-      return `<div class="card2" style="margin:-4px 0 8px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--gro)">${h != null ? h + 'h' : '—'}</div><div style="font-size:10px;color:var(--muted);font-weight:600">${h != null && h >= 16 ? '✅ 16시간 달성!' : '현재 공복 유지 중'}</div></div>`;
-    }
-    function fastingHours() {
-      const lastMealTime = S.meals.filter(m => m.foods.length > 0 || m.text).map(m => m.time).sort().pop();
-      if (!lastMealTime) return null;
-      const [hh, mm] = lastMealTime.split(':').map(Number); const now = new Date(); const last = new Date(); last.setHours(hh, mm, 0, 0); if (last > now) last.setDate(last.getDate() - 1);
-      return Math.round((now - last) / 3600000 * 10) / 10;
-    }
-    function saveWorkoutTiming(minutes) {
-      S.exBurned.minutesAfterMeal = minutes; S.checks.g1 = true; closeMod('mod-workout-timing'); goH('growth'); updateHome();
-      if (typeof saveChecksRow === 'function') saveChecksRow();
-    }
-    // 운동 기록은 식사 기록처럼 하루에 여러 번 추가할 수 있는 리스트다(저강도 산책 + 저녁 고강도 크로스핏처럼
-    // 같은 날 여러 강도를 섞어 할 수 있음). "+ 운동 추가"를 누를 때마다 모달 필드를 새 항목 기준으로 리셋한다
-    // — 예전엔 강도/시간이 today 단일 슬롯에 upsert돼서, 이전 값이 남은 채 다음 항목이 겹쳐 쓰였다
-    // (스쿼트 3분에 496kcal로 나온 원인).
-    let _pickedIntensity = null;
-    function openAddWorkoutModal() {
-      _pickedIntensity = null;
-      document.querySelectorAll('.wk-int-btn').forEach(b => b.classList.remove('selected'));
-      document.getElementById('wk-type').value = '';
+    // 강도별 체크박스를 누르면 그 강도의 운동을 검색+시간(슬라이더)으로 기록하는 모달이 열린다.
+    // 하루에 저/중/고강도를 모두 기록할 수 있고, 같은 강도도 여러 번 추가할 수 있다(식사 기록과 동일한
+    // 리스트 구조). 예전엔 하나의 슬롯에 upsert돼서 이전 값이 남은 채 겹쳐 쓰였다(496kcal 버그의 원인).
+    let _workoutModalIntensity = null; let _pickedExercise = null;
+    function openWorkoutLogModal(intensity) {
+      _workoutModalIntensity = intensity; _pickedExercise = null;
+      setTxt('wk-log-title', `${INTENSITY_ICON[intensity]} ${INTENSITY_LABEL[intensity]} 운동 기록`);
+      document.getElementById('wk-search').value = ''; document.getElementById('wk-search-dd').style.display = 'none';
       const now = new Date(); document.getElementById('wk-time').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       document.getElementById('wk-duration').value = 20;
       setTxt('wk-duration-label', '20분');
+      updateWorkoutKcalPreview();
       openMod('mod-workout-intensity');
     }
-    function pickWorkoutIntensity(level) {
-      _pickedIntensity = level;
-      document.querySelectorAll('.wk-int-btn').forEach(b => b.classList.toggle('selected', b.dataset.lv === level));
+    function searchExercise(q) {
+      const dd = document.getElementById('wk-search-dd'); const list = EXERCISE_DB[_workoutModalIntensity] || [];
+      _pickedExercise = null;
+      if (!q.trim()) { dd.style.display = 'none'; updateWorkoutKcalPreview(); return; }
+      const res = list.filter(e => e.n.includes(q)).slice(0, 8);
+      if (!res.length) { dd.style.display = 'none'; updateWorkoutKcalPreview(); return; }
+      dd.innerHTML = res.map(e => `<div class="ddi" onclick="pickExercise('${e.n}')"><span style="font-weight:600">${e.n}</span><span style="font-size:10px;color:var(--muted);font-weight:600">MET ${e.met}</span></div>`).join('');
+      dd.style.display = 'block';
+      updateWorkoutKcalPreview();
     }
-    function onWorkoutDurationInput(val) { setTxt('wk-duration-label', `${val}분`); }
+    function pickExercise(name) {
+      const found = (EXERCISE_DB[_workoutModalIntensity] || []).find(e => e.n === name);
+      if (!found) return;
+      _pickedExercise = found;
+      document.getElementById('wk-search').value = found.n;
+      document.getElementById('wk-search-dd').style.display = 'none';
+      updateWorkoutKcalPreview();
+    }
+    function onWorkoutDurationInput(val) { setTxt('wk-duration-label', `${val}분`); updateWorkoutKcalPreview(); }
+    function updateWorkoutKcalPreview() {
+      const dur = parseInt(document.getElementById('wk-duration')?.value) || 0;
+      const met = _pickedExercise ? _pickedExercise.met : INTENSITY_MET[_workoutModalIntensity];
+      const kcal = exerciseKcal(_workoutModalIntensity, dur, _pickedExercise ? _pickedExercise.met : null);
+      const el = document.getElementById('wk-kcal-preview'); if (el) el.textContent = `약 ${kcal}kcal 소모 (MET ${met})`;
+    }
     function saveWorkoutEntry() {
-      const type = document.getElementById('wk-type')?.value?.trim() || '';
+      const type = document.getElementById('wk-search')?.value?.trim() || '';
       const time = document.getElementById('wk-time')?.value || '';
       const dur = parseInt(document.getElementById('wk-duration')?.value) || 0;
-      if (!_pickedIntensity) { alert('운동 강도를 선택해주세요'); return; }
+      if (!type) { alert('운동을 검색해서 선택하거나 입력해주세요'); return; }
       if (dur <= 0) { alert('운동 시간을 선택해주세요'); return; }
-      const entry = { id: S.nextWorkoutId++, date: todayISOLocal(), time, intensity: _pickedIntensity, durationMin: dur, exerciseType: type };
+      const entry = { id: S.nextWorkoutId++, date: todayISOLocal(), time, intensity: _workoutModalIntensity, durationMin: dur, exerciseType: type, met: _pickedExercise ? _pickedExercise.met : null };
       S.workoutLogs.push(entry);
       closeMod('mod-workout-intensity'); goH('growth'); updateHome();
       if (typeof saveWorkoutRow === 'function') saveWorkoutRow(entry);
@@ -2768,6 +2751,7 @@
       const insights = Array.isArray(r.insights) ? r.insights : [];
       const actions = Array.isArray(r.actions) ? r.actions : [];
       return `
+      ${r.degraded ? `<div style="font-size:11px;color:var(--warn);background:rgba(255,167,38,.1);border:1.5px solid rgba(255,167,38,.3);border-radius:11px;padding:8px 11px;margin-bottom:10px;font-weight:600">⚠️ AI 서버 연결에 문제가 있어 기본 안내로 보여드려요. 매크로·몸무게 예측 등 계산값은 정상입니다.</div>` : ''}
       <div class="card" style="background:linear-gradient(135deg,var(--sky3),var(--lav3));margin-bottom:12px">
         <div class="cap">AI 리포트</div>
         ${r.headline ? `<div style="font-size:13px;color:var(--text);font-weight:700;margin-bottom:8px">"${r.headline}"</div>` : ''}
@@ -2840,7 +2824,9 @@
     }
 
     // ═══════════════════════ RECIPES ═══════════════════════
-    const RCPS = [
+    // 손수 큐레이션한 8개(칼로리 포함 — 마이페이지 칼로리별 예시식단 연동에 씀) + 유튜브 다이어트
+    // 레시피 엑셀에서 추려온 실제 레시피들(data-recipes.js, RCPS_IMPORTED — 칼로리 정보는 원본에 없음).
+    const RCPS_CURATED = [
       { n: '아보카도 두부볼', t: 5, tp: '간식', cal: 120, cost: 2500, img: '🥑', ingredients: ['아보카도 ½개', '두부 100g', '레몬즙 1큰술', '소금 약간'], steps: ['아보카도를 반으로 잘라 씨를 제거해요', '두부를 으깨서 아보카도와 섞어요', '레몬즙과 소금으로 간을 맞춰요', '냉장고에 10분 두면 더 맛있어요'], cpgQ: '유기농 아보카도' },
       { n: '통밀 에그머핀', t: 10, tp: '간식', cal: 180, cost: 3500, img: '🥚', ingredients: ['달걀 3개', '통밀가루 50g', '베이킹파우더 1작은술', '저지방 우유 30ml'], steps: ['오븐을 180도로 예열해요', '달걀, 우유를 잘 섞어요', '통밀가루와 베이킹파우더를 체에 쳐서 넣어요', '머핀 틀에 붓고 15분 구워요'], cpgQ: '무항생제 유정란' },
       { n: '연어 콜리플라워라이스', t: 15, tp: '일식', cal: 320, cost: 8000, img: '🐟', ingredients: ['연어 150g', '콜리플라워 200g', '간장 1큰술', '참기름 1작은술', '레몬 ½개'], steps: ['콜리플라워를 푸드프로세서로 잘게 갈아요', '팬에 기름 없이 콜리플라워라이스를 볶아요', '연어는 팬에 껍질부터 굽고 반으로 나눠요', '간장, 참기름으로 소스를 만들어 곁들여요'], cpgQ: '노르웨이 생연어' },
@@ -2850,12 +2836,21 @@
       { n: '닭가슴살 레몬허브볼', t: 10, tp: '양식', cal: 260, cost: 7000, img: '🌿', ingredients: ['닭가슴살 150g', '레몬 1개', '로즈마리 약간', '올리브오일 1큰술', '소금·후추'], steps: ['닭가슴살에 소금, 후추, 레몬즙을 발라 10분 재워요', '팬을 달궈 올리브오일을 두르고 구워요', '로즈마리를 올려 향을 입혀요', '얇게 썰어 샐러드 위에 올려요'], cpgQ: '슬라이스 닭가슴살' },
       { n: '훈제연어 샐러드', t: 5, tp: '일식', cal: 200, cost: 9000, img: '🥗', ingredients: ['훈제연어 100g', '루꼴라 50g', '케이퍼 1큰술', '레몬즙 1큰술', '올리브오일 1큰술'], steps: ['루꼴라를 깨끗이 씻어 물기를 제거해요', '접시에 루꼴라를 깔아요', '훈제연어를 올리고 케이퍼를 뿌려요', '레몬즙과 올리브오일을 드레싱으로 뿌려요'], cpgQ: '훈제연어 슬라이스' },
     ];
-    // 칼로리가 가장 비슷한 저장된 레시피를 찾는다 (마이페이지 예시식단 ↔ 레시피 연동용)
+    const RCPS = [...RCPS_CURATED, ...(typeof RCPS_IMPORTED !== 'undefined' ? RCPS_IMPORTED : [])];
+    // 칼로리가 가장 비슷한 저장된 레시피를 찾는다 (마이페이지 예시식단 ↔ 레시피 연동용).
+    // 엑셀에서 가져온 레시피는 칼로리 정보가 없어 cal이 있는 것들(RCPS_CURATED)에서만 찾는다.
     function findClosestRecipe(kcal) {
-      return RCPS.reduce((best, r) => Math.abs(r.cal - kcal) < Math.abs(best.cal - kcal) ? r : best, RCPS[0]);
+      const withCal = RCPS.filter(r => r.cal != null);
+      return withCal.reduce((best, r) => Math.abs(r.cal - kcal) < Math.abs(best.cal - kcal) ? r : best, withCal[0]);
     }
     function rfil(el, k, v) { S.rFilters[k] = S.rFilters[k] === v ? null : v; document.querySelectorAll(`.chip[dfk="${k}"]`).forEach(c => { c.classList.remove('on'); }); el.setAttribute('dfk', k); if (S.rFilters[k]) el.classList.add('on'); else el.classList.remove('on'); renderRecipes(); }
+    function renderRecipeCategoryChips() {
+      const box = document.getElementById('rcp-category-chips'); if (!box || box.childElementCount) return; // 한 번만 생성
+      const cats = [...new Set(RCPS.map(r => r.tp))].sort((a, b) => a.localeCompare(b, 'ko'));
+      box.innerHTML = cats.map(c => `<span class="chip" onclick="rfil(this,'type','${c}')">${c}</span>`).join('');
+    }
     function renderRecipes() {
+      renderRecipeCategoryChips();
       const g = document.getElementById('rcp-grid'); if (!g) return;
       const f = RCPS.filter(r => {
         if (S.rFilters.time && r.t > S.rFilters.time) return false;
@@ -2870,10 +2865,10 @@
       <div style="flex:1">
         <div style="font-size:10px;color:var(--sky2);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${r.tp}</div>
         <div style="font-size:14px;font-weight:700;color:var(--text)">${r.n}</div>
-        <div style="display:flex;gap:5px;margin-top:4px">
+        <div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">
           <span style="font-size:10px;background:var(--sky3);color:var(--sky2);padding:2px 7px;border-radius:99px;font-weight:700">⏱ ${r.t}분</span>
           <span style="font-size:10px;background:rgba(255,167,38,.1);color:var(--warn);padding:2px 7px;border-radius:99px;font-weight:700">💰 ${costLabel(r.cost)}</span>
-          <span style="font-size:10px;background:var(--card2);color:var(--muted);padding:2px 7px;border-radius:99px;font-weight:700">${r.cal}kcal</span>
+          ${r.cal != null ? `<span style="font-size:10px;background:var(--card2);color:var(--muted);padding:2px 7px;border-radius:99px;font-weight:700">${r.cal}kcal</span>` : ''}
         </div>
       </div>
     </div>
@@ -2885,10 +2880,10 @@
     <div style="text-align:center;margin-bottom:16px">
       <div style="font-size:48px;margin-bottom:10px">${r.img}</div>
       <div class="serif" style="font-size:22px;font-weight:700;color:var(--text)">${r.n}</div>
-      <div style="display:flex;gap:6px;justify-content:center;margin-top:8px">
+      <div style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap">
         <span style="font-size:11px;background:var(--sky3);color:var(--sky2);padding:3px 10px;border-radius:99px;font-weight:700">⏱ ${r.t}분</span>
         <span style="font-size:11px;background:rgba(255,167,38,.1);color:var(--warn);padding:3px 10px;border-radius:99px;font-weight:700">💰 ~${r.cost.toLocaleString()}원</span>
-        <span style="font-size:11px;background:var(--card2);color:var(--muted);padding:3px 10px;border-radius:99px;font-weight:700">${r.cal}kcal</span>
+        ${r.cal != null ? `<span style="font-size:11px;background:var(--card2);color:var(--muted);padding:3px 10px;border-radius:99px;font-weight:700">${r.cal}kcal</span>` : ''}
       </div>
     </div>
     <div class="card" style="margin-bottom:10px">
@@ -2896,13 +2891,14 @@
       ${r.ingredients.map(ing => `<div style="padding:6px 0;border-bottom:1px solid var(--bdr);font-size:13px;color:var(--text);font-weight:500">• ${ing}</div>`).join('')}
       <button onclick="window.open('https://www.coupang.com/np/search?q=${encodeURIComponent(r.cpgQ)}','_blank')" style="width:100%;margin-top:12px;background:linear-gradient(135deg,#ff6400,#ff4500);border:none;border-radius:11px;padding:11px;color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">🛒 쿠팡에서 재료 구매하기</button>
     </div>
-    <div class="card">
+    <div class="card" style="margin-bottom:${r.tip ? '10px' : '0'}">
       <div class="cap">만드는 방법</div>
       ${r.steps.map((s, i) => `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr);align-items:flex-start">
         <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--sky2),var(--lav2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex-shrink:0">${i + 1}</div>
         <div style="font-size:13px;color:var(--text);font-weight:500;padding-top:3px">${s}</div>
       </div>`).join('')}
     </div>
+    ${r.tip ? `<div class="card" style="background:var(--sky3);border-color:rgba(91,184,245,.3)"><div class="cap" style="color:var(--sky2)">💡 TIP</div><div style="font-size:13px;color:var(--text);line-height:1.6;font-weight:500">${r.tip}</div></div>` : ''}
     <button class="btn btn-o" style="margin-top:8px" onclick="closeMod('mod-recipe-detail')">닫기</button>`;
       openMod('mod-recipe-detail');
     }
