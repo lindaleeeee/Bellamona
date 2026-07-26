@@ -2700,7 +2700,7 @@
     function buildDayReportPayload(dateStr, day) {
       return {
         date: dateStr,
-        meals: (day.meals || []).map(m => ({ label: m.label, time: m.time, description: m.description, ai_estimate: m.ai_estimate, bg_pre: m.bg_pre, bg_1h: m.bg_1h, bg_2h: m.bg_2h })),
+        meals: (day.meals || []).map(m => ({ label: m.label, time: m.time, description: m.description, ai_estimate: m.ai_estimate, foods: m.foods, bg_pre: m.bg_pre, bg_1h: m.bg_1h, bg_2h: m.bg_2h })),
         workouts: (day.workouts || []).filter(w => w.intensity).map(w => ({ time: w.logged_time, intensity: w.intensity, duration_min: w.duration_min, exercise_type: w.exercise_type })),
         recentWorkouts: S.workoutLogs.slice(-7),
         sleepThisWeek: S.sleepLogs.slice(-7),

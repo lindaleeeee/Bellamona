@@ -51,18 +51,27 @@ function logGeminiError(tag, error) {
     console.error(`${tag} stack:`, error?.stack);
 }
 
-// meals 배열의 ai_estimate(있으면)를 근거로 하루 총 매크로를 결정론적으로 합산한다.
+// meals 배열의 ai_estimate(자유 텍스트 식단 기록)를 우선으로 쓰고, 그게 없으면(레거시 그램 단위
+// 구조화 식단 기록) foods 배열에서 직접 합산한다 — 예전 방식으로 기록된 식사만 있는 날은 ai_estimate가
+// 없어서 매크로가 전부 0으로 나오는 버그가 있었다.
 // AI 응답에 맡기지 않는 이유: 같은 입력에 항상 같은 숫자가 나와야 하고, Gemini 호출이 실패해도
 // 이 섹션만은 항상 정확하게 보여야 하기 때문이다(사용자 요청: "데이터가 적어도 정해진 규칙대로 보여야").
+function macroFromFoods(foods) {
+    return (foods || []).reduce((acc, f) => {
+        const g = f.g || 0; const food = f.food || {};
+        acc.carb_g += (food.c || 0) * g / 100;
+        acc.protein_g += (food.p || 0) * g / 100;
+        acc.fat_g += (food.f || 0) * g / 100;
+        acc.kcal_total += (food.cal || 0) * g / 100;
+        return acc;
+    }, { carb_g: 0, protein_g: 0, fat_g: 0, kcal_total: 0 });
+}
 function computeMacroBreakdown(meals) {
     const totals = (meals || []).reduce((acc, m) => {
-        const est = m.ai_estimate;
-        if (est) {
-            acc.carb_g += est.carb_g || 0;
-            acc.protein_g += est.protein_g || 0;
-            acc.fat_g += est.fat_g || 0;
-            acc.kcal_total += est.kcal_est || 0;
-        }
+        const src = m.ai_estimate
+            ? { carb_g: m.ai_estimate.carb_g || 0, protein_g: m.ai_estimate.protein_g || 0, fat_g: m.ai_estimate.fat_g || 0, kcal_total: m.ai_estimate.kcal_est || 0 }
+            : macroFromFoods(m.foods);
+        acc.carb_g += src.carb_g; acc.protein_g += src.protein_g; acc.fat_g += src.fat_g; acc.kcal_total += src.kcal_total;
         return acc;
     }, { carb_g: 0, protein_g: 0, fat_g: 0, kcal_total: 0 });
     return {
