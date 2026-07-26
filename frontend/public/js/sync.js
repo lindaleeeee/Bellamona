@@ -163,17 +163,12 @@ async function restoreFromServer() {
       S.nextMealId = S.meals.length;
     }
 
-    if (d.workout) {
-      S.exBurned = {
-        intensity: d.workout.intensity || null,
-        durationMin: d.workout.duration_min || 0,
-        exerciseType: d.workout.exercise_type || '',
-        minutesAfterMeal: d.workout.minutes_after_meal ?? null
-      };
-    }
-    if (d.workoutHistory && d.workoutHistory.length) {
+    // 운동은 하루에 여러 번 기록할 수 있는 리스트다(식사 기록과 동일한 패턴).
+    // workoutHistory가 최근 14일치(오늘 포함) 전체 행을 담고 있으므로 이것만으로 S.workoutLogs를 채운다.
+    if (d.workoutHistory) {
       S.workoutLogs = d.workoutHistory.filter(w => w.intensity).map(w => ({
-        date: (w.performed_date + '').slice(0, 10), intensity: w.intensity, durationMin: w.duration_min, exerciseType: w.exercise_type
+        id: w.id, serverId: w.id, date: (w.performed_date + '').slice(0, 10), time: (w.logged_time || '00:00').slice(0, 5),
+        intensity: w.intensity, durationMin: w.duration_min, exerciseType: w.exercise_type
       }));
     }
     if (d.sleepLogs && d.sleepLogs.length) {
@@ -267,18 +262,29 @@ function saveDiaryRow(entry) {
   }).catch(e => console.error('[saveDiaryRow]', e));
 }
 
-function saveWorkoutRow() {
+// entry: {date, time, intensity, durationMin, exerciseType} — 하루에 여러 번 호출될 수 있다(식사 기록과 동일)
+function saveWorkoutRow(entry) {
+  if (!entry) return;
   fetchApi(apiUrl('/api/data/workouts'), {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      performed_date: todayISO(),
-      intensity: S.exBurned.intensity,
-      duration_min: S.exBurned.durationMin,
-      exercise_type: S.exBurned.exerciseType,
-      minutes_after_meal: S.exBurned.minutesAfterMeal
+      performed_date: entry.date || todayISO(),
+      logged_time: entry.time,
+      intensity: entry.intensity,
+      duration_min: entry.durationMin,
+      exercise_type: entry.exerciseType
     })
-  }).catch(e => console.error('[saveWorkoutRow]', e));
+  })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => { if (data && data.workout) entry.serverId = data.workout.id; })
+    .catch(e => console.error('[saveWorkoutRow]', e));
+}
+
+function deleteWorkoutRow(entry) {
+  if (!entry || !entry.serverId) return;
+  fetchApi(apiUrl('/api/data/workouts/' + entry.serverId), { method: 'DELETE', credentials: 'include' })
+    .catch(e => console.error('[deleteWorkoutRow]', e));
 }
 
 function saveSleepRow(entry) {

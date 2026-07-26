@@ -102,12 +102,15 @@ const initDB = async () => {
       );
     `);
 
-    // 성장호르몬 화면 개편: kcal 직접입력 대신 강도×시간으로 자동 추정하는 방식으로 변경됨
+    // 성장호르몬 화면 개편: kcal 직접입력 대신 강도×시간으로 자동 추정하는 방식으로 변경됨.
+    // 하루에 저강도/중강도/고강도 운동을 여러 번 할 수 있어 (인슐린의 식사 기록처럼) 날짜당 여러 행을
+    // 허용한다 — performed_date 기준 UPSERT였던 것을 매번 새 행을 추가하는 방식으로 바꿨다.
     await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS intensity VARCHAR(10);');
     await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS duration_min INTEGER;');
     await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS exercise_type VARCHAR(100);');
     await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS minutes_after_meal INTEGER;');
-    console.log('[DB] workouts.intensity / duration_min / exercise_type / minutes_after_meal 컬럼 확인 완료');
+    await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS logged_time TIME;');
+    console.log('[DB] workouts.intensity / duration_min / exercise_type / minutes_after_meal / logged_time 컬럼 확인 완료');
 
     // 코르티솔 화면: 수면시간 기록
     await client.query(`

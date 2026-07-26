@@ -103,14 +103,14 @@ router.get('/day', async (req, res) => {
 
         const checks = checksRes.rows[0]?.checks || null;
         const meals = mealsRes.rows;
-        const workout = workoutRes.rows[0] || null;
+        const workouts = workoutRes.rows; // 하루에 여러 건 가능
         const weight = weightRes.rows[0]?.weight_kg ?? null;
         const diary = diaryRes.rows[0]?.content ?? null;
         const period = periodsRes.rows[0] || null;
 
-        const hasAnyRecord = !!checks || meals.length > 0 || !!workout || weight != null || !!diary;
+        const hasAnyRecord = !!checks || meals.length > 0 || workouts.length > 0 || weight != null || !!diary;
 
-        res.json({ date, checks, meals, workout, weight, diary, period, hasAnyRecord });
+        res.json({ date, checks, meals, workouts, weight, diary, period, hasAnyRecord });
     } catch (err) {
         console.error('[DATA] GET /day failed for userId:', userId, err);
         res.status(500).json({ error: 'Failed to load day snapshot' });
@@ -181,9 +181,12 @@ router.get('/', async (req, res) => {
         // 월별/최근 일기
         const diariesRes = await client.query('SELECT * FROM diaries WHERE user_id = $1 ORDER BY written_date DESC LIMIT 30', [userId]);
 
-        // 최근 수면 기록 / 운동 기록 (이번주 시각화용)
+        // 최근 수면 기록 / 운동 기록 (이번주 시각화용). 운동은 하루에 여러 건 가능해서 "행 개수"가 아니라
+        // "최근 14일" 기준으로 가져와야 특정 날 여러 번 기록했다고 다른 날짜가 밀려나지 않는다.
         const sleepLogsRes = await client.query('SELECT * FROM sleep_logs WHERE user_id = $1 ORDER BY log_date DESC LIMIT 14', [userId]);
-        const workoutHistoryRes = await client.query('SELECT * FROM workouts WHERE user_id = $1 ORDER BY performed_date DESC LIMIT 14', [userId]);
+        const workoutHistoryRes = await client.query(
+            "SELECT * FROM workouts WHERE user_id = $1 AND performed_date >= (CURRENT_DATE - INTERVAL '13 days') ORDER BY performed_date ASC, logged_time ASC",
+            [userId]);
 
         console.log('[DATA] GET / success for userId:', userId, {
             meals: mealsRes.rows.length,
@@ -198,7 +201,7 @@ router.get('/', async (req, res) => {
             user: userRes.rows[0],
             profile: profileRes.rows[0] || null,
             meals: mealsRes.rows,
-            workout: workoutsRes.rows[0] || null,
+            workoutsToday: workoutsRes.rows,
             checks: checksRes.rows[0]?.checks || {},
             weights: weightsRes.rows,
             periods: periodsRes.rows,
@@ -292,27 +295,37 @@ router.delete('/meals/:id', async (req, res) => {
     }
 });
 
-// 운동 저장 (UPSERT) — 강도(intensity)×시간(duration_min)으로 자동 추정하는 방식
+// 운동 기록 추가 — 하루에 저/중/고강도 운동을 여러 번 할 수 있어 매번 새 행을 추가한다
+// (인슐린의 식사 기록처럼 리스트에 계속 추가되는 구조. 예전엔 날짜당 1행 UPSERT라
+// 하루에 두 번째 운동을 기록하면 첫 번째 기록을 덮어썼다).
 router.post('/workouts', async (req, res) => {
     const { userId } = req.user;
-    const { performed_date, intensity, duration_min, exercise_type, minutes_after_meal } = req.body;
-    console.log('[DATA] POST /workouts for userId:', userId, { performed_date, intensity, duration_min, exercise_type, minutes_after_meal });
+    const { performed_date, logged_time, intensity, duration_min, exercise_type } = req.body;
+    console.log('[DATA] POST /workouts for userId:', userId, { performed_date, logged_time, intensity, duration_min, exercise_type });
     try {
         const today = performed_date || new Date().toISOString().split('T')[0];
-        const exist = await pool.query('SELECT id FROM workouts WHERE user_id=$1 AND performed_date=$2', [userId, today]);
-        if (exist.rows.length > 0) {
-            console.log('[DATA] Existing workout found, updating id:', exist.rows[0].id);
-            await pool.query('UPDATE workouts SET intensity=$1, duration_min=$2, exercise_type=$3, minutes_after_meal=$4 WHERE id=$5',
-                [intensity ?? null, duration_min ?? null, exercise_type ?? null, minutes_after_meal ?? null, exist.rows[0].id]);
-        } else {
-            console.log('[DATA] No existing workout, inserting new row');
-            await pool.query('INSERT INTO workouts (user_id, performed_date, intensity, duration_min, exercise_type, minutes_after_meal) VALUES ($1, $2, $3, $4, $5, $6)',
-                [userId, today, intensity ?? null, duration_min ?? null, exercise_type ?? null, minutes_after_meal ?? null]);
-        }
-        console.log('[DATA] POST /workouts success for userId:', userId);
-        res.json({ success: true });
+        const r = await pool.query(
+            `INSERT INTO workouts (user_id, performed_date, logged_time, intensity, duration_min, exercise_type)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [userId, today, logged_time || null, intensity ?? null, duration_min ?? null, exercise_type ?? null]);
+        console.log('[DATA] POST /workouts success, id:', r.rows[0].id);
+        res.json({ success: true, workout: r.rows[0] });
     } catch (err) {
         console.error('[DATA] POST /workouts failed for userId:', userId, err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 운동 기록 삭제
+router.delete('/workouts/:id', async (req, res) => {
+    const { userId } = req.user;
+    const { id } = req.params;
+    console.log('[DATA] DELETE /workouts/:id for userId:', userId, 'id:', id);
+    try {
+        await pool.query('DELETE FROM workouts WHERE id = $1 AND user_id = $2', [id, userId]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[DATA] DELETE /workouts/:id failed:', err);
         res.status(500).json({ error: err.message });
     }
 });

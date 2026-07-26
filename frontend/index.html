@@ -1323,23 +1323,25 @@
     <div class="mov" id="mod-workout-intensity">
       <div class="msh">
         <div class="mh"></div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">💪 운동 강도 · 시간</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:500">오늘 운동은 어느 정도였나요?</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">💪 운동 추가</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500">하루에 여러 번 추가할 수 있어요 (예: 아침 산책 + 저녁 크로스핏)</div>
+        <div class="cap" style="margin-bottom:5px">언제 했나요?</div>
+        <input class="input" type="time" id="wk-time" style="margin-bottom:14px" />
+        <div class="cap" style="margin-bottom:5px">강도는 어느 정도였나요?</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px" id="wk-intensity-btns">
           <button type="button" class="btn btn-o wk-int-btn" data-lv="low" onclick="pickWorkoutIntensity('low')" style="justify-content:flex-start;gap:10px"><span style="font-size:22px">🚶</span><span>저강도 · 땀이 살짝 나는 정도 (산책)</span></button>
           <button type="button" class="btn btn-o wk-int-btn" data-lv="medium" onclick="pickWorkoutIntensity('medium')" style="justify-content:flex-start;gap:10px"><span style="font-size:22px">🏃</span><span>중강도 · 숨이 조금 차는 정도 (조깅)</span></button>
           <button type="button" class="btn btn-o wk-int-btn" data-lv="high" onclick="pickWorkoutIntensity('high')" style="justify-content:flex-start;gap:10px"><span style="font-size:22px">🔥</span><span>고강도 · 대화가 힘든 정도 (크로스핏 등)</span></button>
         </div>
         <div class="cap" style="margin-bottom:5px">무엇을 했나요?</div>
-        <input class="input" id="wk-type" placeholder="예: 스쿼트, 러닝, 요가..." style="margin-bottom:12px" />
-        <div class="cap" style="margin-bottom:5px">운동 시간 (분)</div>
-        <input class="input" id="wk-duration" type="number" min="1" max="180" step="1" list="wk-duration-options" placeholder="예: 20" style="margin-bottom:14px" />
-        <datalist id="wk-duration-options">
-          <option value="5"></option><option value="10"></option><option value="15"></option><option value="20"></option>
-          <option value="25"></option><option value="30"></option><option value="35"></option><option value="40"></option>
-          <option value="45"></option><option value="50"></option><option value="55"></option><option value="60"></option>
-        </datalist>
-        <button class="btn btn-p" onclick="saveWorkoutIntensity()">저장</button>
+        <input class="input" id="wk-type" placeholder="예: 스쿼트, 러닝, 요가... (근력운동은 여러 번 나눠 추가 가능)" style="margin-bottom:12px" />
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span class="cap" style="margin-bottom:0">운동 시간</span>
+          <span id="wk-duration-label" style="font-size:13px;font-weight:800;color:var(--gro)">20분</span>
+        </div>
+        <input type="range" id="wk-duration" min="0" max="60" step="5" value="20" oninput="onWorkoutDurationInput(this.value)" style="width:100%;margin-bottom:6px;accent-color:var(--gro)" />
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-bottom:14px"><span>0분</span><span>30분</span><span>60분</span></div>
+        <button class="btn btn-p" onclick="saveWorkoutEntry()">저장</button>
       </div>
     </div>
 
@@ -1600,8 +1602,8 @@
     const S = {
       loggedIn: false, prev: 's-home', curH: 'insulin', obStep: 1,
       name: '혜림', goalCal: 1090, baseBurned: 380,
-      exBurned: { intensity: null, durationMin: 0, exerciseType: '', minutesAfterMeal: null },
-      sleepLogs: [], workoutLogs: [], _showFastDetail: false,
+      exBurned: { minutesAfterMeal: null },
+      sleepLogs: [], workoutLogs: [], nextWorkoutId: 1, _showFastDetail: false,
       reportTime: '21:00', reportGeneratedDate: null, _todayReport: null,
       savedTotal: 0, calMon: { y: 2026, m: 3 },
       trainingPairs: [], predLogs: [], gender: 'female', usingSeedData: false,
@@ -1634,7 +1636,7 @@
         ],
         growth: [
           { id: 'g1', label: '🍽 식후 운동 타이밍', sub: '식사 후 몇 분 뒤 운동했나요?' },
-          { id: 'g2', label: '💪 운동 강도 · 시간', sub: '강도 선택 후 종류·시간까지 등록' },
+          { id: 'g2', label: '🏋️ 오늘 운동 기록', sub: '자동 감지 · 아래 "+ 운동 추가"로 기록' },
           { id: 'g3', label: '⏱ 공복시간', sub: '마지막 식사 기준 자동 계산' },
         ],
         cortisol: [
@@ -1649,13 +1651,28 @@
         oxytocin: [],
       },
     };
+    // S.routines/checks/exBurned의 구조(어떤 루틴이 있는지, id가 뭔지)는 코드가 정의하는 값이지
+    // 사용자 데이터가 아닌데, 예전엔 localStorage에 저장된 예전 버전 값을 통째로 덮어써서 —
+    // 코드에서 "하루 7,000보/HIIT 20분/빈속 아침운동"을 지워도 이미 그 구조를 저장해둔 기기에서는
+    // 계속 옛날 루틴이 보이는 버그가 있었다. 스키마 버전이 바뀌면 routines/checks/exBurned만 새
+    // 기본값으로 리셋하고 이름·몸무게·식단 등 실제 사용자 데이터는 그대로 유지한다.
+    const SCHEMA_VERSION = 3;
     try {
       const saved = localStorage.getItem('bellamona_data');
-      if (saved) Object.assign(S, JSON.parse(saved));
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed._schemaVersion === SCHEMA_VERSION) {
+          Object.assign(S, parsed);
+        } else {
+          const { routines, checks, exBurned, workoutLogs, ...rest } = parsed;
+          Object.assign(S, rest);
+        }
+      }
       // rFilters는 화면 탐색용 UI 상태일 뿐 사용자 데이터가 아니므로 세션마다 초기화한다.
       // (예전에 필터 칩을 눌렀던 기기는 새로고침해도 계속 필터가 걸려 있어
       //  레시피 목록이 사람마다 다르게 보이는 것처럼 보였던 원인)
       S.rFilters = { time: null, type: null, cost: null };
+      S._schemaVersion = SCHEMA_VERSION;
     } catch (e) { }
     seedGlucoseExampleHistory(); // 실제 기록이 없는 새 계정에 한해 2주 예시 데이터를 학습쌍으로 시드 (frontend/public/js/data-glucose-example.js)
 
@@ -1691,7 +1708,9 @@
       const bw = (S.weights && S.weights.length ? S.weights[S.weights.length - 1].w : S.initWeight) || 55;
       return Math.round(met * 3.5 * bw / 200 * (durationMin || 0));
     }
-    function todayWorkoutKcal() { return exerciseKcal(S.exBurned.intensity, S.exBurned.durationMin); }
+    // 오늘 하루 저/중/고강도 운동을 여러 번 기록할 수 있으므로(식사 기록과 동일한 리스트 구조) 모두 합산한다.
+    function todayWorkoutEntries() { const t = todayISOLocal(); return S.workoutLogs.filter(w => w.date === t); }
+    function todayWorkoutKcal() { return todayWorkoutEntries().reduce((a, w) => a + exerciseKcal(w.intensity, w.durationMin), 0); }
     function totalBurned() { return S.baseBurned + todayWorkoutKcal(); }
     function totalIntake() { return S.meals.reduce((a, m) => a + mCalc(m, 'cal'), 0); }
     // 자유 텍스트 식단은 m.foods가 비어있는 대신 AI가 추정한 매크로(m.aiEstimate)를 쓴다.
@@ -1996,7 +2015,7 @@
       if (id === 'c3') { openMod('mod-diary'); return; }
       if (id === 'c1') { openMod('mod-sleep'); return; }
       if (id === 'g1') { openMod('mod-workout-timing'); return; }
-      if (id === 'g2') { openWorkoutIntensityModal(); return; }
+      if (id === 'g2') { return; } // 오늘 운동 기록 1건 이상이면 자동 체크 — "+ 운동 추가" 버튼으로 기록
       if (id === 'g3') { S._showFastDetail = !S._showFastDetail; goH(S.curH); return; } // 공복시간은 실시간 자동계산, 수동 체크 아님
       S.checks[id] = !S.checks[id]; goH(S.curH); updateHome(); if (typeof saveChecksRow === 'function') saveChecksRow();
     }
@@ -2158,7 +2177,7 @@
     // 흐름을 보여주고 각 변곡점에 무엇이 원인이었는지(식사/운동)를 아이콘으로 표시한다.
     // paintBGChart는 주어진 svg <g> 엘리먼트에 그리는 순수 로직이라, 인슐린 화면(오늘)뿐 아니라
     // AI 리포트에서 "그날"의 차트를 그대로 재사용하는 데도 쓰인다(AI가 새로 그리는 게 아님).
-    function paintBGChart(lg, dg, meals, exBurned) {
+    function paintBGChart(lg, dg, meals, workoutEntries) {
       if (!lg || !dg) return; lg.innerHTML = ''; dg.innerHTML = '';
       const pts = []; let lastMealIdxWithEntry = -1;
       const mealsWithEntry = meals.map((m, mi) => ({ m, mi })).filter(x => x.m.text || x.m.foods.length);
@@ -2185,14 +2204,18 @@
         t.setAttribute('x', x); t.setAttribute('y', '88'); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '11');
         t.innerHTML = `🍽<title>${(m.text || m.label).replace(/</g, '')}</title>`; dg.appendChild(t);
       });
-      if (exBurned && exBurned.intensity && lastMealIdxWithEntry >= 0) {
-        const x = 20 + lastMealIdxWithEntry * 90 + 45; const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        t.setAttribute('x', x); t.setAttribute('y', '88'); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '11');
-        t.innerHTML = `${INTENSITY_ICON[exBurned.intensity] || '🏃'}<title>${INTENSITY_LABEL[exBurned.intensity]} · ${(exBurned.exerciseType || '').replace(/</g, '')} ${exBurned.durationMin || 0}분</title>`; dg.appendChild(t);
+      // 오늘 여러 번 운동했을 수 있으니 항목마다 🏃 마커를 찍는다(마지막 식사 근처에 순서대로 배치)
+      const validWorkouts = (workoutEntries || []).filter(w => w && w.intensity);
+      if (validWorkouts.length && lastMealIdxWithEntry >= 0) {
+        validWorkouts.forEach((w, wi) => {
+          const x = 20 + lastMealIdxWithEntry * 90 + 45 + wi * 16; const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          t.setAttribute('x', x); t.setAttribute('y', '88'); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '11');
+          t.innerHTML = `${INTENSITY_ICON[w.intensity] || '🏃'}<title>${INTENSITY_LABEL[w.intensity]} · ${(w.exerciseType || w.exercise_type || '').replace(/</g, '')} ${w.durationMin || w.duration_min || 0}분</title>`; dg.appendChild(t);
+        });
       }
     }
     function renderBGChart() {
-      paintBGChart(document.getElementById('bg-line-g'), document.getElementById('bg-dot-g'), S.meals, S.exBurned);
+      paintBGChart(document.getElementById('bg-line-g'), document.getElementById('bg-dot-g'), S.meals, todayWorkoutEntries());
     }
     // GET /api/data/day의 원본 DB row(snake_case) → S.meals와 동일한 camelCase 구조로 변환
     function normalizeDbMeal(row) {
@@ -2218,43 +2241,54 @@
     // ── GROWTH ──
     const INTENSITY_ICON = { low: '🚶', medium: '🏃', high: '🔥' };
     const INTENSITY_LABEL = { low: '저강도', medium: '중강도', high: '고강도' };
-    function upsertTodayWorkoutLog() {
-      const t = todayISOLocal();
-      const entry = { date: t, intensity: S.exBurned.intensity, durationMin: S.exBurned.durationMin, exerciseType: S.exBurned.exerciseType };
-      const idx = S.workoutLogs.findIndex(w => w.date === t);
-      if (idx >= 0) S.workoutLogs[idx] = entry; else S.workoutLogs.push(entry);
-    }
     function weekWorkoutGrid() {
       const days = ['일', '월', '화', '수', '목', '금', '토']; const today = new Date(); const cells = [];
       for (let i = 6; i >= 0; i--) {
         const d = new Date(today); d.setDate(d.getDate() - i);
         const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        const e = (S.workoutLogs || []).find(w => w.date === ds && w.intensity);
-        cells.push({ label: days[d.getDay()], e });
+        const entries = (S.workoutLogs || []).filter(w => w.date === ds && w.intensity);
+        cells.push({ label: days[d.getDay()], entries });
       }
       return `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:8px">
-    ${cells.map(c => `<div style="background:${c.e ? 'rgba(129,199,132,.1)' : 'var(--card2)'};border:1.5px solid ${c.e ? 'rgba(129,199,132,.4)' : 'var(--bdr)'};border-radius:9px;padding:7px 2px;text-align:center">
+    ${cells.map(c => `<div style="background:${c.entries.length ? 'rgba(129,199,132,.1)' : 'var(--card2)'};border:1.5px solid ${c.entries.length ? 'rgba(129,199,132,.4)' : 'var(--bdr)'};border-radius:9px;padding:7px 2px;text-align:center">
       <div style="font-size:9px;color:var(--muted);font-weight:700">${c.label}</div>
-      <div style="font-size:14px;margin:3px 0">${c.e ? INTENSITY_ICON[c.e.intensity] : '—'}</div>
-      ${c.e ? `<div style="font-size:7px;color:var(--gro);font-weight:700">${c.e.durationMin}분</div>` : ''}
+      <div style="font-size:13px;margin:3px 0">${c.entries.length ? c.entries.slice(0, 3).map(e => INTENSITY_ICON[e.intensity]).join('') : '—'}</div>
+      ${c.entries.length ? `<div style="font-size:7px;color:var(--gro);font-weight:700">${c.entries.reduce((a, e) => a + (e.durationMin || 0), 0)}분</div>` : ''}
     </div>`).join('')}
   </div>`;
     }
     function renderGrowth() {
       const net = getNet(); const save = getSave(); const need = save < 0 ? Math.abs(save) : 0;
-      const hasToday = !!S.exBurned.intensity;
+      const today = todayWorkoutEntries();
+      S.checks.g2 = today.length > 0; // 오늘 운동 기록 1건 이상이면 자동 체크
+      S.checks.g3 = (fastingHours() || 0) >= 16; // 공복 16시간 이상이면 자동 체크
+      const entryRows = today.map(w => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr)">
+      <span style="font-size:20px">${INTENSITY_ICON[w.intensity]}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${INTENSITY_LABEL[w.intensity]} · ${w.exerciseType || '운동'}</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600">${w.time} · ${w.durationMin}분 · 약 ${exerciseKcal(w.intensity, w.durationMin)}kcal</div>
+      </div>
+      <button onclick="removeWorkoutEntry('${w.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+    </div>`).join('') || `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">+ 운동 추가 버튼으로 기록하세요</div>`;
       return `
   <div class="card" style="border-color:rgba(129,199,132,.3)">
     <div class="cap">칼로리 소모 현황</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px">
       <div style="background:var(--gro-bg);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(129,199,132,.2)">
         <div style="font-size:10px;color:var(--muted);font-weight:600">오늘 운동</div>
-        <div style="font-size:26px;margin:4px 0">${hasToday ? INTENSITY_ICON[S.exBurned.intensity] : '—'}</div>
-        <div style="font-size:9px;color:var(--muted);font-weight:600">${hasToday ? `${S.exBurned.durationMin}분` : '기록 없음'}</div>
+        <div style="font-size:22px;font-weight:800;color:var(--gro)">${today.length}건</div>
+        <div style="font-size:9px;color:var(--muted);font-weight:600">${todayWorkoutKcal()}kcal 소모</div>
       </div>
       <div style="background:${need > 0 ? 'rgba(239,83,80,.08)' : 'rgba(102,187,106,.08)'};border-radius:12px;padding:10px;text-align:center;border:1px solid ${need > 0 ? 'rgba(239,83,80,.2)' : 'rgba(102,187,106,.2)'}"><div style="font-size:10px;color:var(--muted);font-weight:600">${need > 0 ? '추가 소모 필요' : 'NET 칼로리'}</div><div style="font-size:22px;font-weight:800;color:${need > 0 ? 'var(--danger)' : 'var(--ok)'}">${need > 0 ? need : net}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
     </div>
     ${need > 0 ? `<div style="font-size:12px;color:var(--danger);background:rgba(239,83,80,.07);border:1.5px solid rgba(239,83,80,.2);border-radius:11px;padding:8px 12px;font-weight:600">🔗 인슐린 ${Math.abs(save)}kcal 초과 → 운동으로 ${need}kcal 더 태우면 목표 달성</div>` : `<div style="font-size:12px;color:var(--ok);background:rgba(102,187,106,.07);border:1.5px solid rgba(102,187,106,.2);border-radius:11px;padding:8px 12px;font-weight:700">✅ NET ${net}kcal · 목표 이내</div>`}
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="cap" style="margin-bottom:0">오늘 운동 기록</div>
+      <button onclick="openAddWorkoutModal()" style="background:var(--gro-bg);border:1.5px solid rgba(129,199,132,.3);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--gro);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">+ 운동 추가</button>
+    </div>
+    ${entryRows}
   </div>
   <div class="card">
     <div class="cap" style="margin-bottom:8px">이번 주 운동 기록 (7일)</div>
@@ -2276,31 +2310,43 @@
     }
     function saveWorkoutTiming(minutes) {
       S.exBurned.minutesAfterMeal = minutes; S.checks.g1 = true; closeMod('mod-workout-timing'); goH('growth'); updateHome();
-      if (typeof saveChecksRow === 'function') saveChecksRow(); if (typeof saveWorkoutRow === 'function') saveWorkoutRow();
+      if (typeof saveChecksRow === 'function') saveChecksRow();
     }
-    // 강도 선택 → 같은 모달 안에서 바로 운동 종류·시간까지 등록 (예전엔 두 모달로 나뉘어 있어서
-    // 이전에 입력한 시간값이 창을 다시 열 때 그대로 남아있는 채로 저장되는 버그가 있었다 —
-    // openWorkoutIntensityModal()에서 매번 필드를 today 상태로 리셋해 이 문제를 없앴다).
+    // 운동 기록은 식사 기록처럼 하루에 여러 번 추가할 수 있는 리스트다(저강도 산책 + 저녁 고강도 크로스핏처럼
+    // 같은 날 여러 강도를 섞어 할 수 있음). "+ 운동 추가"를 누를 때마다 모달 필드를 새 항목 기준으로 리셋한다
+    // — 예전엔 강도/시간이 today 단일 슬롯에 upsert돼서, 이전 값이 남은 채 다음 항목이 겹쳐 쓰였다
+    // (스쿼트 3분에 496kcal로 나온 원인).
     let _pickedIntensity = null;
-    function openWorkoutIntensityModal() {
-      _pickedIntensity = S.exBurned.intensity || null;
-      document.querySelectorAll('.wk-int-btn').forEach(b => b.classList.toggle('selected', b.dataset.lv === _pickedIntensity));
-      document.getElementById('wk-type').value = S.exBurned.exerciseType || '';
-      document.getElementById('wk-duration').value = S.exBurned.durationMin || '';
+    function openAddWorkoutModal() {
+      _pickedIntensity = null;
+      document.querySelectorAll('.wk-int-btn').forEach(b => b.classList.remove('selected'));
+      document.getElementById('wk-type').value = '';
+      const now = new Date(); document.getElementById('wk-time').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      document.getElementById('wk-duration').value = 20;
+      setTxt('wk-duration-label', '20분');
       openMod('mod-workout-intensity');
     }
     function pickWorkoutIntensity(level) {
       _pickedIntensity = level;
       document.querySelectorAll('.wk-int-btn').forEach(b => b.classList.toggle('selected', b.dataset.lv === level));
     }
-    function saveWorkoutIntensity() {
+    function onWorkoutDurationInput(val) { setTxt('wk-duration-label', `${val}분`); }
+    function saveWorkoutEntry() {
       const type = document.getElementById('wk-type')?.value?.trim() || '';
+      const time = document.getElementById('wk-time')?.value || '';
       const dur = parseInt(document.getElementById('wk-duration')?.value) || 0;
       if (!_pickedIntensity) { alert('운동 강도를 선택해주세요'); return; }
-      if (dur <= 0) { alert('운동 시간을 입력해주세요'); return; }
-      S.exBurned.intensity = _pickedIntensity; S.exBurned.exerciseType = type; S.exBurned.durationMin = dur;
-      S.checks.g2 = true; upsertTodayWorkoutLog(); closeMod('mod-workout-intensity'); goH('growth'); updateHome();
-      if (typeof saveChecksRow === 'function') saveChecksRow(); if (typeof saveWorkoutRow === 'function') saveWorkoutRow();
+      if (dur <= 0) { alert('운동 시간을 선택해주세요'); return; }
+      const entry = { id: S.nextWorkoutId++, date: todayISOLocal(), time, intensity: _pickedIntensity, durationMin: dur, exerciseType: type };
+      S.workoutLogs.push(entry);
+      closeMod('mod-workout-intensity'); goH('growth'); updateHome();
+      if (typeof saveWorkoutRow === 'function') saveWorkoutRow(entry);
+    }
+    function removeWorkoutEntry(id) {
+      const idx = S.workoutLogs.findIndex(w => String(w.id) === String(id)); if (idx < 0) return;
+      const [entry] = S.workoutLogs.splice(idx, 1);
+      goH('growth'); updateHome();
+      if (typeof deleteWorkoutRow === 'function') deleteWorkoutRow(entry);
     }
 
     // ── CORTISOL ──
@@ -2621,8 +2667,9 @@
     </div>`;
       }).join('') || `<div style="font-size:12px;color:var(--muted);padding:6px 0">식사 기록 없음</div>`;
 
-      const workoutTxt = day.workout && day.workout.intensity
-        ? `${INTENSITY_ICON[day.workout.intensity] || ''} ${INTENSITY_LABEL[day.workout.intensity] || ''} · ${day.workout.exercise_type || ''} ${day.workout.duration_min || 0}분`
+      const dayWorkouts = (day.workouts || []).filter(w => w.intensity);
+      const workoutTxt = dayWorkouts.length
+        ? dayWorkouts.map(w => `${INTENSITY_ICON[w.intensity] || ''} ${INTENSITY_LABEL[w.intensity] || ''} · ${w.exercise_type || ''} ${w.duration_min || 0}분`).join(' / ')
         : '운동 기록 없음';
 
       body.innerHTML = `
@@ -2652,7 +2699,7 @@
       return {
         date: dateStr,
         meals: (day.meals || []).map(m => ({ label: m.label, time: m.time, description: m.description, ai_estimate: m.ai_estimate, bg_pre: m.bg_pre, bg_1h: m.bg_1h, bg_2h: m.bg_2h })),
-        workout: day.workout ? { intensity: day.workout.intensity, duration_min: day.workout.duration_min, exercise_type: day.workout.exercise_type, minutes_after_meal: day.workout.minutes_after_meal } : null,
+        workouts: (day.workouts || []).filter(w => w.intensity).map(w => ({ time: w.logged_time, intensity: w.intensity, duration_min: w.duration_min, exercise_type: w.exercise_type })),
         recentWorkouts: S.workoutLogs.slice(-7),
         sleepThisWeek: S.sleepLogs.slice(-7),
         routineChecksThatDay: day.checks,
@@ -2709,7 +2756,7 @@
       }
       // 인슐린 섹션의 혈당 그래프는 AI가 그리는 게 아니라 인슐린 화면과 동일한 로직 기반 차트를 재사용한다.
       const rlg = document.getElementById('report-bg-line-g'), rdg = document.getElementById('report-bg-dot-g');
-      if (rlg && rdg) paintBGChart(rlg, rdg, (day.meals || []).map(normalizeDbMeal), day.workout);
+      if (rlg && rdg) paintBGChart(rlg, rdg, (day.meals || []).map(normalizeDbMeal), day.workouts || []);
     }
     // AI 리포트 5개 섹션 렌더링 (①목표체중 예측 ②인슐린 ③성장호르몬 ④코르티솔 ⑤호르몬/일기)
     function renderReportSections(r, day) {
@@ -2773,7 +2820,7 @@
         const slot = document.getElementById('day-report-slot');
         if (slot) slot.innerHTML = renderReportSections(S._todayReport.report, S._todayReport.day);
         const rlg = document.getElementById('report-bg-line-g'), rdg = document.getElementById('report-bg-dot-g');
-        if (rlg && rdg) paintBGChart(rlg, rdg, (S._todayReport.day.meals || []).map(normalizeDbMeal), S._todayReport.day.workout);
+        if (rlg && rdg) paintBGChart(rlg, rdg, (S._todayReport.day.meals || []).map(normalizeDbMeal), S._todayReport.day.workouts || []);
       } else {
         generateDayReport();
       }
