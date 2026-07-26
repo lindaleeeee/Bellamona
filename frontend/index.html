@@ -2695,6 +2695,31 @@
       <button class="btn btn-p" style="margin-bottom:8px" onclick="generateDayReport()">🤖 이 날의 AI 리포트 생성</button>
     </div>
     <button class="btn btn-o" onclick="closeMod('mod-day-detail')">닫기</button>`;
+      loadCachedReportIfAny(dateStr, day);
+    }
+
+    // 이 날짜에 이미 저장된 리포트가 있는지 확인만 하고(Gemini 호출 없음) 있으면 바로 보여준다.
+    // 없으면 기존 "생성" 버튼을 그대로 둬서, 실제로 만들 때만(=버튼 클릭 시) Gemini를 호출하게 한다.
+    async function loadCachedReportIfAny(dateStr, day) {
+      if (dateStr === todayISOLocal() && S._todayReport && S._todayReport.date === dateStr) {
+        const slot = document.getElementById('day-report-slot');
+        if (slot) slot.innerHTML = renderReportSections(S._todayReport.report, day);
+        const rlg = document.getElementById('report-bg-line-g'), rdg = document.getElementById('report-bg-dot-g');
+        if (rlg && rdg) paintBGChart(rlg, rdg, (day.meals || []).map(normalizeDbMeal), day.workouts || []);
+        return;
+      }
+      try {
+        const res = await fetchApi(apiUrl(`/api/report/${dateStr}`), { credentials: 'include' });
+        const json = await res.json().catch(() => null);
+        if (!_dayDetailCache || _dayDetailCache.dateStr !== dateStr) return; // 그 사이 다른 날짜로 이동했으면 무시
+        if (res.ok && json && json.success) {
+          const slot = document.getElementById('day-report-slot');
+          if (slot) slot.innerHTML = renderReportSections(json.report, day);
+          const rlg = document.getElementById('report-bg-line-g'), rdg = document.getElementById('report-bg-dot-g');
+          if (rlg && rdg) paintBGChart(rlg, rdg, (day.meals || []).map(normalizeDbMeal), day.workouts || []);
+          if (dateStr === todayISOLocal()) { S.reportGeneratedDate = dateStr; S._todayReport = { date: dateStr, report: json.report, day }; saveState(); }
+        }
+      } catch (e) { console.error('[loadCachedReportIfAny]', e); }
     }
 
     function buildDayReportPayload(dateStr, day) {
@@ -2734,16 +2759,18 @@
       let offset = 0; const circles = segs.map(s => { const len = s.v / total * C; const el = `<circle cx="50" cy="50" r="${R}" fill="none" stroke="${s.col}" stroke-width="14" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 50 50)"/>`; offset += len; return el; }).join('');
       return `<svg width="100" height="100" viewBox="0 0 100 100">${circles}</svg>`;
     }
-    async function generateDayReport() {
+    async function generateDayReport(force = false) {
       if (!_dayDetailCache) return;
       const { dateStr, day } = _dayDetailCache;
       const slot = document.getElementById('day-report-slot');
       slot.innerHTML = `<div style="text-align:center;padding:20px 0"><div style="font-size:28px;margin-bottom:8px">🤖</div><div style="font-size:12px;color:var(--muted);font-weight:600">${dateStr} 기록을 분석하고 있어요...</div></div>`;
       try {
+        // force=false면 서버가 그 날짜에 이미 저장된 리포트를 찾아 그대로 돌려주고 Gemini를 다시 부르지
+        // 않는다 — "다시 생성" 버튼(force=true)을 누른 경우만 실제로 새로 만든다.
         const res = await fetchApi(apiUrl('/api/report'), {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: buildDayReportPayload(dateStr, day) })
+          body: JSON.stringify({ data: buildDayReportPayload(dateStr, day), force })
         });
         const json = await res.json().catch(() => null);
         if (!res.ok || !json || !json.success) {
@@ -2812,21 +2839,15 @@
       ${insights.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">인사이트</div>${insights.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:4px 0;border-bottom:1px solid var(--bdr)">${t}</div>`).join('')}</div>` : ''}
       ${actions.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">추천 행동</div>${actions.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:3px 0">・ ${t}</div>`).join('')}</div>` : ''}
       ${r.pcos_insight ? `<div class="card" style="margin-bottom:12px;border-color:rgba(244,143,177,.3);background:rgba(244,143,177,.05)"><div class="cap" style="color:var(--rose2)">PCOS 인사이트</div><div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.pcos_insight}</div></div>` : ''}
-      <button class="btn btn-o" onclick="generateDayReport()">🔄 다시 생성</button>`;
+      <button class="btn btn-o" onclick="generateDayReport(true)">🔄 다시 생성</button>`;
     }
 
     // ═══════════════════════ 하루 한 번, 지정 시각 AI 리포트 자동 생성 ═══════════════════════
     function saveReportTime(val) { if (!val) return; S.reportTime = val; if (typeof saveProfileRow === 'function') saveProfileRow(); }
     async function openTodayReport() {
+      // showDayDetail → renderDayDetail이 오늘 날짜의 저장된 리포트를 자동으로 찾아 보여준다
+      // (로컬 캐시 우선, 없으면 서버에 저장된 것 확인 — 둘 다 없을 때만 "생성" 버튼이 남는다).
       await showDayDetail(todayISOLocal());
-      if (S._todayReport && S._todayReport.date === todayISOLocal()) {
-        const slot = document.getElementById('day-report-slot');
-        if (slot) slot.innerHTML = renderReportSections(S._todayReport.report, S._todayReport.day);
-        const rlg = document.getElementById('report-bg-line-g'), rdg = document.getElementById('report-bg-dot-g');
-        if (rlg && rdg) paintBGChart(rlg, rdg, (S._todayReport.day.meals || []).map(normalizeDbMeal), S._todayReport.day.workouts || []);
-      } else {
-        generateDayReport();
-      }
     }
     async function checkAutoGenerateReport() {
       if (!S.reportTime) return;

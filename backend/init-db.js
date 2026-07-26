@@ -194,6 +194,11 @@ const initDB = async () => {
       );
     `);
 
+    // 하루 리포트는 날짜당 1건만 저장하고 재사용해서(캐시) 같은 날 Gemini를 다시 호출하지 않도록 한다.
+    // day 리포트는 항상 period_start = period_end = 그 날짜로 저장하므로 이 조합이 유니크 키가 된다.
+    await client.query('CREATE UNIQUE INDEX IF NOT EXISTS reports_user_period_uniq ON reports (user_id, period_start, period_end);');
+    console.log('[DB] reports.user_id/period_start/period_end 유니크 인덱스 확인 완료');
+
     // 10. training_pairs
     await client.query(`
       CREATE TABLE IF NOT EXISTS training_pairs (

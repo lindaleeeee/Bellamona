@@ -98,14 +98,52 @@ function fallbackReport(data) {
     };
 }
 
+// 이미 저장된 날짜별 리포트를 캐시로만 조회 (Gemini 호출 없음) — 달력에서 하루를 열어볼 때
+// 매번 새로 생성하지 않고, 이미 만들어둔 리포트가 있으면 그것만 보여주기 위한 용도.
+router.get('/:date', authenticateToken, async (req, res) => {
+    const { date } = req.params;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ success: false, error: 'invalid date' });
+    try {
+        const { rows } = await pool.query(
+            'SELECT content FROM reports WHERE user_id = $1 AND period_start = $2 AND period_end = $2',
+            [req.user.userId, date]
+        );
+        if (!rows.length) return res.json({ success: false });
+        res.json({ success: true, report: rows[0].content, cached: true });
+    } catch (error) {
+        console.error('[REPORT] GET /:date 캐시 조회 실패:', error);
+        res.status(500).json({ success: false });
+    }
+});
+
 router.post('/', authenticateToken, async (req, res) => {
     console.log('[REPORT] POST / called by userId:', req.user?.userId);
-    const { data } = req.body;
+    const { data, force } = req.body;
     if (!data) {
         console.warn('[REPORT] Rejected: no data provided in request body');
         return res.status(400).json({ success: false, error: 'No data provided' });
     }
     console.log('[REPORT] Input data keys:', Object.keys(data));
+
+    // 하루 한 번만 Gemini를 호출하도록: force가 아니면 이미 저장된 리포트가 있는지 먼저 확인하고,
+    // 있으면 그걸 그대로 반환한다 (토큰 재사용 없음). "다시 생성" 버튼을 누른 경우만 force=true로 와서
+    // 이 캐시를 건너뛰고 새로 만든다.
+    const reportDate = data.date;
+    if (reportDate && !force) {
+        try {
+            const { rows } = await pool.query(
+                'SELECT content FROM reports WHERE user_id = $1 AND period_start = $2 AND period_end = $2',
+                [req.user.userId, reportDate]
+            );
+            if (rows.length) {
+                console.log(`[REPORT] ${reportDate} 캐시된 리포트 재사용 (Gemini 미호출) userId:`, req.user?.userId);
+                return res.json({ success: true, report: rows[0].content, cached: true });
+            }
+        } catch (dbErr) {
+            console.error('[REPORT] 캐시 조회 실패, 새로 생성 절차로 진행:', dbErr);
+        }
+    }
+
     const macro_breakdown = computeMacroBreakdown(data.meals);
 
     try {
@@ -151,6 +189,22 @@ router.post('/', authenticateToken, async (req, res) => {
         }
         reportJSON.macro_breakdown = macro_breakdown; // 항상 서버 계산값으로 덮어써서 정확성 보장
         console.log('[REPORT] Successfully parsed report JSON for userId:', req.user?.userId);
+
+        // 실제 Gemini 응답이 성공한 경우만 저장 — 이후 같은 날 재요청은 위 캐시 조회에서 바로 반환되어
+        // Gemini를 다시 호출하지 않는다 (사용자 요청: 하루 한 번 생성한 리포트를 저장해서 토큰 재사용 방지).
+        if (reportDate) {
+            try {
+                await pool.query(`
+                    INSERT INTO reports (user_id, period_start, period_end, content)
+                    VALUES ($1, $2, $2, $3)
+                    ON CONFLICT (user_id, period_start, period_end)
+                    DO UPDATE SET content = EXCLUDED.content, created_at = CURRENT_TIMESTAMP
+                `, [req.user.userId, reportDate, JSON.stringify(reportJSON)]);
+                console.log(`[REPORT] ${reportDate} 리포트 저장 완료 (다음 요청부터 캐시 재사용)`);
+            } catch (saveErr) {
+                console.error('[REPORT] 리포트 저장 실패 (응답 자체는 정상 반환):', saveErr);
+            }
+        }
         res.json({ success: true, report: reportJSON });
     } catch (error) {
         console.error('[REPORT] Gemini API failed for userId:', req.user?.userId, '— returning fallback report. 아래 로그로 실제 원인을 확인하세요:');
