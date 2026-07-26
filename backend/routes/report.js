@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const { generateWithFallback } = require('../geminiClient');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -112,11 +112,6 @@ router.post('/', authenticateToken, async (req, res) => {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
-        const genAI = new GoogleGenerativeAI(apiKey);
-        // gemini-1.5-flash는 Google이 이후 세대 모델 출시와 함께 단종시켰다 — 실패 원인이 그거였을
-        // 가능성이 높아 현재 지원되는 모델로 교체.
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
         const prompt = `
 이 사용자의 건강 데이터를 분석하여 저속노화 및 호르몬 관리를 위한 통찰과 추천을 제공해 주세요.
 반드시 JSON 형식으로만 응답해야 합니다. 의학적 진단은 금지합니다. 데이터가 부족한 항목은 "기록이 더
@@ -142,9 +137,8 @@ router.post('/', authenticateToken, async (req, res) => {
 `;
 
         console.log('[REPORT] Calling Gemini API, prompt length:', prompt.length);
-        const result = await model.generateContent(prompt);
-        let rawText = result.response.text();
-        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const { text } = await generateWithFallback(apiKey, prompt, '[REPORT]');
+        let rawText = text.replace(/```json/g, '').replace(/```/g, '').trim();
 
         let reportJSON;
         try {

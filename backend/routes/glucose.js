@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const { generateWithFallback } = require('../geminiClient');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -60,9 +60,6 @@ router.post('/predict', authenticateToken, async (req, res) => {
             return res.status(500).json({ success: false, error: 'API Key not configured' });
         }
 
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' }); // gemini-1.5-flash 단종 대응
-
         const prompt = `
 당신은 PCOS(다낭성난소증후군) 여성을 위한 혈당 관리 앱의 예측 보조 도구입니다.
 아래 "이번 식사" 설명(자유 텍스트, 그램 단위 아님)과 이 사용자의 최근 2주 식단·혈당·운동 이력을
@@ -88,9 +85,8 @@ router.post('/predict', authenticateToken, async (req, res) => {
 `;
 
         console.log('[GLUCOSE] Calling Gemini API, prompt length:', prompt.length);
-        const result = await model.generateContent(prompt);
-        let rawText = result.response.text();
-        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const { text: rawTextResult } = await generateWithFallback(apiKey, prompt, '[GLUCOSE]');
+        let rawText = rawTextResult.replace(/```json/g, '').replace(/```/g, '').trim();
 
         let estimate;
         try {
