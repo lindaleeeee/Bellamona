@@ -916,14 +916,6 @@
               </div>
             </div>
           </div>
-          <div class="card2" onclick="go('s-diet')"
-            style="cursor:pointer;display:flex;align-items:center;gap:10px;border-color:rgba(91,184,245,.25)"><span
-              style="font-size:22px">🥗</span>
-            <div>
-              <div style="font-size:13px;font-weight:700;color:var(--text)">저당 레시피 보기</div>
-              <div style="font-size:11px;color:var(--sky2);font-weight:600">건강한 저혈당 식단 →</div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -947,8 +939,8 @@
             <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">
               <div class="rw"><svg width="82" height="82" style="transform:rotate(-90deg)">
                   <circle cx="41" cy="41" r="33" fill="none" stroke="var(--sub)" stroke-width="7" />
-                  <circle cx="41" cy="41" r="33" fill="none" stroke="url(#dg)" stroke-width="7"
-                    stroke-dasharray="155 207" stroke-linecap="round" />
+                  <circle cx="41" cy="41" r="33" fill="none" stroke="url(#dg)" stroke-width="7" id="d-score-ring"
+                    stroke-dasharray="0 207" stroke-linecap="round" />
                   <defs>
                     <linearGradient id="dg">
                       <stop offset="0%" stop-color="#5bb8f5" />
@@ -957,13 +949,13 @@
                   </defs>
                 </svg>
                 <div class="rl">
-                  <div style="font-size:22px;font-weight:800;color:var(--text)">75</div>
+                  <div style="font-size:22px;font-weight:800;color:var(--text)" id="d-score-val">-</div>
                   <div style="font-size:9px;color:var(--muted);font-weight:600">/100</div>
                 </div>
               </div>
               <div style="flex:1">
                 <div style="font-size:13px;font-weight:700;color:var(--text)">이달 저속노화 점수</div>
-                <div style="font-size:11px;color:var(--ok);margin-top:2px;font-weight:700">생물학적 나이 0.4세 ↓</div>
+                <div style="font-size:11px;color:var(--ok);margin-top:2px;font-weight:700" id="d-score-sub">기록을 시작하면 표시돼요</div>
                 <div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500" id="d-wt-prog">목표 -4kg ·
                   현재 -0.0kg</div>
                 <div style="margin-top:6px">
@@ -1007,12 +999,6 @@
             </div>
           </div>
           <div class="card">
-            <div class="cap" style="margin-bottom:8px">14일 달성 기록</div>
-            <div style="display:flex;gap:3px;align-items:flex-end;height:56px;margin-bottom:5px" id="hist-bars"></div>
-            <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600"
-              id="hist-dates"></div>
-          </div>
-          <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
               <div class="cap" style="margin-bottom:0" id="cal-lbl">4월 달력</div>
               <button onclick="openMod('mod-period')"
@@ -1032,19 +1018,6 @@
               <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);font-weight:600">
                 <div style="width:9px;height:9px;border-radius:2px;background:rgba(102,187,106,.12)"></div>완벽 달성
               </div>
-            </div>
-          </div>
-          <div class="card" onclick="openMod('mod-report')"
-            style="cursor:pointer;background:linear-gradient(135deg,var(--lav3),rgba(244,143,177,.08));border-color:var(--lav)">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div>
-                <div style="font-size:13px;font-weight:700;color:var(--lav2)">🤖 AI 통합 리포트</div>
-                <div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500">일기 분석 + 호르몬 상관관계 · 3일마다
-                </div>
-              </div>
-              <div
-                style="background:linear-gradient(135deg,var(--sky2),var(--lav2));color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px">
-                보기</div>
             </div>
           </div>
         </div>
@@ -1209,12 +1182,6 @@
                 viewBox="0 0 24 24">
                 <polyline points="9 18 15 12 9 6" />
               </svg></div>
-            <div class="card2" onclick="openMod('mod-report')"
-              style="display:flex;justify-content:space-between;align-items:center;border-color:var(--lav);cursor:pointer">
-              <span style="font-size:13px;color:var(--lav2);font-weight:700">🤖 AI 통합 리포트</span><span
-                style="font-size:10px;background:var(--lav3);color:var(--lav2);padding:2px 7px;border-radius:99px;font-weight:700">구독
-                전용</span>
-            </div>
             <div class="card2" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer"
               onclick="doLogout()"><span style="font-size:13px;color:var(--text);font-weight:600">🚪 로그아웃</span><svg
                 width="15" height="15" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24">
@@ -1258,6 +1225,13 @@
     </div>
 
     <!-- MODALS -->
+    <div class="mov" id="mod-day-detail">
+      <div class="msh">
+        <div class="mh"></div>
+        <div id="day-detail-body"></div>
+      </div>
+    </div>
+
     <div class="mov" id="mod-period">
       <div class="msh">
         <div class="mh"></div>
@@ -1373,29 +1347,6 @@
               style="font-size:13px;color:var(--text);font-weight:600">🐨 바이오PM</span></label></div><textarea
           class="input" id="notify-msg" rows="3" style="margin-bottom:12px"></textarea><button class="btn btn-p"
           onclick="sendNotify()">보내기</button>
-      </div>
-    </div>
-
-    <div class="mov" id="mod-paywall">
-      <div class="msh">
-        <div class="mh"></div>
-        <div style="text-align:center;margin-bottom:16px">
-          <div style="font-size:36px;margin-bottom:8px">🔒</div>
-          <div style="font-size:16px;font-weight:700;color:var(--text)">AI 통합 리포트</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;font-weight:500">구독자 전용 · 3일마다 생성</div>
-        </div>
-        <div class="card" style="margin-bottom:12px;font-size:13px;color:var(--text);line-height:1.9;font-weight:500">✓
-          일기 단어 분석 + 감정-호르몬 상관관계<br>✓ 혈당 추이 + AI 예측 시뮬레이션<br>✓ PCOS 사이클 맞춤 가이드<br>✓ AI 루틴 추천 & 개인화</div><button
-          class="btn btn-p" style="margin-bottom:8px"
-          onclick="S.subscribed=true;closeMod('mod-paywall');renderReport();openMod('mod-report')">월 9,900원
-          구독하기</button><button class="btn btn-o" onclick="closeMod('mod-paywall')">나중에</button>
-      </div>
-    </div>
-
-    <div class="mov" id="mod-report">
-      <div class="msh" style="max-height:92%">
-        <div class="mh"></div>
-        <div id="rep-body"></div>
       </div>
     </div>
 
@@ -1561,7 +1512,7 @@
 
     // ═══════════════════════ STATE ═══════════════════════
     const S = {
-      loggedIn: false, subscribed: false, prev: 's-home', curH: 'insulin', obStep: 1,
+      loggedIn: false, prev: 's-home', curH: 'insulin', obStep: 1,
       name: '혜림', goalCal: 1090, baseBurned: 380,
       exBurned: { strength: 0, hiit: 0, cardio: 0, walk: 0 },
       savedTotal: 0, calMon: { y: 2026, m: 3 },
@@ -1585,7 +1536,6 @@
       avatar: '🦋',
       streakDays: 0, gapDays: 0, totalLoggedDays: 0,
       friendCode: '',
-      report: null, reportGeneratedAt: null,
       routines: {
         insulin: [
           { id: 'i1', label: '⏱ 간헐적 단식 16시간', sub: '마지막 식사 기준 자동 계산' },
@@ -1630,8 +1580,6 @@
     function go(id) { document.querySelectorAll('.scr').forEach(s => s.classList.remove('on')); const el = document.getElementById(id); if (el) el.classList.add('on'); if (id === 's-dash') renderDash(); if (id === 's-diet') renderRecipes(); updateHome(); updateProfileHeader(); }
     function navTo(el, id) { document.querySelectorAll('.ni').forEach(n => n.classList.remove('on')); el.classList.add('on'); if (id !== 's-hormone') S.prev = id; go(id); }
     function openMod(id) {
-      if (id === 'mod-report' && !S.subscribed) { document.getElementById('mod-paywall').classList.add('open'); return; }
-      if (id === 'mod-report') renderReport();
       if (id === 'mod-cheat') { renderCheat(); document.getElementById('ch-avail').textContent = S.savedTotal; }
       if (id === 'mod-edit-routine') renderEditRoutine();
       if (id === 'mod-friends') setTxt('my-friend-code', S.friendCode || '발급 중...');
@@ -2160,7 +2108,7 @@
       S.calMon = { y: d.getFullYear(), m: d.getMonth() };
     }
 
-    function renderDash() {
+    async function renderDash() {
       const { y, m } = S.calMon; setTxt('d-title', `${y}년 ${m + 1}월 성과`); setTxt('cal-lbl', `${m + 1}월 달력`);
       const g = document.getElementById('dash-cal'); if (!g) return; g.innerHTML = '';
       ['일', '월', '화', '수', '목', '금', '토'].forEach(d => { const e = document.createElement('div'); e.className = 'cdow'; e.textContent = d; g.appendChild(e); });
@@ -2169,16 +2117,27 @@
 
       const today = new Date(); const isCur = y === today.getFullYear() && m === today.getMonth(); const todayDate = today.getDate();
 
-      const goodDays = [];
       const reqTotal = S.routines ? Object.values(S.routines).flat().length : 16;
-      if (S.checkHistory) {
-        S.checkHistory.forEach(ch => {
-          const d = new Date(ch.date);
-          if (d.getFullYear() === y && d.getMonth() === m) {
-            if (Object.values(ch.checks).filter(Boolean).length >= reqTotal) goodDays.push(d.getDate());
-          }
-        });
-      }
+      let monthDays = [];
+      try {
+        const res = await fetchApi(apiUrl(`/api/data/month-summary?year=${y}&month=${m + 1}`), { credentials: 'include' });
+        if (res.ok) { const j = await res.json(); monthDays = j.days || []; }
+      } catch (e) { console.error('[renderDash month-summary]', e); }
+
+      const dayPctByDate = {};
+      monthDays.forEach(dh => {
+        const done = Object.values(dh.checks || {}).filter(Boolean).length;
+        dayPctByDate[dh.date] = Math.round(done / reqTotal * 100);
+      });
+      const goodDays = monthDays.filter(dh => (dayPctByDate[dh.date] || 0) >= 100).map(dh => parseInt(dh.date.split('-')[2], 10));
+
+      // 이달 저속노화 점수 = 이번 달 기록된 날들의 평균 달성률
+      const pctVals = Object.values(dayPctByDate);
+      const monthAvg = pctVals.length ? Math.round(pctVals.reduce((a, b) => a + b, 0) / pctVals.length) : null;
+      const ring = document.getElementById('d-score-ring');
+      if (ring) { const circ = 207; ring.setAttribute('stroke-dasharray', `${monthAvg != null ? Math.round(monthAvg / 100 * circ) : 0} ${circ}`); }
+      setTxt('d-score-val', monthAvg != null ? monthAvg : '-');
+      setTxt('d-score-sub', monthAvg != null ? `이번 달 ${pctVals.length}일 기록 · 평균 ${monthAvg}점` : '기록을 시작하면 표시돼요');
 
       for (let i = 0; i < first; i++) { const e = document.createElement('div'); g.appendChild(e); }
       for (let d = 1; d <= total; d++) {
@@ -2186,38 +2145,153 @@
         if (isCur && d === todayDate) e.classList.add('today'); else if (isP) e.classList.add('per'); else if (isO) e.classList.add('ovul'); else if (goodDays.includes(d)) e.classList.add('full');
         let inner = `<span>${d}</span>`;
         if ((d >= todayDate - 3 && d <= todayDate && isCur) && !isP && !isO && d !== todayDate) inner += `<div class="dtr"><div class="d4" style="background:var(--sky2)"></div><div class="d4" style="background:var(--cor)"></div><div class="d4" style="background:var(--gro)"></div><div class="d4" style="background:var(--rose)"></div></div>`;
-        e.innerHTML = inner; g.appendChild(e);
+        e.innerHTML = inner;
+        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        e.style.cursor = 'pointer';
+        e.onclick = () => showDayDetail(dateStr);
+        g.appendChild(e);
       }
-      renderHistBars(); updateHome();
+      updateHome();
     }
     function chgMon(d) { S.calMon.m += d; if (S.calMon.m > 11) { S.calMon.m = 0; S.calMon.y++; } if (S.calMon.m < 0) { S.calMon.m = 11; S.calMon.y--; } renderDash(); }
     function savePeriod() { const s = document.getElementById('per-start')?.value; const days = parseInt(document.getElementById('per-days')?.value) || 5; if (s) S.periods.push({ start: s, days }); closeMod('mod-period'); renderDash(); if (typeof savePeriodRow === 'function') savePeriodRow(); }
 
-    function renderHistBars() {
-      const c = document.getElementById('hist-bars'); if (!c) return;
-      const data = []; const today = new Date();
-      const reqTotal = S.routines ? Object.values(S.routines).flat().length : 16;
-      for (let i = 13; i >= 0; i--) {
-        const d = new Date(today); d.setDate(d.getDate() - i);
-        const dStr = d.toISOString().split('T')[0];
-        const ch = S.checkHistory ? S.checkHistory.find(x => x.date === dStr) : null;
-        let v = 0;
-        if (ch) v = Math.round(Object.values(ch.checks).filter(Boolean).length / reqTotal * 100);
-        else if (i === 0 && S.checks) v = Math.round(Object.values(S.checks).filter(Boolean).length / reqTotal * 100);
-        data.push(v);
+    // ═══════════════════════ 달력 날짜 클릭 → 일별 상세 ═══════════════════════
+    function hormonePctForChecks(hid, checksObj) {
+      const rts = S.routines[hid]; if (!rts || !rts.length) return 0;
+      const done = rts.filter(r => checksObj && checksObj[r.id]).length;
+      return Math.round(done / rts.length * 100);
+    }
+    function overallPctForChecks(checksObj) {
+      const all = Object.values(S.routines).flat(); if (!all.length) return 0;
+      const done = all.filter(r => checksObj && checksObj[r.id]).length;
+      return Math.round(done / all.length * 100);
+    }
+
+    let _dayDetailCache = null; // { dateStr, label, day }
+
+    async function showDayDetail(dateStr) {
+      const [y, mo, d] = dateStr.split('-').map(Number);
+      const label = `${y}년 ${mo}월 ${d}일`;
+      const body = document.getElementById('day-detail-body');
+      body.innerHTML = `<div style="text-align:center;padding:30px 0;color:var(--muted);font-size:13px;font-weight:600">불러오는 중...</div>`;
+      document.getElementById('mod-day-detail')?.classList.add('open');
+      try {
+        const res = await fetchApi(apiUrl(`/api/data/day?date=${dateStr}`), { credentials: 'include' });
+        if (!res.ok) { body.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--danger);font-size:12px;font-weight:700">기록을 불러오지 못했어요.</div>`; return; }
+        const day = await res.json();
+        _dayDetailCache = { dateStr, label, day };
+        renderDayDetail();
+      } catch (e) {
+        console.error('[showDayDetail]', e);
+        body.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--danger);font-size:12px;font-weight:700">네트워크 오류로 불러오지 못했어요.</div>`;
       }
-      c.innerHTML = '';
-      const isCurMonth = S.calMon.y === today.getFullYear() && S.calMon.m === today.getMonth();
-      data.forEach((v, i) => {
-        const b = document.createElement('div'); const isT = i === data.length - 1 && isCurMonth;
-        b.style.cssText = `flex:1;border-radius:4px 4px 0 0;height:${Math.max(v * .8, 4)}px;background:${isT ? 'linear-gradient(180deg,var(--sky2),var(--lav2))' : v >= 80 ? 'rgba(91,184,245,.5)' : v >= 60 ? 'rgba(179,157,219,.4)' : 'rgba(200,200,220,.3)'};transition:height .5s`;
-        c.appendChild(b);
-      });
-      const dd = document.getElementById('hist-dates');
-      if (dd) {
-        const d1 = new Date(today); d1.setDate(today.getDate() - 13);
-        const d2 = new Date(today); d2.setDate(today.getDate() - 6);
-        dd.innerHTML = `<span>${d1.getMonth() + 1}/${d1.getDate()}</span><span>${d2.getMonth() + 1}/${d2.getDate()}</span><span>${today.getMonth() + 1}/${today.getDate()}</span>`;
+    }
+
+    function renderDayDetail() {
+      if (!_dayDetailCache) return;
+      const { dateStr, label, day } = _dayDetailCache;
+      const body = document.getElementById('day-detail-body');
+
+      if (!day.hasAnyRecord) {
+        body.innerHTML = `
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px">📅 ${label}</div>
+    <div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px;font-weight:600">이 날은 기록이 없어요.</div>
+    <button class="btn btn-o" onclick="closeMod('mod-day-detail')">닫기</button>`;
+        return;
+      }
+
+      const overall = overallPctForChecks(day.checks);
+      const hormRows = [['🩺 인슐린', 'insulin', 'var(--sky2)'], ['💪 성장', 'growth', 'var(--gro)'], ['🌿 코르티솔', 'cortisol', 'var(--cor)'], ['💗 옥시토신', 'oxytocin', 'var(--rose)']]
+        .map(([l, h, c]) => `<div style="display:flex;align-items:center;gap:6px"><span style="width:64px;font-size:11px;color:var(--muted);font-weight:600">${l}</span><div class="bar-t" style="flex:1;height:5px"><div class="bar-f" style="width:${hormonePctForChecks(h, day.checks)}%;background:${c}"></div></div><span style="font-size:11px;width:28px;text-align:right;font-weight:800;color:${c}">${hormonePctForChecks(h, day.checks)}%</span></div>`).join('');
+
+      const mealsHtml = day.meals.filter(m => (m.foods || []).length > 0).map(m => {
+        const cal = mCalc(m, 'cal');
+        return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bdr);font-size:12px"><span style="color:var(--text);font-weight:600">${m.label} ${m.time ? '· ' + String(m.time).slice(0, 5) : ''}</span><span style="color:var(--sky2);font-weight:800">${cal}kcal${m.bg_pre != null || m.bg_1h != null || m.bg_2h != null ? ` · 혈당 ${[m.bg_pre, m.bg_1h, m.bg_2h].filter(v => v != null).join('→')}` : ''}</span></div>`;
+      }).join('') || `<div style="font-size:12px;color:var(--muted);padding:6px 0">식사 기록 없음</div>`;
+
+      const workoutTxt = day.workout
+        ? `근력 ${day.workout.strength || 0} · HIIT ${day.workout.hiit || 0} · 유산소 ${day.workout.cardio || 0} · 걷기 ${day.workout.walk || 0}`
+        : '운동 기록 없음';
+
+      body.innerHTML = `
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px">📅 ${label}</div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="cap">그날의 호르몬 기록 점수</div>
+      <div style="font-size:26px;font-weight:800;color:var(--text);margin-bottom:8px">${overall}<span style="font-size:12px;color:var(--muted);font-weight:600">/100</span></div>
+      <div style="display:flex;flex-direction:column;gap:5px">${hormRows}</div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="cap">식사</div>
+      ${mealsHtml}
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="cap">운동</div>
+      <div style="font-size:12px;color:var(--text);font-weight:600">${workoutTxt}</div>
+      ${day.weight != null ? `<div style="font-size:12px;color:var(--text);font-weight:600;margin-top:6px">체중 ${Number(day.weight).toFixed(1)}kg</div>` : ''}
+    </div>
+    ${day.diary ? `<div class="card" style="margin-bottom:12px"><div class="cap">일기</div><div style="font-size:12px;color:var(--text);line-height:1.6;font-weight:500">${day.diary}</div></div>` : ''}
+    <div id="day-report-slot">
+      <button class="btn btn-p" style="margin-bottom:8px" onclick="generateDayReport()">🤖 이 날의 AI 리포트 생성</button>
+    </div>
+    <button class="btn btn-o" onclick="closeMod('mod-day-detail')">닫기</button>`;
+    }
+
+    function buildDayReportPayload(dateStr, day) {
+      return {
+        date: dateStr,
+        meals: (day.meals || []).map(m => ({ label: m.label, time: m.time, foods: m.foods, bg_pre: m.bg_pre, bg_1h: m.bg_1h, bg_2h: m.bg_2h })),
+        workout: day.workout || null,
+        routineChecksThatDay: day.checks,
+        overallRoutinePct: overallPctForChecks(day.checks),
+        hormonePct: {
+          insulin: hormonePctForChecks('insulin', day.checks), growth: hormonePctForChecks('growth', day.checks),
+          cortisol: hormonePctForChecks('cortisol', day.checks), oxytocin: hormonePctForChecks('oxytocin', day.checks)
+        },
+        weightThatDay: day.weight,
+        goalWeight: S.goalWeight, initWeight: S.initWeight, dailyKcalGoal: S.goalCal,
+        periodContext: day.period,
+        diaryThatDay: day.diary
+      };
+    }
+
+    async function generateDayReport() {
+      if (!_dayDetailCache) return;
+      const { dateStr, day } = _dayDetailCache;
+      const slot = document.getElementById('day-report-slot');
+      slot.innerHTML = `<div style="text-align:center;padding:20px 0"><div style="font-size:28px;margin-bottom:8px">🤖</div><div style="font-size:12px;color:var(--muted);font-weight:600">${dateStr} 기록을 분석하고 있어요...</div></div>`;
+      try {
+        const res = await fetchApi(apiUrl('/api/report'), {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: buildDayReportPayload(dateStr, day) })
+        });
+        const json = await res.json().catch(() => null);
+        if (!res.ok || !json || !json.success) {
+          slot.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--danger);font-size:12px;font-weight:700">리포트 생성에 실패했어요.</div><button class="btn btn-p" style="margin-top:8px" onclick="generateDayReport()">다시 시도</button>`;
+          return;
+        }
+        const r = json.report;
+        const scores = r.scores || {};
+        const keywords = Array.isArray(r.emotion_keywords) ? r.emotion_keywords : [];
+        const kwColor = t => t === 'positive' ? ['rgba(91,184,245,.2)', 'var(--sky2)'] : t === 'negative' ? ['rgba(239,83,80,.15)', 'var(--danger)'] : ['var(--card2)', 'var(--muted)'];
+        const wc = keywords.map(k => { const [bg, col] = kwColor(k.type); return `<div style="padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;background:${bg};color:${col}">${k.word} <span style="font-size:9px;opacity:.7">${k.count || 1}</span></div>`; }).join('');
+        const insights = Array.isArray(r.insights) ? r.insights : [];
+        const actions = Array.isArray(r.actions) ? r.actions : [];
+        slot.innerHTML = `
+      <div class="card" style="background:linear-gradient(135deg,var(--sky3),var(--lav3));margin-bottom:12px">
+        <div class="cap">AI 리포트</div>
+        ${r.headline ? `<div style="font-size:13px;color:var(--text);font-weight:700;margin-bottom:8px">"${r.headline}"</div>` : ''}
+        ${typeof scores.overall === 'number' ? `<div style="font-size:38px;font-weight:800;color:var(--text)">${scores.overall}<span style="font-size:11px;color:var(--muted);font-weight:600"> /100</span></div>` : ''}
+      </div>
+      ${keywords.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">감정 키워드</div><div style="display:flex;flex-wrap:wrap;gap:6px">${wc}</div></div>` : ''}
+      ${insights.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">인사이트</div>${insights.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:4px 0;border-bottom:1px solid var(--bdr)">${t}</div>`).join('')}</div>` : ''}
+      ${actions.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">추천 행동</div>${actions.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:3px 0">・ ${t}</div>`).join('')}</div>` : ''}
+      ${r.pcos_insight ? `<div class="card" style="margin-bottom:12px;border-color:rgba(244,143,177,.3);background:rgba(244,143,177,.05)"><div class="cap" style="color:var(--rose2)">PCOS 인사이트</div><div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.pcos_insight}</div></div>` : ''}
+      <button class="btn btn-o" onclick="generateDayReport()">🔄 다시 생성</button>`;
+      } catch (e) {
+        console.error('[generateDayReport]', e);
+        slot.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--danger);font-size:12px;font-weight:700">네트워크 오류가 발생했어요.</div><button class="btn btn-p" style="margin-top:8px" onclick="generateDayReport()">다시 시도</button>`;
       }
     }
 
@@ -2334,134 +2408,6 @@
 
     // ═══════════════════════ AVATAR ═══════════════════════
     function setAvatar(em) { S.avatar = em; const el = document.getElementById('user-avatar'); if (el) el.textContent = em; const mini = document.getElementById('prof-avatar-mini'); if (mini) mini.textContent = em; saveState(); saveAvatarRow(em); closeMod('mod-avatar'); }
-
-    // ═══════════════════════ AI REPORT ═══════════════════════
-    // 오늘 실제 기록을 백엔드로 보낼 payload로 정리 (Gemini 프롬프트 재료)
-    function buildReportPayload() {
-      return {
-        today: todayISO(),
-        meals: S.meals.map(m => ({ label: m.label, time: m.time, foods: m.foods, bg_pre: m.bgPre, bg_1h: m.bg1h, bg_2h: m.bg2h })),
-        intakeKcalToday: totalIntake(),
-        burnedKcalToday: totalBurned(),
-        dailyKcalGoal: S.goalCal,
-        workoutToday: S.exBurned,
-        routineChecksToday: S.checks,
-        overallRoutinePct: overallPct(),
-        hormonePct: {
-          insulin: hormonePct('insulin'), growth: hormonePct('growth'),
-          cortisol: hormonePct('cortisol'), oxytocin: hormonePct('oxytocin')
-        },
-        weight: {
-          current: S.weights.length ? S.weights[S.weights.length - 1].w : null,
-          initial: S.initWeight, goal: S.goalWeight, goalMonths: S.goalMonths
-        },
-        cyclePeriods: S.periods, cycleLen: S.cycleLen,
-        recentDiaries: S.diaries.slice(-7).map(d => ({ date: d.d, text: d.t })),
-        streakDays: S.streakDays
-      };
-    }
-
-    async function generateAIReport() {
-      const body = document.getElementById('rep-body');
-      body.innerHTML = `<div style="text-align:center;padding:40px 0"><div style="font-size:32px;margin-bottom:10px">🤖</div><div style="font-size:13px;color:var(--muted);font-weight:600">오늘 기록을 분석해서 리포트를 생성하고 있어요...</div></div>`;
-      try {
-        const res = await fetchApi(apiUrl('/api/report'), {
-          method: 'POST', credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: buildReportPayload() })
-        });
-        const json = await res.json().catch(() => null);
-        if (!res.ok || !json || !json.success) {
-          body.innerHTML = `<div style="text-align:center;padding:30px 0"><div style="font-size:13px;color:var(--danger);font-weight:700;margin-bottom:12px">리포트 생성에 실패했어요. 잠시 후 다시 시도해주세요.</div><button class="btn btn-p" onclick="generateAIReport()">다시 시도</button></div>`;
-          return;
-        }
-        S.report = json.report;
-        S.reportGeneratedAt = Date.now();
-        saveState();
-        renderReport();
-      } catch (e) {
-        console.error('[generateAIReport]', e);
-        body.innerHTML = `<div style="text-align:center;padding:30px 0"><div style="font-size:13px;color:var(--danger);font-weight:700;margin-bottom:12px">네트워크 오류로 리포트를 생성하지 못했어요.</div><button class="btn btn-p" onclick="generateAIReport()">다시 시도</button></div>`;
-      }
-    }
-
-    function renderReport() {
-      const r = S.report;
-      const genAt = S.reportGeneratedAt ? new Date(S.reportGeneratedAt) : null;
-      const genAtTxt = genAt ? `${genAt.getMonth() + 1}.${genAt.getDate()} ${String(genAt.getHours()).padStart(2, '0')}:${String(genAt.getMinutes()).padStart(2, '0')} 생성` : '아직 생성된 리포트가 없어요';
-
-      const header = `
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-    <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--sky2),var(--lav2));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🤖</div>
-    <div><div style="font-size:15px;font-weight:700;color:var(--text)">AI 통합 리포트</div><div style="font-size:11px;color:var(--muted);font-weight:500">${genAtTxt}</div></div>
-  </div>
-  <div class="card" style="margin-bottom:12px">
-    <div class="cap">오늘 실측 데이터</div>
-    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
-      ${[['🩺 인슐린', 'insulin', 'var(--sky2)'], ['💪 성장', 'growth', 'var(--gro)'], ['🌿 코르티솔', 'cortisol', 'var(--cor)'], ['💗 옥시토신', 'oxytocin', 'var(--rose)']].map(([l, h, c]) => `<div style="display:flex;align-items:center;gap:6px"><span style="width:64px;font-size:11px;color:var(--muted);font-weight:600">${l}</span><div class="bar-t" style="flex:1;height:5px"><div class="bar-f" style="width:${hormonePct(h)}%;background:${c}"></div></div><span style="font-size:11px;width:26px;text-align:right;font-weight:800;color:${c}">${hormonePct(h)}%</span></div>`).join('')}
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center">
-      <div><div style="font-size:10px;color:var(--muted);font-weight:600">오늘 섭취</div><div style="font-size:16px;font-weight:800;color:var(--sky2)">${totalIntake() || 0}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
-      <div><div style="font-size:10px;color:var(--muted);font-weight:600">오늘 소모</div><div style="font-size:16px;font-weight:800;color:var(--gro)">${totalBurned()}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
-      <div><div style="font-size:10px;color:var(--muted);font-weight:600">누적 세이브</div><div style="font-size:16px;font-weight:800;color:var(--ok)">${S.savedTotal}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
-    </div>
-  </div>`;
-
-      if (!r) {
-        document.getElementById('rep-body').innerHTML = header + `
-  <div class="card" style="text-align:center;padding:24px 12px">
-    <div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:14px">오늘 기록을 바탕으로 AI 리포트를 생성해보세요.</div>
-    <button class="btn btn-p" onclick="generateAIReport()">🤖 AI 리포트 생성하기</button>
-  </div>
-  <button class="btn btn-o" style="margin-top:4px" onclick="closeMod('mod-report')">닫기</button>`;
-        return;
-      }
-
-      const scores = r.scores || {};
-      const overall = typeof scores.overall === 'number' ? scores.overall : '-';
-      const ageDelta = scores.biological_age_delta;
-      const ageDeltaTxt = typeof ageDelta === 'number'
-        ? `생물학적 나이 ${Math.abs(ageDelta).toFixed(1)}세 ${ageDelta <= 0 ? '↓' : '↑'}`
-        : '';
-      const keywords = Array.isArray(r.emotion_keywords) ? r.emotion_keywords : [];
-      const kwColor = t => t === 'positive' ? ['rgba(91,184,245,.2)', 'var(--sky2)'] : t === 'negative' ? ['rgba(239,83,80,.15)', 'var(--danger)'] : ['var(--card2)', 'var(--muted)'];
-      const wc = keywords.map(k => { const [bg, col] = kwColor(k.type); const sz = Math.max(10, Math.min(15, 10 + (k.count || 1) * 1.5)); return `<div style="padding:4px ${sz}px;border-radius:99px;font-size:${sz}px;font-weight:700;background:${bg};color:${col}">${k.word} <span style="font-size:9px;opacity:.7">${k.count || 1}</span></div>`; }).join('');
-      const insights = Array.isArray(r.insights) ? r.insights : [];
-      const actions = Array.isArray(r.actions) ? r.actions : [];
-
-      document.getElementById('rep-body').innerHTML = header + `
-  <div class="card" style="background:linear-gradient(135deg,var(--sky3),var(--lav3));margin-bottom:12px">
-    <div class="cap">저속노화 종합점수</div>
-    ${r.headline ? `<div style="font-size:13px;color:var(--text);font-weight:700;margin-bottom:10px">"${r.headline}"</div>` : ''}
-    <div style="display:flex;align-items:flex-end;gap:6px">
-      <div class="serif" style="font-size:60px;font-weight:700;color:var(--text);line-height:1">${overall}</div>
-      <div style="margin-bottom:10px;font-size:10px;color:var(--muted);font-weight:600">/100</div>
-      ${ageDeltaTxt ? `<div style="margin-bottom:12px;margin-left:8px"><div style="font-size:11px;color:var(--ok);font-weight:700">${ageDeltaTxt}</div></div>` : ''}
-    </div>
-  </div>
-  ${keywords.length ? `
-  <div class="card" style="margin-bottom:12px;border-color:rgba(244,143,177,.25)">
-    <div class="cap">📔 일기 감정 키워드 (최근 ${S.diaries.length}일)</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">${wc}</div>
-  </div>` : ''}
-  ${insights.length ? `
-  <div class="card" style="margin-bottom:12px">
-    <div class="cap">🔎 AI 인사이트</div>
-    ${insights.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:6px 0;border-bottom:1px solid var(--bdr)">${t}</div>`).join('')}
-  </div>` : ''}
-  ${actions.length ? `
-  <div class="card" style="background:linear-gradient(135deg,var(--sky3),var(--lav3));margin-bottom:12px;border-color:var(--sky2)">
-    <div class="cap" style="color:var(--sky2)">🤖 AI 추천 행동</div>
-    ${actions.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:4px 0">・ ${t}</div>`).join('')}
-  </div>` : ''}
-  ${r.pcos_insight ? `
-  <div class="card" style="border-color:rgba(244,143,177,.3);background:rgba(244,143,177,.05);margin-bottom:12px">
-    <div class="cap" style="color:var(--rose2)">PCOS 맞춤 인사이트</div>
-    <div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.pcos_insight}</div>
-  </div>` : ''}
-  <button class="btn btn-o" style="margin-bottom:8px" onclick="generateAIReport()">🔄 오늘 기록으로 다시 생성</button>
-  <button class="btn btn-o" onclick="closeMod('mod-report')">닫기</button>`;
-    }
 
     // ═══════════════════════ EXCEL EXPORT ═══════════════════════
     function doExport() {

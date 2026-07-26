@@ -79,6 +79,77 @@ router.get('/streak', async (req, res) => {
     }
 });
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// 특정 날짜의 기록 스냅샷 (GET /api/data/day?date=YYYY-MM-DD) - 달력 날짜 클릭 상세보기용
+router.get('/day', async (req, res) => {
+    const { userId } = req.user;
+    const { date } = req.query;
+    console.log('[DATA] GET /day for userId:', userId, 'date:', date);
+
+    if (!date || !DATE_RE.test(date)) {
+        return res.status(400).json({ error: 'invalid_date' });
+    }
+
+    try {
+        const [checksRes, mealsRes, workoutRes, weightRes, diaryRes, periodsRes] = await Promise.all([
+            pool.query('SELECT checks FROM routine_checks WHERE user_id = $1 AND check_date = $2', [userId, date]),
+            pool.query('SELECT * FROM meals WHERE user_id = $1 AND eaten_date = $2', [userId, date]),
+            pool.query('SELECT * FROM workouts WHERE user_id = $1 AND performed_date = $2', [userId, date]),
+            pool.query('SELECT weight_kg FROM weights WHERE user_id = $1 AND logged_date = $2', [userId, date]),
+            pool.query('SELECT content FROM diaries WHERE user_id = $1 AND written_date = $2', [userId, date]),
+            pool.query('SELECT start_date, duration_days FROM periods WHERE user_id = $1 AND start_date <= $2 ORDER BY start_date DESC LIMIT 1', [userId, date]),
+        ]);
+
+        const checks = checksRes.rows[0]?.checks || null;
+        const meals = mealsRes.rows;
+        const workout = workoutRes.rows[0] || null;
+        const weight = weightRes.rows[0]?.weight_kg ?? null;
+        const diary = diaryRes.rows[0]?.content ?? null;
+        const period = periodsRes.rows[0] || null;
+
+        const hasAnyRecord = !!checks || meals.length > 0 || !!workout || weight != null || !!diary;
+
+        res.json({ date, checks, meals, workout, weight, diary, period, hasAnyRecord });
+    } catch (err) {
+        console.error('[DATA] GET /day failed for userId:', userId, err);
+        res.status(500).json({ error: 'Failed to load day snapshot' });
+    }
+});
+
+// 월간 루틴체크 히스토리 (GET /api/data/month-summary?year=&month=) - 이달 평균 점수 + 캘린더 완벽달성일 표시용
+router.get('/month-summary', async (req, res) => {
+    const { userId } = req.user;
+    const year = parseInt(req.query.year, 10);
+    const month = parseInt(req.query.month, 10); // 1-12
+    console.log('[DATA] GET /month-summary for userId:', userId, { year, month });
+
+    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+        return res.status(400).json({ error: 'invalid_year_month' });
+    }
+
+    try {
+        const start = `${year}-${String(month).padStart(2, '0')}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        const end = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+        const { rows } = await pool.query(
+            'SELECT check_date, checks FROM routine_checks WHERE user_id = $1 AND check_date BETWEEN $2 AND $3 ORDER BY check_date',
+            [userId, start, end]
+        );
+
+        const days = rows.map(r => ({
+            date: r.check_date.toISOString().split('T')[0],
+            checks: r.checks,
+        }));
+
+        res.json({ year, month, days });
+    } catch (err) {
+        console.error('[DATA] GET /month-summary failed for userId:', userId, err);
+        res.status(500).json({ error: 'Failed to load month summary' });
+    }
+});
+
 // 데이터 로드 (GET /api/data)
 router.get('/', async (req, res) => {
     const { userId } = req.user;
