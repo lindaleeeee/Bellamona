@@ -1,6 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+
+// 환경변수 로드 — 반드시 다른 로컬 모듈을 require하기 전에 실행해야 한다.
+// auth.js/routes/*.js는 모듈 로드 시점(require 시점)에 바로 `new Pool({connectionString: process.env.DATABASE_URL})`를
+// 실행하므로, dotenv.config()가 이 require들보다 늦게 호출되면 process.env가 아직 비어있는 상태로
+// Pool이 만들어져(connectionString: undefined) 이후 모든 DB 쿼리가 실패한다 — 로컬 .env 파일로 개발할 때만
+// 드러나는 버그였다(배포 환경은 OS/플랫폼이 프로세스 시작 전에 이미 env를 주입하므로 순서가 문제되지 않았음).
+dotenv.config();
+
 const authRoutes = require('./auth');
 const dataRoutes = require('./routes/data');
 const reportRoutes = require('./routes/report');
@@ -8,9 +16,6 @@ const glucoseRoutes = require('./routes/glucose');
 const userRoutes = require('./routes/user');
 const authMiddleware = require('./middleware/auth');
 const cookieParser = require('cookie-parser');
-
-// 환경변수 로드
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 8080;

@@ -209,6 +209,12 @@
       color: var(--text)
     }
 
+    .wk-int-btn.selected {
+      border-color: var(--gro);
+      background: var(--gro-bg);
+      color: var(--gro)
+    }
+
     .btn-sm {
       width: auto;
       padding: 7px 14px;
@@ -1317,30 +1323,23 @@
     <div class="mov" id="mod-workout-intensity">
       <div class="msh">
         <div class="mh"></div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">💪 운동 강도</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">💪 운동 강도 · 시간</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:500">오늘 운동은 어느 정도였나요?</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn btn-o" style="justify-content:flex-start;gap:10px" onclick="saveWorkoutIntensity('low')"><span style="font-size:22px">🚶</span><span>저강도 · 땀이 살짝 나는 정도 (산책)</span></button>
-          <button class="btn btn-o" style="justify-content:flex-start;gap:10px" onclick="saveWorkoutIntensity('medium')"><span style="font-size:22px">🏃</span><span>중강도 · 숨이 조금 차는 정도 (조깅)</span></button>
-          <button class="btn btn-o" style="justify-content:flex-start;gap:10px" onclick="saveWorkoutIntensity('high')"><span style="font-size:22px">🔥</span><span>고강도 · 대화가 힘든 정도 (크로스핏 등)</span></button>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px" id="wk-intensity-btns">
+          <button type="button" class="btn btn-o wk-int-btn" data-lv="low" onclick="pickWorkoutIntensity('low')" style="justify-content:flex-start;gap:10px"><span style="font-size:22px">🚶</span><span>저강도 · 땀이 살짝 나는 정도 (산책)</span></button>
+          <button type="button" class="btn btn-o wk-int-btn" data-lv="medium" onclick="pickWorkoutIntensity('medium')" style="justify-content:flex-start;gap:10px"><span style="font-size:22px">🏃</span><span>중강도 · 숨이 조금 차는 정도 (조깅)</span></button>
+          <button type="button" class="btn btn-o wk-int-btn" data-lv="high" onclick="pickWorkoutIntensity('high')" style="justify-content:flex-start;gap:10px"><span style="font-size:22px">🔥</span><span>고강도 · 대화가 힘든 정도 (크로스핏 등)</span></button>
         </div>
-      </div>
-    </div>
-
-    <div class="mov" id="mod-workout-duration">
-      <div class="msh">
-        <div class="mh"></div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">⏱ 지속시간 · 운동 종류</div>
         <div class="cap" style="margin-bottom:5px">무엇을 했나요?</div>
         <input class="input" id="wk-type" placeholder="예: 스쿼트, 러닝, 요가..." style="margin-bottom:12px" />
         <div class="cap" style="margin-bottom:5px">운동 시간 (분)</div>
-        <input class="input" id="wk-duration" type="number" min="5" max="60" step="5" list="wk-duration-options" placeholder="5~60분, 직접 입력도 가능" style="margin-bottom:14px" />
+        <input class="input" id="wk-duration" type="number" min="1" max="180" step="1" list="wk-duration-options" placeholder="예: 20" style="margin-bottom:14px" />
         <datalist id="wk-duration-options">
           <option value="5"></option><option value="10"></option><option value="15"></option><option value="20"></option>
           <option value="25"></option><option value="30"></option><option value="35"></option><option value="40"></option>
           <option value="45"></option><option value="50"></option><option value="55"></option><option value="60"></option>
         </datalist>
-        <button class="btn btn-p" onclick="saveWorkoutDuration()">저장</button>
+        <button class="btn btn-p" onclick="saveWorkoutIntensity()">저장</button>
       </div>
     </div>
 
@@ -1427,6 +1426,15 @@
       </div>
     </div>
 
+    <div class="mov" id="mod-add-meal">
+      <div class="msh">
+        <div class="mh"></div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">🍽 어떤 식사를 추가할까요?</div>
+        <div id="add-meal-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
+        <button class="btn btn-o" onclick="closeMod('mod-add-meal')">취소</button>
+      </div>
+    </div>
+
     <div class="mov" id="mod-food">
       <div class="msh">
         <div class="mh"></div>
@@ -1487,13 +1495,6 @@
         <div id="edit-routine-list"></div>
         <button class="btn btn-p" style="margin-top:10px;margin-bottom:8px" onclick="saveRoutine()">저장</button>
         <button class="btn btn-o" onclick="closeMod('mod-edit-routine')">취소</button>
-      </div>
-    </div>
-
-    <div class="mov" id="mod-glucose-example">
-      <div class="msh">
-        <div class="mh"></div>
-        <div id="glucose-example-body"></div>
       </div>
     </div>
 
@@ -1603,15 +1604,15 @@
       sleepLogs: [], workoutLogs: [], _showFastDetail: false,
       reportTime: '21:00', reportGeneratedDate: null, _todayReport: null,
       savedTotal: 0, calMon: { y: 2026, m: 3 },
-      trainingPairs: [], predLogs: [], gender: 'female',
+      trainingPairs: [], predLogs: [], gender: 'female', usingSeedData: false,
       periods: [{ start: '2026-04-01', days: 5 }], cycleLen: 28,
-      checks: { i1: false, i2: false, i3: false, i4: false, g1: false, g2: false, g3: false, g4: false, c1: false, c2: false, c3: false, c4: false },
+      checks: { i1: false, i2: false, i3: false, i4: false, g1: false, g2: false, g3: false, c1: false, c2: false, c3: false, c4: false },
       meals: [
         { id: 0, label: '아침', time: '07:30', foods: [], bgPre: null, bg1h: null, bg2h: null },
         { id: 1, label: '점심', time: '12:30', foods: [], bgPre: null, bg1h: null, bg2h: null },
         { id: 2, label: '저녁', time: '18:45', foods: [], bgPre: null, bg1h: null, bg2h: null },
       ],
-      nextMealId: 3, activeMealId: null, pending: [],
+      nextMealId: 3, activeMealId: null,
       diaries: [
         { d: '04/19', t: '아침에 일어나니 몸이 무겁고 피곤했어요. 운동하고 나니까 상쾌해졌어요. 혈당이 높아서 걱정됐는데 저녁엔 나아졌어요.' },
         { d: '04/20', t: '오늘은 명상을 했는데 마음이 차분해졌어요. 엄마랑 통화해서 기분 좋았고 행복했어요. 혈당이 낮아서 뿌듯해요.' },
@@ -1633,9 +1634,8 @@
         ],
         growth: [
           { id: 'g1', label: '🍽 식후 운동 타이밍', sub: '식사 후 몇 분 뒤 운동했나요?' },
-          { id: 'g2', label: '💪 운동 강도', sub: '저강도 / 중강도 / 고강도' },
-          { id: 'g3', label: '⏱ 지속시간 · 운동 종류', sub: '무엇을 몇 분 했는지' },
-          { id: 'g4', label: '⏱ 공복시간', sub: '마지막 식사 기준 자동 계산' },
+          { id: 'g2', label: '💪 운동 강도 · 시간', sub: '강도 선택 후 종류·시간까지 등록' },
+          { id: 'g3', label: '⏱ 공복시간', sub: '마지막 식사 기준 자동 계산' },
         ],
         cortisol: [
           { id: 'c1', label: '😴 수면시간 기록', sub: '취침·기상 시간 입력' },
@@ -1657,19 +1657,24 @@
       //  레시피 목록이 사람마다 다르게 보이는 것처럼 보였던 원인)
       S.rFilters = { time: null, type: null, cost: null };
     } catch (e) { }
+    seedGlucoseExampleHistory(); // 실제 기록이 없는 새 계정에 한해 2주 예시 데이터를 학습쌍으로 시드 (frontend/public/js/data-glucose-example.js)
 
     function saveState() {
       localStorage.setItem('bellamona_data', JSON.stringify(S));
     }
 
     // ═══════════════════════ HELPERS ═══════════════════════
-    function go(id) { document.querySelectorAll('.scr').forEach(s => s.classList.remove('on')); const el = document.getElementById(id); if (el) el.classList.add('on'); if (id === 's-dash') renderDash(); if (id === 's-diet') renderRecipes(); updateHome(); updateProfileHeader(); }
+    function go(id) {
+      document.querySelectorAll('.scr').forEach(s => s.classList.remove('on')); const el = document.getElementById(id); if (el) el.classList.add('on');
+      const navMap = { 's-home': 'nav-home', 's-dash': 'nav-dash', 's-diet': 'nav-diet', 's-profile': 'nav-profile' };
+      if (navMap[id]) { document.querySelectorAll('.ni').forEach(n => n.classList.remove('on')); document.getElementById(navMap[id])?.classList.add('on'); }
+      if (id === 's-dash') renderDash(); if (id === 's-diet') renderRecipes(); updateHome(); updateProfileHeader();
+    }
     function navTo(el, id) { document.querySelectorAll('.ni').forEach(n => n.classList.remove('on')); el.classList.add('on'); if (id !== 's-hormone') S.prev = id; go(id); }
     function openMod(id) {
       if (id === 'mod-cheat') { renderCheat(); document.getElementById('ch-avail').textContent = S.savedTotal; }
       if (id === 'mod-edit-routine') renderEditRoutine();
       if (id === 'mod-friends') setTxt('my-friend-code', S.friendCode || '발급 중...');
-      if (id === 'mod-glucose-example') renderGlucoseExample();
       if (id === 'mod-mealplan') renderMealPlan(S.goalCal);
       if (id === 'mod-edit-goal') fillEditGoalForm();
       document.getElementById(id)?.classList.add('open');
@@ -1962,7 +1967,13 @@
       oxytocin: { em: '💗', label: '옥시토신', color: 'var(--rose)', bg: 'var(--oxy-bg)' },
     };
     function goH(id) {
-      S.prev = document.querySelector('.scr.on')?.id || 's-home'; S.curH = id;
+      // goH는 같은 화면 안에서 체크/저장할 때마다 다시 호출되는데, 그때 .scr.on은 이미 s-hormone이라
+      // S.prev가 's-hormone'으로 덮어써지면 뒤로가기 화살표가 제자리로만 이동해 안 움직이는 것처럼
+      // 보였다. s-hormone이 아닐 때(처음 진입할 때)만 이전 화면을 기록한다.
+      const curScr = document.querySelector('.scr.on')?.id;
+      if (curScr && curScr !== 's-hormone') S.prev = curScr;
+      else if (!S.prev) S.prev = 's-home';
+      S.curH = id;
       const h = HCFG[id];
       const label = id === 'oxytocin' ? hormoneScreenLabel() : h.label;
       document.getElementById('h-hdr').innerHTML = `<div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:${h.color}">${h.em} ${label}</div>`;
@@ -1985,9 +1996,8 @@
       if (id === 'c3') { openMod('mod-diary'); return; }
       if (id === 'c1') { openMod('mod-sleep'); return; }
       if (id === 'g1') { openMod('mod-workout-timing'); return; }
-      if (id === 'g2') { openMod('mod-workout-intensity'); return; }
-      if (id === 'g3') { openMod('mod-workout-duration'); return; }
-      if (id === 'g4') { S._showFastDetail = !S._showFastDetail; goH(S.curH); return; } // 공복시간은 실시간 자동계산, 수동 체크 아님
+      if (id === 'g2') { openWorkoutIntensityModal(); return; }
+      if (id === 'g3') { S._showFastDetail = !S._showFastDetail; goH(S.curH); return; } // 공복시간은 실시간 자동계산, 수동 체크 아님
       S.checks[id] = !S.checks[id]; goH(S.curH); updateHome(); if (typeof saveChecksRow === 'function') saveChecksRow();
     }
     function saveDiary() { S.checks.c3 = true; const txt = document.getElementById('diary-txt')?.value; let entry = null; if (txt) { entry = { d: '오늘', t: txt }; S.diaries.push(entry); } closeMod('mod-diary'); goH('cortisol'); updateHome(); if (typeof saveChecksRow === 'function') saveChecksRow(); if (entry && typeof saveDiaryRow === 'function') saveDiaryRow(entry); }
@@ -2064,6 +2074,7 @@
       ${hasEntry ? `
       <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:8px">${m.text || ''}</div>
       ${m.aiPending ? `<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0;font-weight:500">🤖 AI가 혈당 반응을 분석하고 있어요...</div>` : `
+      <div style="font-size:9px;color:var(--muted);font-weight:600;margin-bottom:4px">${!est ? '' : est.method === 'fallback' ? '⚠️ 서버 연결 실패 — 간단 키워드 추정치예요' : '🤖 AI 추정 (텍스트+최근 2주 기록 기반)'}</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px">
         <div style="text-align:center;background:var(--sky3);border-radius:9px;padding:6px 3px;border:1px solid rgba(91,184,245,.2)"><div style="font-size:12px;font-weight:800;color:var(--sky2)">${cal}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
         <div style="text-align:center;background:rgba(255,167,38,.1);border-radius:9px;padding:6px 3px;border:1px solid rgba(255,167,38,.2)"><div style="font-size:12px;font-weight:800;color:var(--warn)">${carb}g</div><div style="font-size:9px;color:var(--muted);font-weight:600">탄수</div></div>
@@ -2098,11 +2109,10 @@
       <div style="flex:1">
         <div class="bar-t" style="height:7px;margin-bottom:5px"><div class="bar-f" style="width:${Math.min(nPairs / 40 * 100, 100)}%;background:linear-gradient(90deg,var(--lav2),var(--sky2))"></div></div>
         <div style="font-size:11px;color:var(--text);font-weight:600">학습 데이터 <strong style="color:var(--lav2)">${nPairs}</strong>건 / 개인화 목표 40건(약 2주)</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">${nPairs >= 40 ? '✅ 개인 예측 안정 단계' : nPairs >= 5 ? '개인 데이터 예측 작동 중' : '현재 기본 추정 단계 · 혈당을 기록하면 정확해져요'}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">${S.usingSeedData ? '📋 예시 데이터로 미리 채워둔 상태 · 직접 기록을 시작하면 내 데이터로 바뀌어요' : nPairs >= 40 ? '✅ 개인 예측 안정 단계' : nPairs >= 5 ? '개인 데이터 예측 작동 중' : '현재 기본 추정 단계 · 혈당을 기록하면 정확해져요'}</div>
       </div>
       ${hr != null ? `<div style="text-align:center;background:var(--surf);border-radius:12px;padding:8px 12px;border:1px solid var(--bdr)"><div style="font-size:18px;font-weight:800;color:var(--ok)">${hr}%</div><div style="font-size:9px;color:var(--muted);font-weight:600">예측 적중률</div></div>` : ''}
     </div>
-    <button onclick="openMod('mod-glucose-example')" style="width:100%;margin-top:10px;background:var(--surf);border:1.5px solid var(--lav2);border-radius:10px;padding:9px;font-size:12px;color:var(--lav2);font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">🔬 예시로 2주 식단-혈당 예측 리포트 보기</button>
   </div>
   <div class="card" style="border-color:rgba(91,184,245,.25)">
     <div class="cap">칼로리 — 인슐린 ↔ 성장호르몬 연동</div>
@@ -2115,7 +2125,7 @@
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div class="cap" style="margin-bottom:0">식사 기록</div>
-      <button onclick="addMeal()" style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--sky2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">+ 식사 추가</button>
+      <button onclick="openAddMealModal()" style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--sky2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">+ 식사 추가</button>
     </div>
     ${mHtml}
     <div style="border-top:1px solid var(--bdr);padding-top:10px;margin-top:6px">
@@ -2189,60 +2199,20 @@
       return { id: row.id, label: row.label, time: (row.time || '00:00').slice(0, 5), foods: row.foods || [], text: row.description || '', aiEstimate: row.ai_estimate || null, bgPre: row.bg_pre, bg1h: row.bg_1h, bg2h: row.bg_2h };
     }
 
-    // ═══════════════════════ 예시: 2주 식단-혈당 예측 리포트 ═══════════════════════
-    // 실제 CGM 기록이 없을 때, GMODEL(§4)이 2주 로그가 쌓이면 어떻게 예측을 계산하는지
-    // 그대로 보여주기 위한 데모. GLUCOSE_EXAMPLE_DAYS의 날짜 순서를 따라가며 "이 시점까지 쌓인
-    // 학습쌍"만으로 그 다음 식사를 예측해, 규칙기반→개인 k-NN으로 전환되는 과정을 실시간 계산한다.
-    function renderGlucoseExample() {
-      const body = document.getElementById('glucose-example-body'); if (!body) return;
-      const history = []; const logs = []; let firstKnnDay = null;
-      const dayCards = GLUCOSE_EXAMPLE_DAYS.map((day, di) => {
+    // ═══════════════════════ 2주 예시 데이터를 실제 예측 로직에 시드로 반영 ═══════════════════════
+    // 예전엔 "🔬 예시로 2주 리포트 보기"라는 별도 데모 화면으로만 보여줬는데, 사용자가 실제로
+    // 음식을 기록했을 때 곧바로 혈당 예측(GMODEL의 k-NN 단계)을 체감할 수 있도록 이 예시 데이터를
+    // S.trainingPairs(개인 학습쌍)에 미리 시드로 넣어둔다. 원본 데이터는
+    // frontend/public/js/data-glucose-example.js의 GLUCOSE_EXAMPLE_DAYS다(파일 자체를 수정하면 시드도 바뀜).
+    // 실제 기록이 하나도 없는 새 계정에서만 시드를 채우고, 이미 실측 데이터가 쌓였으면 건드리지 않는다.
+    function seedGlucoseExampleHistory() {
+      if (S.trainingPairs.length || typeof GLUCOSE_EXAMPLE_DAYS === 'undefined') return;
+      const seeded = [];
+      GLUCOSE_EXAMPLE_DAYS.forEach(day => {
         const ctx = { cyclePhase: day.cyclePhase };
-        const mealRows = day.meals.map(meal => {
-          const pred = GMODEL.predict(meal, ctx, history);
-          if (pred.method === 'knn' && firstKnnDay == null) firstKnnDay = di + 1;
-          const pair = GMODEL.makeTrainingPair(meal, ctx);
-          if (pair) { history.push(pair); logs.push({ predicted_delta: pred.deltaPeak, actual_delta: pair.delta_peak }); }
-          const lvColor = pred.level === 'high' ? 'var(--danger)' : pred.level === 'medium' ? 'var(--warn)' : 'var(--sky2)';
-          const methodLabel = { rule: '기본 추정', knn: '개인 데이터', ml: 'AI 모델', ml_personal: '개인 AI' }[pred.method] || '추정';
-          const actualPeak = Math.max(meal.bg1h || 0, meal.bg2h || 0) || null;
-          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:11px">
-        <span style="color:var(--text);font-weight:600">${meal.label} · ${meal.time.slice(0,5)}</span>
-        <span style="color:var(--muted)">실측(예시) ${meal.bgPre}→${meal.bg1h}→${meal.bg2h}</span>
-        <span style="font-weight:800;color:${lvColor}">예측 +${pred.deltaPeak} (${methodLabel})</span>
-      </div>`;
-        }).join('');
-        return `<div class="card2" style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:var(--text)">${day.date}</span><span style="font-size:10px;color:var(--muted);font-weight:600">${{follicular:'난포기',ovulation:'배란기',luteal:'황체기',menstrual:'생리기'}[day.cyclePhase]||''}</span></div>
-      ${mealRows}
-    </div>`;
-      }).join('');
-      const hr = GMODEL.hitRate(logs);
-      const dist = { low: 0, medium: 0, high: 0 };
-      logs.forEach(l => { const lv = l.predicted_delta > 70 ? 'high' : l.predicted_delta >= 40 ? 'medium' : 'low'; dist[lv]++; });
-      body.innerHTML = `
-    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">🔬 예시: 2주 식단-혈당 예측 리포트</div>
-    <div style="font-size:11px;color:var(--rose2);background:rgba(244,143,177,.1);border:1.5px solid rgba(244,143,177,.3);border-radius:11px;padding:9px 11px;margin-bottom:10px;line-height:1.6;font-weight:600">
-      ⚠️ 아직 연속혈당측정기(CGM) 기록이 없어 아래는 <strong>예시 데이터</strong>입니다. 실제 식단·운동을 2주간 기록하면
-      이 화면과 같은 방식(BELLAMONA 혈당예측모델 §4)으로 회원님의 실제 예측 리포트가 계산됩니다.
-    </div>
-    <div class="card" style="margin-bottom:10px">
-      <div class="cap">14일 요약</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px">
-        <div style="text-align:center;background:var(--sky3);border-radius:9px;padding:8px 3px"><div style="font-size:15px;font-weight:800;color:var(--sky2)">${dist.low}</div><div style="font-size:9px;color:var(--muted);font-weight:600">낮음 끼니</div></div>
-        <div style="text-align:center;background:rgba(255,167,38,.1);border-radius:9px;padding:8px 3px"><div style="font-size:15px;font-weight:800;color:var(--warn)">${dist.medium}</div><div style="font-size:9px;color:var(--muted);font-weight:600">보통 끼니</div></div>
-        <div style="text-align:center;background:rgba(239,83,80,.08);border-radius:9px;padding:8px 3px"><div style="font-size:15px;font-weight:800;color:var(--danger)">${dist.high}</div><div style="font-size:9px;color:var(--muted);font-weight:600">높음 끼니</div></div>
-      </div>
-      <div style="font-size:11px;color:var(--text);font-weight:600">예측 적중률(±20mg/dL 이내) <strong style="color:var(--ok)">${hr != null ? hr + '%' : '-'}</strong></div>
-      ${firstKnnDay ? `<div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">${firstKnnDay}일차부터 개인 데이터 기반(k-NN) 예측으로 전환됨</div>` : ''}
-    </div>
-    ${dayCards}
-    <div class="card" style="margin-bottom:10px">
-      <div class="cap">참고 논문 (방법론적 근거)</div>
-      ${GLUCOSE_EXAMPLE_REFS.map(r => `<div style="font-size:10px;color:var(--muted);line-height:1.6;padding:3px 0;font-weight:500">・ ${r}</div>`).join('')}
-      <div class="pred-disclaimer" style="margin-top:6px">※ 본 예측은 참고용 추정치이며 의료적 진단이 아닙니다. 운동(식후 30분 내 활동)이 혈당을 완충한다는 것은 Liu et al./van Doorn et al.의 공통된 결론이나, 현재 규칙 기반(콜드스타트) 단계는 이를 수치에 아직 반영하지 않으며 개인 데이터가 쌓인 k-NN/개인화 단계부터 반영됩니다.</div>
-    </div>
-    <button class="btn btn-o" onclick="closeMod('mod-glucose-example')">닫기</button>`;
+        day.meals.forEach(meal => { const pair = GMODEL.makeTrainingPair(meal, ctx); if (pair) seeded.push({ ...pair, seeded: true }); });
+      });
+      S.trainingPairs = seeded; S.usingSeedData = true;
     }
 
     // ── GROWTH ──
@@ -2291,7 +2261,7 @@
     ${weekWorkoutGrid()}
   </div>
   <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크</div>
-  ${S.routines.growth.map(r => r.id === 'g4' ? ckHtml(r.id, r.label, r.sub, 'var(--gro)') + fastDetailHtml() : ckHtml(r.id, r.label, r.sub, 'var(--gro)')).join('')}`;
+  ${S.routines.growth.map(r => r.id === 'g3' ? ckHtml(r.id, r.label, r.sub, 'var(--gro)') + fastDetailHtml() : ckHtml(r.id, r.label, r.sub, 'var(--gro)')).join('')}`;
     }
     function fastDetailHtml() {
       if (!S._showFastDetail) return '';
@@ -2308,16 +2278,28 @@
       S.exBurned.minutesAfterMeal = minutes; S.checks.g1 = true; closeMod('mod-workout-timing'); goH('growth'); updateHome();
       if (typeof saveChecksRow === 'function') saveChecksRow(); if (typeof saveWorkoutRow === 'function') saveWorkoutRow();
     }
-    function saveWorkoutIntensity(level) {
-      S.exBurned.intensity = level; S.checks.g2 = true; upsertTodayWorkoutLog(); closeMod('mod-workout-intensity'); goH('growth'); updateHome();
-      if (typeof saveChecksRow === 'function') saveChecksRow(); if (typeof saveWorkoutRow === 'function') saveWorkoutRow();
+    // 강도 선택 → 같은 모달 안에서 바로 운동 종류·시간까지 등록 (예전엔 두 모달로 나뉘어 있어서
+    // 이전에 입력한 시간값이 창을 다시 열 때 그대로 남아있는 채로 저장되는 버그가 있었다 —
+    // openWorkoutIntensityModal()에서 매번 필드를 today 상태로 리셋해 이 문제를 없앴다).
+    let _pickedIntensity = null;
+    function openWorkoutIntensityModal() {
+      _pickedIntensity = S.exBurned.intensity || null;
+      document.querySelectorAll('.wk-int-btn').forEach(b => b.classList.toggle('selected', b.dataset.lv === _pickedIntensity));
+      document.getElementById('wk-type').value = S.exBurned.exerciseType || '';
+      document.getElementById('wk-duration').value = S.exBurned.durationMin || '';
+      openMod('mod-workout-intensity');
     }
-    function saveWorkoutDuration() {
+    function pickWorkoutIntensity(level) {
+      _pickedIntensity = level;
+      document.querySelectorAll('.wk-int-btn').forEach(b => b.classList.toggle('selected', b.dataset.lv === level));
+    }
+    function saveWorkoutIntensity() {
       const type = document.getElementById('wk-type')?.value?.trim() || '';
       const dur = parseInt(document.getElementById('wk-duration')?.value) || 0;
+      if (!_pickedIntensity) { alert('운동 강도를 선택해주세요'); return; }
       if (dur <= 0) { alert('운동 시간을 입력해주세요'); return; }
-      S.exBurned.exerciseType = type; S.exBurned.durationMin = dur; S.checks.g3 = true;
-      upsertTodayWorkoutLog(); closeMod('mod-workout-duration'); goH('growth'); updateHome();
+      S.exBurned.intensity = _pickedIntensity; S.exBurned.exerciseType = type; S.exBurned.durationMin = dur;
+      S.checks.g2 = true; upsertTodayWorkoutLog(); closeMod('mod-workout-intensity'); goH('growth'); updateHome();
       if (typeof saveChecksRow === 'function') saveChecksRow(); if (typeof saveWorkoutRow === 'function') saveWorkoutRow();
     }
 
@@ -2487,7 +2469,23 @@
       const level = hit ? 'medium' : 'low';
       return { level, deltaPeak: hit ? 55 : 20, carb_g: hit ? 55 : 15, protein_g: 15, fat_g: 10, kcal_est: hit ? 550 : 250, gi_estimate: hit ? 65 : 40, rationale: '네트워크 오류로 간단 추정치를 보여드려요.', method: 'fallback' };
     }
-    function addMeal() { const labels = ['간식', '야식']; const used = S.meals.map(m => m.label); const label = labels.find(l => !used.includes(l)) || '간식'; const now = new Date(); const t = `${now.getHours()}:${now.getMinutes() < 10 ? '0' : ''}${now.getMinutes()}`; const meal = { id: S.nextMealId++, label, time: t, foods: [], text: '', bgPre: null, bg1h: null, bg2h: null }; S.meals.push(meal); if (typeof saveMealRow === 'function') saveMealRow(meal); goH('insulin'); }
+    const MEAL_LABEL_OPTIONS = ['아침', '점심', '저녁', '간식', '야식'];
+    function openAddMealModal() {
+      const used = S.meals.map(m => m.label);
+      const body = document.getElementById('add-meal-chips');
+      body.innerHTML = MEAL_LABEL_OPTIONS.map(l => {
+        const taken = used.includes(l);
+        return `<span class="chip${taken ? '' : ''}" style="${taken ? 'opacity:.4;cursor:not-allowed' : 'cursor:pointer'}" ${taken ? '' : `onclick="addMeal('${l}')"`}>${l}${taken ? ' (이미 있음)' : ''}</span>`;
+      }).join('');
+      openMod('mod-add-meal');
+    }
+    function addMeal(label) {
+      const now = new Date(); const t = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const meal = { id: S.nextMealId++, label, time: t, foods: [], text: '', bgPre: null, bg1h: null, bg2h: null };
+      S.meals.push(meal); if (typeof saveMealRow === 'function') saveMealRow(meal);
+      closeMod('mod-add-meal'); goH('insulin');
+      openFoodModal(meal.id);
+    }
     function delMeal(id) { const i = S.meals.findIndex(m => m.id === id); if (i >= 0) { if (typeof deleteMealRow === 'function') deleteMealRow(S.meals[i]); S.meals.splice(i, 1); } goH('insulin'); }
     // 혈당 실측 입력 → 학습쌍 생성(명세서 §3) + 예측 로그(적중률 §6) 축적
     function updBG(mealId, key, val) {
@@ -2501,6 +2499,7 @@
       if (pair) {
         const idx = S.trainingPairs.findIndex(p => p.meal_id === m.id);
         if (idx >= 0) S.trainingPairs[idx] = pair; else S.trainingPairs.push(pair);
+        S.usingSeedData = false; // 실제 기록이 들어오기 시작하면 더 이상 예시 시드로 안내하지 않음
         const li = S.predLogs.findIndex(l => l.meal_id === m.id);
         const log = { meal_id: m.id, predicted_delta: predBefore.deltaPeak, actual_delta: pair.delta_peak };
         if (li >= 0) S.predLogs[li] = log; else S.predLogs.push(log);
