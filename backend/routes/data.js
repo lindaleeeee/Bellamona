@@ -403,14 +403,20 @@ router.post('/periods', async (req, res) => {
     }
 });
 
-// 일기 저장
+// 일기 저장 (UPSERT) — 예전엔 매번 새 행을 INSERT해서 같은 날 두 번째로 저장하면 어느 행이
+// "오늘 쓴 일기"인지 알 수 없었다. 하루 1건으로 합쳐서 다시 열었을 때 이어서 수정할 수 있게 한다.
 router.post('/diaries', async (req, res) => {
     const { userId } = req.user;
     const { written_date, content } = req.body;
     console.log('[DATA] POST /diaries for userId:', userId, { written_date, contentLength: content?.length });
     try {
         const today = written_date || new Date().toISOString().split('T')[0];
-        await pool.query('INSERT INTO diaries (user_id, written_date, content) VALUES ($1, $2, $3)', [userId, today, content]);
+        await pool.query(`
+      INSERT INTO diaries (user_id, written_date, content)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (user_id, written_date)
+      DO UPDATE SET content = EXCLUDED.content
+    `, [userId, today, content]);
         console.log('[DATA] POST /diaries success for userId:', userId);
         res.json({ success: true });
     } catch (err) {

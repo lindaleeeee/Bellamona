@@ -172,6 +172,16 @@ const initDB = async () => {
       );
     `);
 
+    // 일기를 하루에 여러 번 저장하면 계속 새 행이 쌓여, 다시 열었을 때 "오늘 쓴 일기"가 어느 행인지
+    // 알 수 없어 항상 빈 칸으로만 보였다. 하루 1건으로 UPSERT하기 위해 유니크 인덱스가 필요한데,
+    // 기존에 중복 저장된 행이 있을 수 있으니 날짜당 가장 최근 것만 남기고 정리한 뒤 인덱스를 건다.
+    await client.query(`
+      DELETE FROM diaries a USING diaries b
+      WHERE a.user_id = b.user_id AND a.written_date = b.written_date AND a.created_at < b.created_at
+    `);
+    await client.query('CREATE UNIQUE INDEX IF NOT EXISTS diaries_user_date_uniq ON diaries (user_id, written_date);');
+    console.log('[DB] diaries 중복 정리 + user_id/written_date 유니크 인덱스 확인 완료');
+
     // 9. reports
     await client.query(`
       CREATE TABLE IF NOT EXISTS reports (

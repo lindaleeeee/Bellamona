@@ -1998,14 +1998,33 @@
   </div>`;
     }
     function doCheck(id) {
-      if (id === 'c3') { openMod('mod-diary'); return; }
+      if (id === 'c3') { openDiaryModal(); return; }
       if (id === 'c1') { openMod('mod-sleep'); return; }
       if (id === 'g1') { openWorkoutLogModal('low'); return; }
       if (id === 'g2') { openWorkoutLogModal('medium'); return; }
       if (id === 'g3') { openWorkoutLogModal('high'); return; }
       S.checks[id] = !S.checks[id]; goH(S.curH); updateHome(); if (typeof saveChecksRow === 'function') saveChecksRow();
     }
-    function saveDiary() { S.checks.c3 = true; const txt = document.getElementById('diary-txt')?.value; let entry = null; if (txt) { entry = { d: '오늘', t: txt }; S.diaries.push(entry); } closeMod('mod-diary'); goH('cortisol'); updateHome(); if (typeof saveChecksRow === 'function') saveChecksRow(); if (entry && typeof saveDiaryRow === 'function') saveDiaryRow(entry); }
+    // 일기 모달을 열 때 오늘 이미 쓴 내용이 있으면 채워서 보여준다 — 전엔 항상 빈 칸으로 열려서
+    // "저장한 내용이 지워졌다"고 느껴졌지만, 실제로는 모달이 기존 내용을 절대 불러오지 않았던 것뿐이었다.
+    function todayDiaryEntry() { const t = todayISOLocal(); return S.diaries.find(d => d.date === t); }
+    function openDiaryModal() {
+      const existing = todayDiaryEntry();
+      document.getElementById('diary-txt').value = existing ? existing.t : '';
+      openMod('mod-diary');
+    }
+    function saveDiary() {
+      const txt = document.getElementById('diary-txt')?.value?.trim();
+      if (!txt) { closeMod('mod-diary'); return; }
+      S.checks.c3 = true;
+      const existing = todayDiaryEntry();
+      let entry;
+      if (existing) { existing.t = txt; entry = existing; }
+      else { entry = { date: todayISOLocal(), d: '오늘', t: txt }; S.diaries.push(entry); }
+      closeMod('mod-diary'); goH('cortisol'); updateHome();
+      if (typeof saveChecksRow === 'function') saveChecksRow();
+      if (typeof saveDiaryRow === 'function') saveDiaryRow(entry);
+    }
 
     // ── INSULIN ──
     // 생리주기 phase는 대시보드/코르티솔과 동일한 getCycleInfo()를 그대로 재사용한다.
@@ -2849,8 +2868,12 @@
       const cats = [...new Set(RCPS.map(r => r.tp))].sort((a, b) => a.localeCompare(b, 'ko'));
       box.innerHTML = cats.map(c => `<span class="chip" onclick="rfil(this,'type','${c}')">${c}</span>`).join('');
     }
-    function renderRecipes() {
+    // 필터에 걸리는 레시피가 1000개 넘게 있을 수 있어(엑셀에서 가져온 것들) 한 번에 다 그리지 않고
+    // 일정 개수만 보여준 뒤 "더 보기"로 이어서 불러온다.
+    const RCP_PAGE_SIZE = 24;
+    function renderRecipes(reset = true) {
       renderRecipeCategoryChips();
+      if (reset) S.rcpShowCount = RCP_PAGE_SIZE;
       const g = document.getElementById('rcp-grid'); if (!g) return;
       const f = RCPS.filter(r => {
         if (S.rFilters.time && r.t > S.rFilters.time) return false;
@@ -2858,8 +2881,9 @@
         if (S.rFilters.cost && r.cost > S.rFilters.cost) return false;
         return true;
       });
+      const shown = f.slice(0, S.rcpShowCount || RCP_PAGE_SIZE);
       const costLabel = c => `~${(c / 1000).toFixed(0)}천원`;
-      g.innerHTML = f.map(r => `<div class="recipe-card" onclick="showRecipeDetail(${RCPS.indexOf(r)})">
+      const cardsHtml = shown.map(r => `<div class="recipe-card" onclick="showRecipeDetail(${RCPS.indexOf(r)})">
     <div style="display:flex;align-items:center;gap:12px">
       <span style="font-size:32px">${r.img}</span>
       <div style="flex:1">
@@ -2873,7 +2897,11 @@
       </div>
     </div>
   </div>`).join('');
+      const remain = f.length - shown.length;
+      const moreBtn = remain > 0 ? `<button class="btn btn-o" style="margin-top:8px" onclick="loadMoreRecipes()">더 보기 (${remain}개 더 · 총 ${f.length}개)</button>` : (f.length ? `<div style="text-align:center;color:var(--muted);font-size:11px;padding:8px 0;font-weight:500">${f.length}개 전체를 보여드렸어요</div>` : '');
+      g.innerHTML = cardsHtml + moreBtn;
     }
+    function loadMoreRecipes() { S.rcpShowCount = (S.rcpShowCount || RCP_PAGE_SIZE) + RCP_PAGE_SIZE; renderRecipes(false); }
     function showRecipeDetail(idx) {
       const r = RCPS[idx];
       document.getElementById('recipe-detail-body').innerHTML = `

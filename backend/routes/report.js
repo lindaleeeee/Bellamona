@@ -8,6 +8,9 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
+// 부팅 시점에 바로 확인 가능하도록 — 요청이 올 때까지 기다리지 않고 로그에서 키 누락을 알 수 있게 함
+if (!process.env.GEMINI_API_KEY) console.error('[REPORT] 부팅 경고: GEMINI_API_KEY 환경변수가 설정되지 않았습니다. AI 리포트는 항상 폴백으로만 응답합니다.');
+
 // Auth middleware for report
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -31,6 +34,22 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
+// Gemini 호출 실패의 진짜 원인(모델 단종/키 무효/네트워크/쿼터 초과 등)을 로그에서 바로 알아볼 수
+// 있도록, error 객체가 들고 있을 수 있는 필드를 최대한 펼쳐서 찍는다. error.message만 찍으면
+// "[GoogleGenerativeAI Error]: fetch failed" 처럼 뭉뚱그려져서 원인 파악이 안 되는 경우가 많다.
+function logGeminiError(tag, error) {
+    console.error(`${tag} name:`, error?.name);
+    console.error(`${tag} message:`, error?.message);
+    if (error?.status) console.error(`${tag} status:`, error.status, error.statusText);
+    if (error?.errorDetails) console.error(`${tag} errorDetails:`, JSON.stringify(error.errorDetails));
+    if (error?.cause) console.error(`${tag} cause:`, error.cause);
+    if (error?.response) {
+        try { console.error(`${tag} response:`, JSON.stringify(error.response).slice(0, 2000)); }
+        catch (e) { console.error(`${tag} response (unstringifiable):`, error.response); }
+    }
+    console.error(`${tag} stack:`, error?.stack);
+}
 
 // meals 배열의 ai_estimate(있으면)를 근거로 하루 총 매크로를 결정론적으로 합산한다.
 // AI 응답에 맡기지 않는 이유: 같은 입력에 항상 같은 숫자가 나와야 하고, Gemini 호출이 실패해도
@@ -131,7 +150,8 @@ router.post('/', authenticateToken, async (req, res) => {
         console.log('[REPORT] Successfully parsed report JSON for userId:', req.user?.userId);
         res.json({ success: true, report: reportJSON });
     } catch (error) {
-        console.error('[REPORT] Gemini API failed, returning fallback report for userId:', req.user?.userId, error.message);
+        console.error('[REPORT] Gemini API failed for userId:', req.user?.userId, '— returning fallback report. 아래 로그로 실제 원인을 확인하세요:');
+        logGeminiError('[REPORT]', error);
         const report = fallbackReport(data);
         report.macro_breakdown = macro_breakdown;
         res.json({ success: true, report });

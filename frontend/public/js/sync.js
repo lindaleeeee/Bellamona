@@ -146,7 +146,7 @@ async function restoreFromServer() {
     if (d.checks) S.checks = Object.assign({}, S.checks, d.checks);
 
     if (d.diaries && d.diaries.length) {
-      S.diaries = d.diaries.slice().reverse().map(x => ({ d: fmtDateShort(x.written_date), t: x.content }));
+      S.diaries = d.diaries.slice().reverse().map(x => ({ date: (x.written_date + '').slice(0, 10), d: fmtDateShort(x.written_date), t: x.content }));
     }
 
     if (d.meals && d.meals.length) {

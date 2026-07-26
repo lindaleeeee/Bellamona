@@ -30,6 +30,18 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+if (!process.env.GEMINI_API_KEY) console.error('[GLUCOSE] 부팅 경고: GEMINI_API_KEY 환경변수가 설정되지 않았습니다.');
+
+// 실패 원인을 로그에서 바로 알아볼 수 있도록 error 객체를 최대한 펼쳐서 찍는다 (report.js와 동일한 헬퍼)
+function logGeminiError(tag, error) {
+    console.error(`${tag} name:`, error?.name);
+    console.error(`${tag} message:`, error?.message);
+    if (error?.status) console.error(`${tag} status:`, error.status, error.statusText);
+    if (error?.errorDetails) console.error(`${tag} errorDetails:`, JSON.stringify(error.errorDetails));
+    if (error?.cause) console.error(`${tag} cause:`, error.cause);
+    console.error(`${tag} stack:`, error?.stack);
+}
+
 // POST /api/glucose/predict
 // 그램 단위 정확한 음식 검색 대신, 자유 텍스트 식단 설명 + 시간 + 최근 2주 식단/혈당/운동 이력을
 // 근거로 이번 식사의 혈당 반응(ΔPeak, 신호등 레벨)을 추정한다. 매크로(탄수/단백/지방/GI)도 함께
@@ -80,11 +92,19 @@ router.post('/predict', authenticateToken, async (req, res) => {
         let rawText = result.response.text();
         rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
 
-        const estimate = JSON.parse(rawText);
+        let estimate;
+        try {
+            estimate = JSON.parse(rawText);
+        } catch (parseErr) {
+            const match = rawText.match(/\{[\s\S]*\}/);
+            if (!match) throw parseErr;
+            estimate = JSON.parse(match[0]);
+        }
         console.log('[GLUCOSE] Successfully parsed estimate for userId:', req.user?.userId, estimate.level);
         res.json({ success: true, estimate });
     } catch (error) {
-        console.error('[GLUCOSE] Gemini API Error for userId:', req.user?.userId, error);
+        console.error('[GLUCOSE] Gemini API failed for userId:', req.user?.userId, '— 아래 로그로 실제 원인을 확인하세요:');
+        logGeminiError('[GLUCOSE]', error);
         res.status(500).json({ success: false, error: 'Failed to predict glucose response' });
     }
 });
