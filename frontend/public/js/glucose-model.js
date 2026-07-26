@@ -77,17 +77,22 @@ const GMODEL = (() => {
             baseline_glucose: meal.bgPre ? +meal.bgPre : 100,
             cycle_phase: ctx.cyclePhase || 'unknown',
             workout_within_30min_post: !!ctx.workoutPost,
+            sleep_h: ctx.sleepH != null ? +ctx.sleepH : 7, // 결측 시 평균 수면시간 7h 가정
             carb_x_gi: Math.round(carb * gi / 100),
         };
     }
 
-    /* ── §4 단계 1: 규칙 기반 (콜드스타트) ── */
+    /* ── §4 단계 1: 규칙 기반 (콜드스타트) ──
+       보완: 식후 30분 내 운동은 혈당 피크를 낮춘다는 것이 Liu et al./van Doorn et al.의 공통된
+       결론이나, buildFeatures가 뽑아내는 workout_within_30min_post가 정작 이 계산식에서 빠져
+       있었다(피처만 추출하고 미사용). 운동 시 15% 추가 완충을 적용해 실제로 반영되게 한다. */
     function ruleBased(feat) {
         const base = LOOKUP[carbBucket(feat.carb_g)][giBucket(feat.gi_estimate)];
         const buffer = 1
             - 0.15 * (feat.fiber_g > 5 ? 1 : 0)
             - 0.10 * (feat.fat_g > 15 ? 1 : 0)
-            - 0.10 * (feat.protein_g > 20 ? 1 : 0);
+            - 0.10 * (feat.protein_g > 20 ? 1 : 0)
+            - 0.15 * (feat.workout_within_30min_post ? 1 : 0);
         const delta = base * buffer * timeCoeff(feat.meal_hour) * cycleCoeff(feat.cycle_phase);
         return { deltaPeak: Math.round(delta), method: 'rule', confidence: 'low' };
     }
@@ -103,12 +108,16 @@ const GMODEL = (() => {
             sameBucket(h)
         );
         if (neighbors.length < 3) return null; // 폴백 신호
-        // 거리 역가중 평균
+        // 거리 역가중 평균. 탄수·GI만으로는 데이터가 쌓일수록 정확도가 한계에 부딪히므로,
+        // 공복혈당(baseline_glucose)·수면시간(sleep_h) 차이도 거리에 작은 가중치로 포함한다.
         let wsum = 0, vsum = 0;
         const deltas = [];
         neighbors.forEach(n => {
             const dist = Math.abs(n.features.carb_g - feat.carb_g)
-                + Math.abs(n.features.gi_estimate - feat.gi_estimate) + 1;
+                + Math.abs(n.features.gi_estimate - feat.gi_estimate)
+                + Math.abs((n.features.baseline_glucose ?? 100) - (feat.baseline_glucose ?? 100)) * 0.3
+                + Math.abs((n.features.sleep_h ?? 7) - (feat.sleep_h ?? 7)) * 0.5
+                + 1;
             const w = 1 / dist;
             wsum += w; vsum += w * n.delta_peak;
             deltas.push(n.delta_peak);

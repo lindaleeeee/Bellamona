@@ -131,6 +131,8 @@ async function restoreFromServer() {
       if (d.profile.height_cm != null) S.heightCm = Number(d.profile.height_cm);
       if (d.profile.start_date) S.startDate = new Date(d.profile.start_date).getTime();
       if (d.profile.goal_date) S.goalDate = new Date(d.profile.goal_date).getTime();
+      if (d.profile.gender) S.gender = d.profile.gender;
+      if (d.profile.report_time) S.reportTime = (d.profile.report_time + '').slice(0, 5);
     }
 
     if (d.weights && d.weights.length) {
@@ -154,6 +156,8 @@ async function restoreFromServer() {
         label: row.label,
         time: (row.time || '00:00').slice(0, 5),
         foods: row.foods || [],
+        text: row.description || '',
+        aiEstimate: row.ai_estimate || null,
         bgPre: row.bg_pre, bg1h: row.bg_1h, bg2h: row.bg_2h
       }));
       S.nextMealId = S.meals.length;
@@ -161,11 +165,24 @@ async function restoreFromServer() {
 
     if (d.workout) {
       S.exBurned = {
-        strength: d.workout.strength || 0,
-        hiit: d.workout.hiit || 0,
-        cardio: d.workout.cardio || 0,
-        walk: d.workout.walk || 0
+        intensity: d.workout.intensity || null,
+        durationMin: d.workout.duration_min || 0,
+        exerciseType: d.workout.exercise_type || '',
+        minutesAfterMeal: d.workout.minutes_after_meal ?? null
       };
+    }
+    if (d.workoutHistory && d.workoutHistory.length) {
+      S.workoutLogs = d.workoutHistory.filter(w => w.intensity).map(w => ({
+        date: (w.performed_date + '').slice(0, 10), intensity: w.intensity, durationMin: w.duration_min, exerciseType: w.exercise_type
+      }));
+    }
+    if (d.sleepLogs && d.sleepLogs.length) {
+      S.sleepLogs = d.sleepLogs.map(s => ({
+        date: (s.log_date + '').slice(0, 10), bedtime: s.bedtime, wake: s.wake_time, hours: s.hours != null ? Number(s.hours) : null
+      }));
+    }
+    if (d.profile && Array.isArray(d.profile.supplements) && d.profile.supplements.length) {
+      S.routines.oxytocin = d.profile.supplements;
     }
 
     try {
@@ -206,7 +223,10 @@ function saveProfileRow() {
       daily_kcal_target: S.goalCal,
       cycle_len: S.cycleLen,
       start_date: S.startDate ? new Date(S.startDate).toISOString().split('T')[0] : null,
-      goal_date: S.goalDate ? new Date(S.goalDate).toISOString().split('T')[0] : null
+      goal_date: S.goalDate ? new Date(S.goalDate).toISOString().split('T')[0] : null,
+      gender: S.gender || null,
+      report_time: S.reportTime || null,
+      supplements: S.routines.oxytocin || []
     })
   }).catch(e => console.error('[saveProfileRow]', e));
 }
@@ -251,9 +271,28 @@ function saveWorkoutRow() {
   fetchApi(apiUrl('/api/data/workouts'), {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ performed_date: todayISO(), ...S.exBurned })
+    body: JSON.stringify({
+      performed_date: todayISO(),
+      intensity: S.exBurned.intensity,
+      duration_min: S.exBurned.durationMin,
+      exercise_type: S.exBurned.exerciseType,
+      minutes_after_meal: S.exBurned.minutesAfterMeal
+    })
   }).catch(e => console.error('[saveWorkoutRow]', e));
 }
+
+function saveSleepRow(entry) {
+  if (!entry) return;
+  fetchApi(apiUrl('/api/data/sleep'), {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ log_date: entry.date || todayISO(), bedtime: entry.bedtime, wake_time: entry.wake, hours: entry.hours })
+  }).catch(e => console.error('[saveSleepRow]', e));
+}
+
+// 영양제 목록은 profiles 테이블에 함께 저장되므로 saveProfileRow()를 그대로 재사용한다
+// (POST /api/data/profiles가 프로필 전체를 UPSERT하는 구조라 일부 필드만 보내면 안 됨).
+function saveSupplementsRow() { saveProfileRow(); }
 
 function savePeriodRow() {
   const p = S.periods[S.periods.length - 1];
@@ -275,6 +314,8 @@ function saveMealRow(meal) {
       label: meal.label,
       time: meal.time,
       foods: meal.foods,
+      description: meal.text || null,
+      ai_estimate: meal.aiEstimate || null,
       bg_pre: meal.bgPre, bg_1h: meal.bg1h, bg_2h: meal.bg2h
     })
   })

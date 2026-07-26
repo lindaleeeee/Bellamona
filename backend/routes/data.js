@@ -181,6 +181,10 @@ router.get('/', async (req, res) => {
         // 월별/최근 일기
         const diariesRes = await client.query('SELECT * FROM diaries WHERE user_id = $1 ORDER BY written_date DESC LIMIT 30', [userId]);
 
+        // 최근 수면 기록 / 운동 기록 (이번주 시각화용)
+        const sleepLogsRes = await client.query('SELECT * FROM sleep_logs WHERE user_id = $1 ORDER BY log_date DESC LIMIT 14', [userId]);
+        const workoutHistoryRes = await client.query('SELECT * FROM workouts WHERE user_id = $1 ORDER BY performed_date DESC LIMIT 14', [userId]);
+
         console.log('[DATA] GET / success for userId:', userId, {
             meals: mealsRes.rows.length,
             workouts: workoutsRes.rows.length,
@@ -198,7 +202,9 @@ router.get('/', async (req, res) => {
             checks: checksRes.rows[0]?.checks || {},
             weights: weightsRes.rows,
             periods: periodsRes.rows,
-            diaries: diariesRes.rows
+            diaries: diariesRes.rows,
+            sleepLogs: sleepLogsRes.rows,
+            workoutHistory: workoutHistoryRes.rows
         });
     } catch (err) {
         console.error('[DATA] GET / failed for userId:', userId, err);
@@ -211,12 +217,12 @@ router.get('/', async (req, res) => {
 // 프로필 저장 (UPSERT)
 router.post('/profiles', async (req, res) => {
     const { userId } = req.user;
-    const { height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date, goal_date } = req.body;
+    const { height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date, goal_date, gender, report_time, supplements } = req.body;
     console.log('[DATA] POST /profiles for userId:', userId, req.body);
     try {
         await pool.query(`
-      INSERT INTO profiles (user_id, height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date, goal_date)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO profiles (user_id, height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date, goal_date, gender, report_time, supplements)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       ON CONFLICT (user_id)
       DO UPDATE SET
         height_cm = EXCLUDED.height_cm,
@@ -227,8 +233,11 @@ router.post('/profiles', async (req, res) => {
         cycle_len = EXCLUDED.cycle_len,
         start_date = EXCLUDED.start_date,
         goal_date = EXCLUDED.goal_date,
+        gender = EXCLUDED.gender,
+        report_time = EXCLUDED.report_time,
+        supplements = COALESCE(EXCLUDED.supplements, profiles.supplements),
         updated_at = CURRENT_TIMESTAMP
-    `, [userId, height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date || null, goal_date || null]);
+    `, [userId, height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date || null, goal_date || null, gender || null, report_time || null, supplements ? JSON.stringify(supplements) : null]);
         console.log('[DATA] POST /profiles success for userId:', userId);
         res.json({ success: true });
     } catch (err) {
@@ -240,8 +249,8 @@ router.post('/profiles', async (req, res) => {
 // 식사 저장 (같은 날짜+끼니 라벨이면 UPSERT)
 router.post('/meals', async (req, res) => {
     const { userId } = req.user;
-    const { eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h } = req.body;
-    console.log('[DATA] POST /meals for userId:', userId, { eaten_date, label, time, bg_pre, bg_1h, bg_2h });
+    const { eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h, description, ai_estimate } = req.body;
+    console.log('[DATA] POST /meals for userId:', userId, { eaten_date, label, time, bg_pre, bg_1h, bg_2h, description });
     try {
         const today = eaten_date || new Date().toISOString().split('T')[0];
         const exist = await pool.query('SELECT id FROM meals WHERE user_id=$1 AND eaten_date=$2 AND label=$3', [userId, today, label]);
@@ -249,15 +258,15 @@ router.post('/meals', async (req, res) => {
         if (exist.rows.length > 0) {
             console.log('[DATA] Existing meal slot found, updating id:', exist.rows[0].id);
             const r = await pool.query(
-                `UPDATE meals SET time=$1, foods=$2, bg_pre=$3, bg_1h=$4, bg_2h=$5 WHERE id=$6 RETURNING *`,
-                [time, JSON.stringify(foods), bg_pre, bg_1h, bg_2h, exist.rows[0].id]);
+                `UPDATE meals SET time=$1, foods=$2, bg_pre=$3, bg_1h=$4, bg_2h=$5, description=$6, ai_estimate=$7 WHERE id=$8 RETURNING *`,
+                [time, JSON.stringify(foods), bg_pre, bg_1h, bg_2h, description || null, ai_estimate ? JSON.stringify(ai_estimate) : null, exist.rows[0].id]);
             row = r.rows[0];
         } else {
             console.log('[DATA] No existing meal slot, inserting new row');
             const r = await pool.query(
-                `INSERT INTO meals (user_id, eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-                [userId, today, label, time, JSON.stringify(foods), bg_pre, bg_1h, bg_2h]);
+                `INSERT INTO meals (user_id, eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h, description, ai_estimate)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+                [userId, today, label, time, JSON.stringify(foods), bg_pre, bg_1h, bg_2h, description || null, ai_estimate ? JSON.stringify(ai_estimate) : null]);
             row = r.rows[0];
         }
         console.log('[DATA] POST /meals success, meal id:', row.id);
@@ -283,29 +292,48 @@ router.delete('/meals/:id', async (req, res) => {
     }
 });
 
-// 운동 저장 (UPSERT)
+// 운동 저장 (UPSERT) — 강도(intensity)×시간(duration_min)으로 자동 추정하는 방식
 router.post('/workouts', async (req, res) => {
     const { userId } = req.user;
-    const { performed_date, strength, hiit, cardio, walk, note } = req.body;
-    console.log('[DATA] POST /workouts for userId:', userId, { performed_date, strength, hiit, cardio, walk });
+    const { performed_date, intensity, duration_min, exercise_type, minutes_after_meal } = req.body;
+    console.log('[DATA] POST /workouts for userId:', userId, { performed_date, intensity, duration_min, exercise_type, minutes_after_meal });
     try {
         const today = performed_date || new Date().toISOString().split('T')[0];
-        // 간단한 처리를 위해 DELETE 후 INSERT (체크가 쉬움) 또는 SELECT 후 업데이트. 원래는 고유 제약조건 필요.
-        // 여기서는 고유 제약조건이 없으므로 일단 매번 INSERT 하거나 오늘자 찾아서 업데이트.
         const exist = await pool.query('SELECT id FROM workouts WHERE user_id=$1 AND performed_date=$2', [userId, today]);
         if (exist.rows.length > 0) {
             console.log('[DATA] Existing workout found, updating id:', exist.rows[0].id);
-            await pool.query('UPDATE workouts SET strength=$1, hiit=$2, cardio=$3, walk=$4, note=$5 WHERE id=$6',
-                [strength, hiit, cardio, walk, note, exist.rows[0].id]);
+            await pool.query('UPDATE workouts SET intensity=$1, duration_min=$2, exercise_type=$3, minutes_after_meal=$4 WHERE id=$5',
+                [intensity ?? null, duration_min ?? null, exercise_type ?? null, minutes_after_meal ?? null, exist.rows[0].id]);
         } else {
             console.log('[DATA] No existing workout, inserting new row');
-            await pool.query('INSERT INTO workouts (user_id, performed_date, strength, hiit, cardio, walk, note) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-                [userId, today, strength, hiit, cardio, walk, note]);
+            await pool.query('INSERT INTO workouts (user_id, performed_date, intensity, duration_min, exercise_type, minutes_after_meal) VALUES ($1, $2, $3, $4, $5, $6)',
+                [userId, today, intensity ?? null, duration_min ?? null, exercise_type ?? null, minutes_after_meal ?? null]);
         }
         console.log('[DATA] POST /workouts success for userId:', userId);
         res.json({ success: true });
     } catch (err) {
         console.error('[DATA] POST /workouts failed for userId:', userId, err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 수면 기록 저장 (UPSERT)
+router.post('/sleep', async (req, res) => {
+    const { userId } = req.user;
+    const { log_date, bedtime, wake_time, hours } = req.body;
+    console.log('[DATA] POST /sleep for userId:', userId, { log_date, bedtime, wake_time, hours });
+    try {
+        const today = log_date || new Date().toISOString().split('T')[0];
+        await pool.query(`
+      INSERT INTO sleep_logs (user_id, log_date, bedtime, wake_time, hours)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (user_id, log_date)
+      DO UPDATE SET bedtime = EXCLUDED.bedtime, wake_time = EXCLUDED.wake_time, hours = EXCLUDED.hours
+    `, [userId, today, bedtime || null, wake_time || null, hours || null]);
+        console.log('[DATA] POST /sleep success for userId:', userId);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[DATA] POST /sleep failed for userId:', userId, err);
         res.status(500).json({ error: err.message });
     }
 });

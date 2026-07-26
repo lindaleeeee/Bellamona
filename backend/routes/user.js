@@ -42,7 +42,7 @@ router.get('/profile', async (req, res) => {
             SELECT u.id, u.email, u.name, u.avatar,
                    p.height_cm, p.weight_kg, p.goal_weight_kg,
                    p.goal_months, p.daily_kcal_target, p.cycle_len,
-                   p.start_date, p.goal_date
+                   p.start_date, p.goal_date, p.gender, p.report_time
             FROM users u
             LEFT JOIN profiles p ON u.id = p.user_id
             WHERE u.id = $1
@@ -69,15 +69,15 @@ router.post('/onboard', async (req, res) => {
     let client;
     try {
         const { userId } = req.user;
-        const { height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date, goal_date } = req.body;
+        const { height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date, goal_date, gender, report_time } = req.body;
         console.log('[USER] POST /onboard for userId:', userId, req.body);
 
         client = await pool.connect();
 
         // Upsert into profiles
         const result = await client.query(`
-            INSERT INTO profiles (user_id, height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date, goal_date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            INSERT INTO profiles (user_id, height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date, goal_date, gender, report_time)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             ON CONFLICT (user_id)
             DO UPDATE SET
                 height_cm = EXCLUDED.height_cm,
@@ -88,9 +88,11 @@ router.post('/onboard', async (req, res) => {
                 cycle_len = EXCLUDED.cycle_len,
                 start_date = EXCLUDED.start_date,
                 goal_date = EXCLUDED.goal_date,
+                gender = EXCLUDED.gender,
+                report_time = EXCLUDED.report_time,
                 updated_at = CURRENT_TIMESTAMP
             RETURNING *;
-        `, [userId, height_cm || null, weight_kg || null, goal_weight_kg || null, goal_months || null, daily_kcal_target || null, cycle_len || 28, start_date || null, goal_date || null]);
+        `, [userId, height_cm || null, weight_kg || null, goal_weight_kg || null, goal_months || null, daily_kcal_target || null, cycle_len || 28, start_date || null, goal_date || null, gender || null, report_time || null]);
 
         console.log('[USER] POST /onboard success for userId:', userId);
         res.json({ message: 'Onboarding completed', profile: result.rows[0] });

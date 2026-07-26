@@ -57,6 +57,15 @@ const initDB = async () => {
     await client.query('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS goal_date DATE;');
     console.log('[DB] profiles.start_date / goal_date 컬럼 확인 완료');
 
+    // 성별(옥시토신 화면을 여성호르몬/남성호르몬으로 표시하는 데 사용) + AI 리포트 자동 생성 시각
+    await client.query("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS gender VARCHAR(10);");
+    await client.query('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS report_time TIME;');
+    console.log('[DB] profiles.gender / report_time 컬럼 확인 완료');
+
+    // 옥시토신(여성/남성호르몬) 화면: 사용자가 직접 추가하는 영양제 목록
+    await client.query("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS supplements JSONB DEFAULT '[]';");
+    console.log('[DB] profiles.supplements 컬럼 확인 완료');
+
     // 3. meals
     await client.query(`
       CREATE TABLE IF NOT EXISTS meals (
@@ -73,6 +82,11 @@ const initDB = async () => {
       );
     `);
 
+    // 인슐린 화면 개편: 그램 단위 구조화 검색 대신 자유 텍스트 식단 기록 + AI 혈당 예측
+    await client.query('ALTER TABLE meals ADD COLUMN IF NOT EXISTS description TEXT;');
+    await client.query('ALTER TABLE meals ADD COLUMN IF NOT EXISTS ai_estimate JSONB;');
+    console.log('[DB] meals.description / ai_estimate 컬럼 확인 완료');
+
     // 4. workouts
     await client.query(`
       CREATE TABLE IF NOT EXISTS workouts (
@@ -87,6 +101,28 @@ const initDB = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // 성장호르몬 화면 개편: kcal 직접입력 대신 강도×시간으로 자동 추정하는 방식으로 변경됨
+    await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS intensity VARCHAR(10);');
+    await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS duration_min INTEGER;');
+    await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS exercise_type VARCHAR(100);');
+    await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS minutes_after_meal INTEGER;');
+    console.log('[DB] workouts.intensity / duration_min / exercise_type / minutes_after_meal 컬럼 확인 완료');
+
+    // 코르티솔 화면: 수면시간 기록
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS sleep_logs (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        log_date DATE NOT NULL,
+        bedtime TIME,
+        wake_time TIME,
+        hours NUMERIC(4,2),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, log_date)
+      );
+    `);
+    console.log('[DB] sleep_logs 테이블 확인 완료');
 
     // 5. routine_checks
     await client.query(`

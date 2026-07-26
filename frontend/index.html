@@ -634,16 +634,14 @@
       height: 50px
     }
 
-    /* Exercise calorie input */
-    .ex-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px;
-      background: var(--card2);
-      border-radius: 11px;
-      margin-bottom: 6px;
-      border: 1px solid var(--bdr)
+    /* 하루 한 번 자동 생성된 AI 리포트가 준비됐을 때 버튼을 강조 */
+    @keyframes reportPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(91, 184, 245, .5) }
+      50% { box-shadow: 0 0 0 8px rgba(91, 184, 245, 0) }
+    }
+
+    .report-ready {
+      animation: reportPulse 1.8s ease-in-out infinite
     }
 
     /* 혈당 예측 신뢰도 배지 (GMODEL) */
@@ -762,7 +760,7 @@
               <input class="input" placeholder="이름" id="ob-name" />
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                 <input class="input" placeholder="나이" type="number" />
-                <select class="input" style="color:var(--text)">
+                <select class="input" style="color:var(--text)" id="ob-gender">
                   <option>여성</option>
                   <option>남성</option>
                 </select>
@@ -953,8 +951,8 @@
               <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span
                   style="font-size:15px">💗</span><span style="font-size:12px;font-weight:800;color:var(--rose)"
                   id="hc-oxy">0%</span></div>
-              <div style="font-size:12px;font-weight:700;color:var(--text)">옥시토신</div>
-              <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">유대·감정</div>
+              <div style="font-size:12px;font-weight:700;color:var(--text)" id="hc-oxy-label">옥시토신</div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">영양제</div>
               <div class="bar-t" style="height:3px">
                 <div class="bar-f" id="bar-oxy" style="width:0%;background:var(--rose)"></div>
               </div>
@@ -1219,6 +1217,16 @@
               <div style="font-size:20px;font-weight:800;color:var(--ok)" id="prof-save-val">0 kcal</div>
             </div>
           </div>
+          <div class="card" style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div class="cap" style="margin-bottom:0">🤖 AI 리포트</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:10px;color:var(--muted);font-weight:600">생성 시각</span>
+                <input class="input" type="time" id="report-time-input" style="width:90px;padding:6px 8px;font-size:12px" onchange="saveReportTime(this.value)" />
+              </div>
+            </div>
+            <button id="prof-report-btn" class="btn btn-p" onclick="openTodayReport()">리포트 확인하기</button>
+          </div>
           <div style="display:flex;flex-direction:column;gap:6px">
             <div class="card2" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer"
               onclick="openMod('mod-friends')"><span style="font-size:13px;color:var(--text);font-weight:600">👥 친구
@@ -1293,39 +1301,58 @@
       </div>
     </div>
 
-    <div class="mov" id="mod-workout">
+    <div class="mov" id="mod-workout-timing">
       <div class="msh">
         <div class="mh"></div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">💪 운동 칼로리 기록</div>
-        <div class="cap" style="margin-bottom:8px">운동별 소모 칼로리 입력</div>
-        <div class="ex-row"><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">🏋️ 근력 운동</span><input
-            type="number" id="ex-strength" placeholder="0" class="bg-inp" style="width:70px"
-            oninput="updateBurned()" /><span style="font-size:11px;color:var(--muted);font-weight:600">kcal</span></div>
-        <div class="ex-row"><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">⚡ HIIT</span><input
-            type="number" id="ex-hiit" placeholder="0" class="bg-inp" style="width:70px"
-            oninput="updateBurned()" /><span style="font-size:11px;color:var(--muted);font-weight:600">kcal</span></div>
-        <div class="ex-row"><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">🌅 공복 유산소</span><input
-            type="number" id="ex-cardio" placeholder="0" class="bg-inp" style="width:70px"
-            oninput="updateBurned()" /><span style="font-size:11px;color:var(--muted);font-weight:600">kcal</span></div>
-        <div class="ex-row"><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">🚶 걷기 /
-            기타</span><input type="number" id="ex-walk" placeholder="0" class="bg-inp" style="width:70px"
-            oninput="updateBurned()" /><span style="font-size:11px;color:var(--muted);font-weight:600">kcal</span></div>
-        <div
-          style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;margin-top:4px">
-          <span style="font-size:12px;color:var(--muted);font-weight:600">운동 소모 합계</span>
-          <span style="font-size:18px;font-weight:800;color:var(--sky2)" id="ex-total">0 kcal</span>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">🍽 식후 운동 타이밍</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:500">식사 후 몇 분 뒤에 운동을 시작했나요?</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-o" onclick="saveWorkoutTiming(0)">식후 직후</button>
+          <button class="btn btn-o" onclick="saveWorkoutTiming(30)">30분 뒤</button>
+          <button class="btn btn-o" onclick="saveWorkoutTiming(60)">1시간 뒤</button>
         </div>
-        <div class="cap" style="margin-bottom:5px">부위 선택 (근력)</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"><span class="chip"
-            onclick="this.classList.toggle('on')">어깨</span><span class="chip"
-            onclick="this.classList.toggle('on')">등</span><span class="chip"
-            onclick="this.classList.toggle('on')">팔</span><span class="chip"
-            onclick="this.classList.toggle('on')">전신</span><span class="chip"
-            onclick="this.classList.toggle('on')">하체</span><span class="chip"
-            onclick="this.classList.toggle('on')">가슴</span></div>
-        <textarea class="input" id="wk-note" placeholder="운동 메모 (예: 스쿼트 3×15, 데드리프트 4×8...)" rows="2"
-          style="margin-bottom:12px"></textarea>
-        <button class="btn btn-p" onclick="saveWorkout()">저장 & 소모 칼로리 반영</button>
+      </div>
+    </div>
+
+    <div class="mov" id="mod-workout-intensity">
+      <div class="msh">
+        <div class="mh"></div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">💪 운동 강도</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:500">오늘 운동은 어느 정도였나요?</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-o" style="justify-content:flex-start;gap:10px" onclick="saveWorkoutIntensity('low')"><span style="font-size:22px">🚶</span><span>저강도 · 땀이 살짝 나는 정도 (산책)</span></button>
+          <button class="btn btn-o" style="justify-content:flex-start;gap:10px" onclick="saveWorkoutIntensity('medium')"><span style="font-size:22px">🏃</span><span>중강도 · 숨이 조금 차는 정도 (조깅)</span></button>
+          <button class="btn btn-o" style="justify-content:flex-start;gap:10px" onclick="saveWorkoutIntensity('high')"><span style="font-size:22px">🔥</span><span>고강도 · 대화가 힘든 정도 (크로스핏 등)</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mov" id="mod-workout-duration">
+      <div class="msh">
+        <div class="mh"></div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">⏱ 지속시간 · 운동 종류</div>
+        <div class="cap" style="margin-bottom:5px">무엇을 했나요?</div>
+        <input class="input" id="wk-type" placeholder="예: 스쿼트, 러닝, 요가..." style="margin-bottom:12px" />
+        <div class="cap" style="margin-bottom:5px">운동 시간 (분)</div>
+        <input class="input" id="wk-duration" type="number" min="5" max="60" step="5" list="wk-duration-options" placeholder="5~60분, 직접 입력도 가능" style="margin-bottom:14px" />
+        <datalist id="wk-duration-options">
+          <option value="5"></option><option value="10"></option><option value="15"></option><option value="20"></option>
+          <option value="25"></option><option value="30"></option><option value="35"></option><option value="40"></option>
+          <option value="45"></option><option value="50"></option><option value="55"></option><option value="60"></option>
+        </datalist>
+        <button class="btn btn-p" onclick="saveWorkoutDuration()">저장</button>
+      </div>
+    </div>
+
+    <div class="mov" id="mod-sleep">
+      <div class="msh">
+        <div class="mh"></div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">😴 수면시간 기록</div>
+        <div class="cap" style="margin-bottom:5px">취침 시간</div>
+        <input class="input" type="time" id="sleep-bedtime" value="23:30" style="margin-bottom:10px" />
+        <div class="cap" style="margin-bottom:5px">기상 시간</div>
+        <input class="input" type="time" id="sleep-wake" value="07:00" style="margin-bottom:14px" />
+        <button class="btn btn-p" onclick="saveSleep()">저장</button>
       </div>
     </div>
 
@@ -1404,40 +1431,13 @@
       <div class="msh">
         <div class="mh"></div>
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px" id="food-title">음식 추가</div>
-        <div style="position:relative;margin-bottom:10px">
-          <input class="input" id="food-q" placeholder="음식 검색 (밥, 닭가슴살, 아보카도...)" oninput="searchFood(this.value)"
-            autocomplete="off" />
-          <div class="dd" id="food-dd" style="display:none"></div>
-        </div>
-        <div id="pend-list" style="min-height:40px;margin-bottom:10px"></div>
-        <div id="pend-prev"
-          style="display:none;background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:13px;padding:12px;margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-            <div class="cap" style="margin-bottom:0">이 식사 합계</div>
-            <div style="font-size:16px;font-weight:800;color:var(--sky2)" id="pend-cal">0 kcal</div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
-            <div style="text-align:center;background:var(--surf);border-radius:9px;padding:6px 3px">
-              <div style="font-size:12px;font-weight:800;color:var(--warn)" id="pend-carb">0g</div>
-              <div style="font-size:9px;color:var(--muted);font-weight:600">탄수</div>
-            </div>
-            <div style="text-align:center;background:var(--surf);border-radius:9px;padding:6px 3px">
-              <div style="font-size:12px;font-weight:800;color:var(--lav2)" id="pend-prot">0g</div>
-              <div style="font-size:9px;color:var(--muted);font-weight:600">단백</div>
-            </div>
-            <div style="text-align:center;background:var(--surf);border-radius:9px;padding:6px 3px">
-              <div style="font-size:12px;font-weight:800;color:var(--muted)" id="pend-fat">0g</div>
-              <div style="font-size:9px;color:var(--muted);font-weight:600">지방</div>
-            </div>
-            <div style="text-align:center;background:var(--surf);border-radius:9px;padding:6px 3px">
-              <div style="font-size:12px;font-weight:800" id="pend-gi">—</div>
-              <div style="font-size:9px;color:var(--muted);font-weight:600">GI</div>
-            </div>
-          </div>
-          <div style="margin-top:8px;padding:8px 10px;border-radius:10px;font-size:12px;font-weight:600" id="pend-pred">
-          </div>
-        </div>
-        <button class="btn btn-p" onclick="confirmFoods()" style="margin-bottom:8px">확인 · 식사에 추가</button>
+        <div class="cap" style="margin-bottom:5px">섭취 시작 시간</div>
+        <input class="input" type="time" id="food-time" style="margin-bottom:12px" />
+        <div class="cap" style="margin-bottom:6px">자주 먹는 메뉴</div>
+        <div id="food-quick-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+        <div class="cap" style="margin-bottom:5px">무엇을 드셨나요? (대략적으로 적어도 괜찮아요)</div>
+        <textarea class="input" id="food-text" rows="3" placeholder="예: 샐러드 파스타 1/2인분, 나시고랭 1인분..." style="margin-bottom:14px"></textarea>
+        <button class="btn btn-p" onclick="saveFoodEntry()" style="margin-bottom:8px">저장</button>
         <button class="btn btn-o" onclick="closeMod('mod-food')">취소</button>
       </div>
     </div>
@@ -1599,11 +1599,13 @@
     const S = {
       loggedIn: false, prev: 's-home', curH: 'insulin', obStep: 1,
       name: '혜림', goalCal: 1090, baseBurned: 380,
-      exBurned: { strength: 0, hiit: 0, cardio: 0, walk: 0 },
+      exBurned: { intensity: null, durationMin: 0, exerciseType: '', minutesAfterMeal: null },
+      sleepLogs: [], workoutLogs: [], _showFastDetail: false,
+      reportTime: '21:00', reportGeneratedDate: null, _todayReport: null,
       savedTotal: 0, calMon: { y: 2026, m: 3 },
-      trainingPairs: [], predLogs: [],
+      trainingPairs: [], predLogs: [], gender: 'female',
       periods: [{ start: '2026-04-01', days: 5 }], cycleLen: 28,
-      checks: { i1: false, i2: false, i3: false, i4: false, g1: false, g2: false, g3: false, g4: false, c1: false, c2: false, c3: false, c4: false, o1: false, o2: false, o3: false, o4: false },
+      checks: { i1: false, i2: false, i3: false, i4: false, g1: false, g2: false, g3: false, g4: false, c1: false, c2: false, c3: false, c4: false },
       meals: [
         { id: 0, label: '아침', time: '07:30', foods: [], bgPre: null, bg1h: null, bg2h: null },
         { id: 1, label: '점심', time: '12:30', foods: [], bgPre: null, bg1h: null, bg2h: null },
@@ -1630,23 +1632,21 @@
           { id: 'i4', label: '📊 혈당 기록', sub: '2주 후 AI 개인화 예측 시작' },
         ],
         growth: [
-          { id: 'g1', label: '👟 하루 7,000보 이상', sub: '자동 감지 · 현재 0보' },
-          { id: 'g2', label: '🏋️ 근력 운동', sub: '부위 선택 후 기록' },
-          { id: 'g3', label: '⚡ HIIT 20분', sub: '고강도 인터벌 운동' },
-          { id: 'g4', label: '🌅 빈속 아침 운동', sub: '오전 9시 이전 + 단식 중' },
+          { id: 'g1', label: '🍽 식후 운동 타이밍', sub: '식사 후 몇 분 뒤 운동했나요?' },
+          { id: 'g2', label: '💪 운동 강도', sub: '저강도 / 중강도 / 고강도' },
+          { id: 'g3', label: '⏱ 지속시간 · 운동 종류', sub: '무엇을 몇 분 했는지' },
+          { id: 'g4', label: '⏱ 공복시간', sub: '마지막 식사 기준 자동 계산' },
         ],
         cortisol: [
-          { id: 'c1', label: '☀️ 햇볕 30분 쬐기', sub: '자동 감지 · GPS / wearable' },
-          { id: 'c2', label: '🚿 취침 전 샤워 + 바디마사지', sub: '알람 21:30' },
-          { id: 'c3', label: '🧘 짧은 명상', sub: '5-10분 명상' },
-          { id: 'c4', label: '😴 수면 7시간', sub: '자동 기록 · Health Kit 연동' },
+          { id: 'c1', label: '😴 수면시간 기록', sub: '취침·기상 시간 입력' },
+          { id: 'c2', label: '🧘 명상', sub: '했으면 체크' },
+          { id: 'c3', label: '📔 일기 쓰기', sub: '하루 마무리 감정 기록' },
+          { id: 'c4', label: '🤗 포옹 20초 이상', sub: '했으면 체크' },
         ],
-        oxytocin: [
-          { id: 'o1', label: '🤗 포옹 20초 이상', sub: '가족·친구·반려동물' },
-          { id: 'o2', label: '📱 감사·칭찬 표현 1회', sub: '전화·문자·직접 대화' },
-          { id: 'o3', label: '🧘 명상하기', sub: '마음챙김 5분 이상' },
-          { id: 'o4', label: '📔 일기 쓰기', sub: '하루 마무리 감정 기록' },
-        ],
+        // 옥시토신(→여성/남성호르몬) 화면은 사용자가 직접 추가하는 영양제 체크리스트다.
+        // 기존 routines 패턴(id로 S.checks에 체크 저장)을 그대로 재사용해 hormonePct/overallPct 등
+        // 공통 집계 로직을 건드리지 않는다.
+        oxytocin: [],
       },
     };
     try {
@@ -1678,18 +1678,35 @@
     function setTxt(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
 
     // ═══════════════════════ CALORIE CALCS ═══════════════════════
-    function totalBurned() { return S.baseBurned + Object.values(S.exBurned).reduce((a, v) => a + (v || 0), 0); }
+    // 운동 소모 칼로리: 사용자가 kcal을 직접 입력하지 않고 강도(저/중/고)×시간으로 자동 추정한다.
+    // MET(대사당량) 공식: kcal = MET * 3.5 * 체중(kg) / 200 * 시간(분)
+    const INTENSITY_MET = { low: 3, medium: 6, high: 9 };
+    function exerciseKcal(intensity, durationMin) {
+      const met = INTENSITY_MET[intensity] || 0;
+      const bw = (S.weights && S.weights.length ? S.weights[S.weights.length - 1].w : S.initWeight) || 55;
+      return Math.round(met * 3.5 * bw / 200 * (durationMin || 0));
+    }
+    function todayWorkoutKcal() { return exerciseKcal(S.exBurned.intensity, S.exBurned.durationMin); }
+    function totalBurned() { return S.baseBurned + todayWorkoutKcal(); }
     function totalIntake() { return S.meals.reduce((a, m) => a + mCalc(m, 'cal'), 0); }
-    function mCalc(m, k) { return m.foods.reduce((a, f) => a + Math.round(f.food[k === 'cal' ? 'cal' : k] * f.g / 100), 0); }
+    // 자유 텍스트 식단은 m.foods가 비어있는 대신 AI가 추정한 매크로(m.aiEstimate)를 쓴다.
+    const AI_EST_KEY = { cal: 'kcal_est', c: 'carb_g', p: 'protein_g', f: 'fat_g' };
+    function mCalc(m, k) {
+      if (!m.foods.length && m.aiEstimate) return m.aiEstimate[AI_EST_KEY[k]] || 0;
+      return m.foods.reduce((a, f) => a + Math.round(f.food[k === 'cal' ? 'cal' : k] * f.g / 100), 0);
+    }
     function mCarb(m) { return mCalc(m, 'c'); }
     function mProt(m) { return mCalc(m, 'p'); }
     function mFat(m) { return mCalc(m, 'f'); }
-    function mGI(m) { const cb = mCarb(m); if (!cb) return 0; return Math.round(m.foods.reduce((a, f) => a + f.food.gi * (f.food.c * f.g / 100), 0) / cb); }
+    function mGI(m) {
+      if (!m.foods.length && m.aiEstimate) return m.aiEstimate.gi_estimate || 0;
+      const cb = mCarb(m); if (!cb) return 0; return Math.round(m.foods.reduce((a, f) => a + f.food.gi * (f.food.c * f.g / 100), 0) / cb);
+    }
     function getNet() { return totalIntake() - totalBurned(); }
     function getSave() { return S.goalCal - getNet(); }
 
     function hormonePct(hid) {
-      const rts = S.routines[hid]; if (!rts) return 0;
+      const rts = S.routines[hid]; if (!rts || !rts.length) return 0;
       const done = rts.filter(r => S.checks[r.id]).length;
       return Math.round(done / rts.length * 100);
     }
@@ -1717,7 +1734,8 @@
       const ring = document.getElementById('h-ring'); const op = overallPct(); if (ring) { const circ = 2 * Math.PI * 29; ring.setAttribute('stroke-dasharray', `${Math.min(op / 100 * circ, circ)} ${circ}`); }
       setTxt('h-ring-pct', op + '%');
       const allRts = Object.values(S.routines).flat(); setTxt('h-done-cnt', allRts.filter(r => S.checks[r.id]).length); setTxt('h-total-cnt', allRts.length);
-      ['ins', 'gro', 'cor', 'oxy'].forEach((k, i) => { const hids = ['insulin', 'growth', 'cortisol', 'oxytocin']; const p = hormonePct(hids[i]); setTxt('hc-' + k, p + '%'); const bar = document.getElementById('bar-' + k); if (bar) bar.style.width = p + '%'; const b = document.getElementById('h-' + k + '-badge'); if (b) b.textContent = { ins: '인슐린', gro: '성장', cor: '코르티솔', oxy: '옥시토신' }[k] + ' ' + p + '%'; });
+      setTxt('hc-oxy-label', hormoneScreenLabel());
+      ['ins', 'gro', 'cor', 'oxy'].forEach((k, i) => { const hids = ['insulin', 'growth', 'cortisol', 'oxytocin']; const p = hormonePct(hids[i]); setTxt('hc-' + k, p + '%'); const bar = document.getElementById('bar-' + k); if (bar) bar.style.width = p + '%'; const b = document.getElementById('h-' + k + '-badge'); if (b) b.textContent = { ins: '인슐린', gro: '성장', cor: '코르티솔', oxy: hormoneScreenLabel() }[k] + ' ' + p + '%'; });
       S.savedTotal = Math.max(0, S.savedTotal + (save > 0 ? 0 : 0));
       setTxt('prof-save-val', S.savedTotal + ' kcal');
       // Weight display
@@ -1741,6 +1759,8 @@
       const goalDateStr = new Date(getGoalDateMs()); setTxt('pi-goal-m', `D-${dDay} (~${goalDateStr.getMonth() + 1}/${goalDateStr.getDate()})`);
       setTxt('pi-goal-cal', S.goalCal.toLocaleString() + ' kcal');
       setTxt('prof-goalcal-btn-val', S.goalCal.toLocaleString() + ' kcal');
+      const rtEl = document.getElementById('report-time-input'); if (rtEl && document.activeElement !== rtEl) rtEl.value = S.reportTime || '21:00';
+      const rBtn = document.getElementById('prof-report-btn'); if (rBtn) rBtn.classList.toggle('report-ready', S.reportGeneratedDate === todayISOLocal() && !!S._todayReport);
       saveState();
     }
 
@@ -1874,6 +1894,7 @@
       if (S.obStep < 3) { document.getElementById(`ob-p${S.obStep}`).style.display = 'none'; S.obStep++; document.getElementById(`ob-p${S.obStep}`).style.display = 'block'; document.getElementById('ob-back').style.display = 'flex'; if (S.obStep === 3) document.getElementById('ob-next').textContent = '시작하기 →'; if (S.obStep === 2) calcGoal(); document.querySelectorAll('.step-dot').forEach((d, i) => d.classList.toggle('on', i === S.obStep - 1)); }
       else {
         S.name = document.getElementById('ob-name')?.value || '혜림';
+        S.gender = document.getElementById('ob-gender')?.value === '남성' ? 'male' : 'female';
         S.cycleLen = parseInt(document.getElementById('ob-cycle')?.value) || 28;
         S.startDate = new Date().getTime();
         S.goalDate = S.startDate + (S.goalDays || 90) * 86400000;
@@ -1925,6 +1946,8 @@
       setTxt('prof-avatar-mini', S.avatar);
       go('s-home');
       document.getElementById('nav-home').click();
+      checkAutoGenerateReport();
+      setInterval(checkAutoGenerateReport, 15 * 60000); // 앱을 켜둔 채로 지정 시각을 넘기는 경우 대비, 15분마다 재확인
     }
 
     // ═══════════════════════ WEIGHT ═══════════════════════
@@ -1941,7 +1964,8 @@
     function goH(id) {
       S.prev = document.querySelector('.scr.on')?.id || 's-home'; S.curH = id;
       const h = HCFG[id];
-      document.getElementById('h-hdr').innerHTML = `<div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:${h.color}">${h.em} ${h.label}</div>`;
+      const label = id === 'oxytocin' ? hormoneScreenLabel() : h.label;
+      document.getElementById('h-hdr').innerHTML = `<div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:${h.color}">${h.em} ${label}</div>`;
       const body = document.getElementById('h-body');
       if (id === 'insulin') body.innerHTML = renderInsulin();
       else if (id === 'growth') body.innerHTML = renderGrowth();
@@ -1958,63 +1982,72 @@
   </div>`;
     }
     function doCheck(id) {
-      if (id === 'o4') { openMod('mod-diary'); return; }
-      if (id === 'g2') { openMod('mod-workout'); return; }
+      if (id === 'c3') { openMod('mod-diary'); return; }
+      if (id === 'c1') { openMod('mod-sleep'); return; }
+      if (id === 'g1') { openMod('mod-workout-timing'); return; }
+      if (id === 'g2') { openMod('mod-workout-intensity'); return; }
+      if (id === 'g3') { openMod('mod-workout-duration'); return; }
+      if (id === 'g4') { S._showFastDetail = !S._showFastDetail; goH(S.curH); return; } // 공복시간은 실시간 자동계산, 수동 체크 아님
       S.checks[id] = !S.checks[id]; goH(S.curH); updateHome(); if (typeof saveChecksRow === 'function') saveChecksRow();
     }
-    function saveDiary() { S.checks.o4 = true; const txt = document.getElementById('diary-txt')?.value; let entry = null; if (txt) { entry = { d: '오늘', t: txt }; S.diaries.push(entry); } closeMod('mod-diary'); goH('oxytocin'); updateHome(); if (typeof saveChecksRow === 'function') saveChecksRow(); if (entry && typeof saveDiaryRow === 'function') saveDiaryRow(entry); }
+    function saveDiary() { S.checks.c3 = true; const txt = document.getElementById('diary-txt')?.value; let entry = null; if (txt) { entry = { d: '오늘', t: txt }; S.diaries.push(entry); } closeMod('mod-diary'); goH('cortisol'); updateHome(); if (typeof saveChecksRow === 'function') saveChecksRow(); if (entry && typeof saveDiaryRow === 'function') saveDiaryRow(entry); }
 
     // ── INSULIN ──
     // 생리주기 phase는 대시보드/코르티솔과 동일한 getCycleInfo()를 그대로 재사용한다.
     function currentCyclePhase() { return getCycleInfo().id; }
+    // 자유 텍스트 식단(m.foods가 비어있음)은 AI가 추정한 매크로(m.aiEstimate)를 GMODEL이 기대하는
+    // foods 구조(c/p/f/gi per 100g, g=100)로 변환해 넣어준다 — buildFeatures 로직을 바꾸지 않고도
+    // carb_g/protein_g/fat_g/gi_estimate가 그대로 계산되게 하는 트릭.
+    function mealForGMODEL(m) {
+      if (m.foods.length || !m.aiEstimate) return m;
+      return { ...m, foods: [{ food: { c: m.aiEstimate.carb_g || 0, p: m.aiEstimate.protein_g || 0, f: m.aiEstimate.fat_g || 0, gi: m.aiEstimate.gi_estimate || 50 }, g: 100 }] };
+    }
     // 식사 → 예측 결과 (BELLAMONA_혈당예측모델_개발명세서.md §4 구현체인 GMODEL 호출). history=개인 학습쌍.
     function predictMeal(m) {
-      const ctx = { cyclePhase: currentCyclePhase(), workoutPost: !!S.checks.i2 };
-      return GMODEL.predict(m, ctx, S.trainingPairs);
+      const ctx = { cyclePhase: currentCyclePhase(), workoutPost: !!S.checks.i2, sleepH: todaySleepHours() ?? undefined };
+      return GMODEL.predict(mealForGMODEL(m), ctx, S.trainingPairs);
     }
 
     function renderInsulin() {
       const intake = totalIntake(); const net = getNet(); const save = getSave();
-      const lastMealTime = S.meals.filter(m => m.foods.length > 0).map(m => m.time).sort().pop();
-      let fastHours = 0;
-      if (lastMealTime) { const [hh, mm] = lastMealTime.split(':').map(Number); const now = new Date(); const last = new Date(); last.setHours(hh, mm, 0, 0); if (last > now) last.setDate(last.getDate() - 1); fastHours = Math.round((now - last) / 3600000 * 10) / 10; }
+      const lastMealTime = S.meals.filter(m => m.foods.length > 0 || m.text).map(m => m.time).sort().pop();
+      const fastHours = fastingHours() || 0;
       // 개인화 진행도(명세서 §7): 학습쌍 개수로 예측 단계 안내
       const nPairs = S.trainingPairs.filter(p => p.valid).length;
       const hr = GMODEL.hitRate(S.predLogs);
       const mHtml = S.meals.map((m, mi) => {
-        const cal = mCalc(m, 'cal'); const carb = mCarb(m); const prot = mProt(m); const fat = mFat(m); const gi = mGI(m); const hasFoods = m.foods.length > 0; const gl = hasFoods ? Math.round(gi * carb / 100) : 0;
-        const pred = hasFoods ? predictMeal(m) : null; const peak = pred ? pred.peakEstimate : null;
-        const foodRows = m.foods.map((f, fi) => `
-      <div class="fi"><span style="flex:1;font-size:12px;color:var(--text);font-weight:600">${f.food.n}</span>
-        <input type="number" min="0.5" step="0.5" value="${f.qty}" onchange="updQty(${m.id},${fi},this.value)" style="width:50px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:8px;padding:4px 5px;color:var(--text);font-size:12px;font-weight:700;text-align:center;outline:none;font-family:'Nunito',sans-serif"/>
-        <span style="font-size:9px;color:var(--muted);width:26px;text-align:center;font-weight:600">${f.food.unit}</span>
-        <span style="font-size:12px;font-weight:800;color:var(--sky2);width:38px;text-align:right">${Math.round(f.food.cal * f.g / 100)}</span>
-        <button onclick="rmFood(${m.id},${fi})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px;line-height:1">×</button>
-      </div>`).join('');
-        // 예측 카드 (신뢰도 배지/방법/근거/disclaimer 포함, GMODEL 결과 기반)
+        const est = m.aiEstimate;
+        const hasEntry = !!(m.text || m.foods.length);
+        const cal = est ? est.kcal_est : mCalc(m, 'cal'); const carb = est ? est.carb_g : mCarb(m); const prot = est ? est.protein_g : mProt(m); const fat = est ? est.fat_g : mFat(m); const gi = est ? est.gi_estimate : mGI(m);
+        const gl = hasEntry ? Math.round(gi * carb / 100) : 0;
+        const pred = hasEntry ? predictMeal(m) : null; const peak = pred ? pred.peakEstimate : null;
+        const level = est ? est.level : (pred ? pred.level : null);
+        const tlColor = { high: 'var(--danger)', medium: 'var(--warn)', low: 'var(--sky2)' }[level] || 'var(--muted)';
+        const tlEmoji = { high: '🔴', medium: '🟡', low: '🟢' }[level] || '⚪';
+        const tlLabel = { high: '위험', medium: '주의', low: '안전' }[level] || '—';
+        // 예측 카드 (신뢰도 배지/방법/근거/disclaimer 포함, GMODEL + AI 추정 결합)
         let predHtml = '';
-        if (carb > 0 && pred) {
-          const lvColor = pred.level === 'high' ? 'var(--danger)' : pred.level === 'medium' ? 'var(--warn)' : 'var(--sky2)';
-          const lvBg = pred.level === 'high' ? 'rgba(239,83,80,.08)' : pred.level === 'medium' ? 'rgba(255,167,38,.08)' : 'rgba(91,184,245,.08)';
-          const lvBd = pred.level === 'high' ? 'rgba(239,83,80,.25)' : pred.level === 'medium' ? 'rgba(255,167,38,.25)' : 'rgba(91,184,245,.25)';
+        if (hasEntry && pred) {
           const methodLabel = { rule: '기본 추정', knn: '개인 데이터', ml: 'AI 모델', ml_personal: '개인 AI' }[pred.method] || '추정';
           const rangeTxt = pred.range ? ` (${pred.range[0]}~${pred.range[1]})` : '';
-          predHtml = `<div style="background:${lvBg};border:1.5px solid ${lvBd};border-radius:12px;padding:10px 12px">
+          predHtml = `<div style="background:rgba(${level === 'high' ? '239,83,80' : level === 'medium' ? '255,167,38' : '91,184,245'},.08);border:1.5px solid rgba(${level === 'high' ? '239,83,80' : level === 'medium' ? '255,167,38' : '91,184,245'},.25);border-radius:12px;padding:10px 12px">
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px;align-items:center">
+          <span style="font-size:12px;font-weight:800;padding:2px 9px;border-radius:99px;background:var(--card2)">${tlEmoji} ${tlLabel}</span>
           <span style="font-size:11px;font-weight:800;padding:2px 9px;border-radius:99px;background:${gl < 10 ? 'rgba(102,187,106,.15)' : gl < 20 ? 'rgba(255,167,38,.15)' : 'rgba(239,83,80,.15)'};color:${gl < 10 ? 'var(--ok)' : gl < 20 ? 'var(--warn)' : 'var(--danger)'}">GL ${gl}</span>
           <span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--lav3);color:var(--lav2)">GI ${gi}</span>
           <span class="pred-badge ${pred.confidence}">${pred.confidence === 'high' ? '신뢰 높음' : pred.confidence === 'medium' ? '신뢰 보통' : '신뢰 낮음'}</span>
           <span class="pred-method">· ${methodLabel}${pred.similarN ? ` ${pred.similarN}건` : ''}</span>
         </div>
-        <div style="font-size:12px;color:var(--text);font-weight:600">예측 상승폭 <strong style="color:${lvColor}">+${pred.deltaPeak} mg/dL</strong> → 예상 피크 <strong style="color:${lvColor}">${peak}${rangeTxt}</strong> ${pred.level === 'high' ? '⚠️ 높음' : pred.level === 'medium' ? '주의' : '✓ 양호'}</div>
+        <div style="font-size:12px;color:var(--text);font-weight:600">예측 상승폭 <strong style="color:${tlColor}">+${pred.deltaPeak} mg/dL</strong> → 예상 피크 <strong style="color:${tlColor}">${peak}${rangeTxt}</strong></div>
+        ${est && est.rationale ? `<div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:500">💬 ${est.rationale}</div>` : ''}
         ${pred.evidence ? `<div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:500">📊 ${pred.evidence}</div>` : ''}
         ${pred.lowData ? '<div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">데이터가 더 쌓이면 정확해져요 (2주 목표)</div>' : ''}
         ${!m.bgPre ? '<div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">공복 혈당 입력 시 더 정확해져요</div>' : ''}
         <div class="pred-disclaimer">※ ${pred.disclaimer}</div>
       </div>`;
         }
-        return `<div class="mb${hasFoods ? ' hd' : ''}">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${hasFoods ? '10px' : '0'}">
+        return `<div class="mb${hasEntry ? ' hd' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${hasEntry ? '10px' : '0'}">
         <div style="display:flex;align-items:center;gap:8px">
           <div style="width:34px;height:34px;border-radius:10px;background:${['rgba(91,184,245,.15)', 'rgba(129,199,132,.15)', 'rgba(179,157,219,.15)', 'rgba(244,143,177,.15)'][mi % 4]};display:flex;align-items:center;justify-content:center;font-size:14px">${['🌅', '☀️', '🌙', '🍎'][mi % 4]}</div>
           <div>
@@ -2023,21 +2056,19 @@
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          ${hasFoods ? `<div style="text-align:right"><div style="font-size:15px;font-weight:800;color:var(--sky2)">${cal}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>` : ''}
-          <button onclick="openFoodModal(${m.id})" style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:9px;padding:6px 12px;font-size:12px;color:var(--sky2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">+ 음식</button>
+          ${hasEntry ? `<span style="font-size:16px">${tlEmoji}</span>` : ''}
+          <button onclick="openFoodModal(${m.id})" style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:9px;padding:6px 12px;font-size:12px;color:var(--sky2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">${hasEntry ? '✏️ 수정' : '+ 음식'}</button>
           <button onclick="delMeal(${m.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0">×</button>
         </div>
       </div>
-      ${hasFoods ? `
+      ${hasEntry ? `
+      <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:8px">${m.text || ''}</div>
+      ${m.aiPending ? `<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0;font-weight:500">🤖 AI가 혈당 반응을 분석하고 있어요...</div>` : `
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px">
         <div style="text-align:center;background:var(--sky3);border-radius:9px;padding:6px 3px;border:1px solid rgba(91,184,245,.2)"><div style="font-size:12px;font-weight:800;color:var(--sky2)">${cal}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
         <div style="text-align:center;background:rgba(255,167,38,.1);border-radius:9px;padding:6px 3px;border:1px solid rgba(255,167,38,.2)"><div style="font-size:12px;font-weight:800;color:var(--warn)">${carb}g</div><div style="font-size:9px;color:var(--muted);font-weight:600">탄수</div></div>
         <div style="text-align:center;background:var(--lav3);border-radius:9px;padding:6px 3px;border:1px solid rgba(149,117,205,.2)"><div style="font-size:12px;font-weight:800;color:var(--lav2)">${prot}g</div><div style="font-size:9px;color:var(--muted);font-weight:600">단백</div></div>
         <div style="text-align:center;background:var(--card2);border-radius:9px;padding:6px 3px;border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:800;color:var(--muted)">${fat}g</div><div style="font-size:9px;color:var(--muted);font-weight:600">지방</div></div>
-      </div>
-      <div style="border-top:1px solid var(--bdr);padding-top:8px;margin-bottom:8px">
-        <div style="display:flex;font-size:9px;color:var(--muted);padding:0 0 5px;gap:8px;font-weight:600"><span style="flex:1">음식</span><span style="width:50px;text-align:center">수량</span><span style="width:26px"></span><span style="width:38px;text-align:right">kcal</span><span style="width:20px"></span></div>
-        ${foodRows}
       </div>
       <div style="border-top:1px solid var(--bdr);padding-top:10px;margin-bottom:8px">
         <div class="cap" style="margin-bottom:6px">혈당 실측 입력</div>
@@ -2047,7 +2078,7 @@
           <div style="display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:var(--muted);text-align:center;font-weight:600">식후 2시간</div><input class="bg-inp" type="number" placeholder="mg/dL" value="${m.bg2h || ''}" onchange="updBG(${m.id},'bg2h',this.value)"/></div>
         </div>
       </div>
-      ${predHtml}
+      ${predHtml}`}
       `: `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">+ 음식 버튼으로 식사를 기록하세요</div>`}
     </div>`;
       }).join('');
@@ -2090,8 +2121,8 @@
     <div style="border-top:1px solid var(--bdr);padding-top:10px;margin-top:6px">
       <div class="cap" style="margin-bottom:5px">혈당 추이 (최대 250mg/dL)</div>
       <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:4px">
-        <div style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--sky2);font-weight:700"><div style="width:16px;height:2px;background:var(--sky2);border-radius:1px"></div>실측</div>
-        <div style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--warn);font-weight:700"><div style="width:16px;height:2px;background:var(--warn);border-radius:1px;border-top:1px dashed var(--warn)"></div>예측</div>
+        <div style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--muted);font-weight:700">🍽 식사</div>
+        <div style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--muted);font-weight:700">🏃 운동 (변곡점 원인 표시)</div>
       </div>
       <svg width="100%" height="90" viewBox="0 0 310 90" id="bg-svg">
         <rect x="0" y="14" width="310" height="17" fill="rgba(91,184,245,.06)" rx="2"/>
@@ -2113,31 +2144,49 @@
 
     function updMealTime(id, val) { const m = S.meals.find(x => x.id === id); if (m) { m.time = val; if (typeof saveMealRow === 'function') saveMealRow(m); } goH('insulin'); }
 
-    // 혈당 추이 차트 (원본 로직 보존, 예측 피크만 GMODEL로 계산)
-    function renderBGChart() {
-      const lg = document.getElementById('bg-line-g'); const dg = document.getElementById('bg-dot-g'); if (!lg || !dg) return; lg.innerHTML = ''; dg.innerHTML = '';
-      const pts = [];
-      S.meals.forEach((m, mi) => {
-        if (!m.foods.length) return;
-        const x = 20 + mi * 90; const carb = mCarb(m); const base = m.bgPre || 90;
+    // 혈당 추이 그래프: "예측 vs 실측 두 줄 비교"가 아니라, 한 줄(실측 있으면 실측 · 없으면 추정치)로
+    // 흐름을 보여주고 각 변곡점에 무엇이 원인이었는지(식사/운동)를 아이콘으로 표시한다.
+    // paintBGChart는 주어진 svg <g> 엘리먼트에 그리는 순수 로직이라, 인슐린 화면(오늘)뿐 아니라
+    // AI 리포트에서 "그날"의 차트를 그대로 재사용하는 데도 쓰인다(AI가 새로 그리는 게 아님).
+    function paintBGChart(lg, dg, meals, exBurned) {
+      if (!lg || !dg) return; lg.innerHTML = ''; dg.innerHTML = '';
+      const pts = []; let lastMealIdxWithEntry = -1;
+      const mealsWithEntry = meals.map((m, mi) => ({ m, mi })).filter(x => x.m.text || x.m.foods.length);
+      mealsWithEntry.forEach(({ m }, order) => {
+        const x = 20 + order * 90; const carb = m.aiEstimate ? m.aiEstimate.carb_g : mCarb(m); const base = m.bgPre || 90;
         const pred = predictMeal(m); const peak = pred ? pred.peakEstimate : base;
         // Y mapping: 70–250 range → 81→5px (top)
         const toY = bg => 81 - Math.round((Math.min(Math.max(bg, 70), 250) - 70) / (250 - 70) * 76);
-        if (m.bgPre) pts.push({ x, y: toY(m.bgPre), v: m.bgPre, real: true });
-        else pts.push({ x, y: toY(base), v: base, real: false });
+        pts.push({ x, y: toY(m.bgPre || base), v: m.bgPre || base, real: !!m.bgPre });
         if (carb > 0) {
-          if (m.bg1h) pts.push({ x: x + 38, y: toY(m.bg1h), v: m.bg1h, real: true });
-          else pts.push({ x: x + 38, y: toY(peak), v: peak, real: false });
+          pts.push({ x: x + 38, y: toY(m.bg1h || peak), v: m.bg1h || peak, real: !!m.bg1h });
           const r2 = Math.max(base - 5, 88);
-          if (m.bg2h) pts.push({ x: x + 72, y: toY(m.bg2h), v: m.bg2h, real: true });
-          else pts.push({ x: x + 72, y: toY(r2), v: r2, real: false });
+          pts.push({ x: x + 72, y: toY(m.bg2h || r2), v: m.bg2h || r2, real: !!m.bg2h });
         }
+        lastMealIdxWithEntry = order;
       });
       if (pts.length < 2) return;
       const pD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-      const pl = document.createElementNS('http://www.w3.org/2000/svg', 'path'); pl.setAttribute('d', pD); pl.setAttribute('fill', 'none'); pl.setAttribute('stroke', 'rgba(255,167,38,.6)'); pl.setAttribute('stroke-width', '2'); pl.setAttribute('stroke-dasharray', '4 3'); pl.setAttribute('stroke-linecap', 'round'); lg.appendChild(pl);
-      const rPts = pts.filter(p => p.real); if (rPts.length >= 2) { const rD = rPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' '); const rl = document.createElementNS('http://www.w3.org/2000/svg', 'path'); rl.setAttribute('d', rD); rl.setAttribute('fill', 'none'); rl.setAttribute('stroke', 'var(--sky2)'); rl.setAttribute('stroke-width', '2.5'); rl.setAttribute('stroke-linecap', 'round'); lg.appendChild(rl); }
-      pts.forEach(p => { const col = p.v > 180 ? 'var(--danger)' : p.v > 140 ? 'var(--warn)' : p.real ? 'var(--sky2)' : 'rgba(255,167,38,.8)'; const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', p.real ? '4' : '3'); if (p.real) c.setAttribute('fill', col); else { c.setAttribute('fill', 'none'); c.setAttribute('stroke', col); c.setAttribute('stroke-width', '1.5'); } dg.appendChild(c); const t = document.createElementNS('http://www.w3.org/2000/svg', 'text'); t.setAttribute('x', p.x); t.setAttribute('y', p.y - 7); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '9'); t.setAttribute('fill', col); t.setAttribute('font-family', 'Nunito'); t.setAttribute('font-weight', '700'); t.textContent = p.v; dg.appendChild(t); });
+      const pl = document.createElementNS('http://www.w3.org/2000/svg', 'path'); pl.setAttribute('d', pD); pl.setAttribute('fill', 'none'); pl.setAttribute('stroke', 'var(--sky2)'); pl.setAttribute('stroke-width', '2.5'); pl.setAttribute('stroke-linecap', 'round'); lg.appendChild(pl);
+      pts.forEach(p => { const col = p.v > 180 ? 'var(--danger)' : p.v > 140 ? 'var(--warn)' : 'var(--sky2)'; const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', p.real ? '4' : '3'); if (p.real) c.setAttribute('fill', col); else { c.setAttribute('fill', 'none'); c.setAttribute('stroke', col); c.setAttribute('stroke-width', '1.5'); } dg.appendChild(c); const t = document.createElementNS('http://www.w3.org/2000/svg', 'text'); t.setAttribute('x', p.x); t.setAttribute('y', p.y - 7); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '9'); t.setAttribute('fill', col); t.setAttribute('font-family', 'Nunito'); t.setAttribute('font-weight', '700'); t.textContent = p.v; dg.appendChild(t); });
+      // 트리거 아이콘: 각 식사 지점엔 🍽, 그날 운동을 기록했다면 가장 최근 식사 지점에 🏃
+      mealsWithEntry.forEach(({ m }, order) => {
+        const x = 20 + order * 90; const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('x', x); t.setAttribute('y', '88'); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '11');
+        t.innerHTML = `🍽<title>${(m.text || m.label).replace(/</g, '')}</title>`; dg.appendChild(t);
+      });
+      if (exBurned && exBurned.intensity && lastMealIdxWithEntry >= 0) {
+        const x = 20 + lastMealIdxWithEntry * 90 + 45; const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('x', x); t.setAttribute('y', '88'); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '11');
+        t.innerHTML = `${INTENSITY_ICON[exBurned.intensity] || '🏃'}<title>${INTENSITY_LABEL[exBurned.intensity]} · ${(exBurned.exerciseType || '').replace(/</g, '')} ${exBurned.durationMin || 0}분</title>`; dg.appendChild(t);
+      }
+    }
+    function renderBGChart() {
+      paintBGChart(document.getElementById('bg-line-g'), document.getElementById('bg-dot-g'), S.meals, S.exBurned);
+    }
+    // GET /api/data/day의 원본 DB row(snake_case) → S.meals와 동일한 camelCase 구조로 변환
+    function normalizeDbMeal(row) {
+      return { id: row.id, label: row.label, time: (row.time || '00:00').slice(0, 5), foods: row.foods || [], text: row.description || '', aiEstimate: row.ai_estimate || null, bgPre: row.bg_pre, bg1h: row.bg_1h, bg2h: row.bg_2h };
     }
 
     // ═══════════════════════ 예시: 2주 식단-혈당 예측 리포트 ═══════════════════════
@@ -2197,45 +2246,79 @@
     }
 
     // ── GROWTH ──
+    const INTENSITY_ICON = { low: '🚶', medium: '🏃', high: '🔥' };
+    const INTENSITY_LABEL = { low: '저강도', medium: '중강도', high: '고강도' };
+    function upsertTodayWorkoutLog() {
+      const t = todayISOLocal();
+      const entry = { date: t, intensity: S.exBurned.intensity, durationMin: S.exBurned.durationMin, exerciseType: S.exBurned.exerciseType };
+      const idx = S.workoutLogs.findIndex(w => w.date === t);
+      if (idx >= 0) S.workoutLogs[idx] = entry; else S.workoutLogs.push(entry);
+    }
+    function weekWorkoutGrid() {
+      const days = ['일', '월', '화', '수', '목', '금', '토']; const today = new Date(); const cells = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(today); d.setDate(d.getDate() - i);
+        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const e = (S.workoutLogs || []).find(w => w.date === ds && w.intensity);
+        cells.push({ label: days[d.getDay()], e });
+      }
+      return `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:8px">
+    ${cells.map(c => `<div style="background:${c.e ? 'rgba(129,199,132,.1)' : 'var(--card2)'};border:1.5px solid ${c.e ? 'rgba(129,199,132,.4)' : 'var(--bdr)'};border-radius:9px;padding:7px 2px;text-align:center">
+      <div style="font-size:9px;color:var(--muted);font-weight:700">${c.label}</div>
+      <div style="font-size:14px;margin:3px 0">${c.e ? INTENSITY_ICON[c.e.intensity] : '—'}</div>
+      ${c.e ? `<div style="font-size:7px;color:var(--gro);font-weight:700">${c.e.durationMin}분</div>` : ''}
+    </div>`).join('')}
+  </div>`;
+    }
     function renderGrowth() {
-      const net = getNet(); const save = getSave(); const need = save < 0 ? Math.abs(save) : 0; const burned = totalBurned();
-      const wk = [{ done: true, t: '하체' }, { done: true, t: '등' }, { done: false }, { done: true, t: '전신' }, { done: true, t: '어깨' }, { done: false }, { done: true, t: '팔' }];
-      const days = ['월', '화', '수', '목', '금', '토', '일'];
+      const net = getNet(); const save = getSave(); const need = save < 0 ? Math.abs(save) : 0;
+      const hasToday = !!S.exBurned.intensity;
       return `
   <div class="card" style="border-color:rgba(129,199,132,.3)">
     <div class="cap">칼로리 소모 현황</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px">
-      <div style="background:var(--gro-bg);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(129,199,132,.2)"><div style="font-size:10px;color:var(--muted);font-weight:600">오늘 소모</div><div style="font-size:22px;font-weight:800;color:var(--gro)">${burned}</div><div style="font-size:9px;color:var(--muted);font-weight:600">기초${S.baseBurned}+운동${burned - S.baseBurned}</div></div>
+      <div style="background:var(--gro-bg);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(129,199,132,.2)">
+        <div style="font-size:10px;color:var(--muted);font-weight:600">오늘 운동</div>
+        <div style="font-size:26px;margin:4px 0">${hasToday ? INTENSITY_ICON[S.exBurned.intensity] : '—'}</div>
+        <div style="font-size:9px;color:var(--muted);font-weight:600">${hasToday ? `${S.exBurned.durationMin}분` : '기록 없음'}</div>
+      </div>
       <div style="background:${need > 0 ? 'rgba(239,83,80,.08)' : 'rgba(102,187,106,.08)'};border-radius:12px;padding:10px;text-align:center;border:1px solid ${need > 0 ? 'rgba(239,83,80,.2)' : 'rgba(102,187,106,.2)'}"><div style="font-size:10px;color:var(--muted);font-weight:600">${need > 0 ? '추가 소모 필요' : 'NET 칼로리'}</div><div style="font-size:22px;font-weight:800;color:${need > 0 ? 'var(--danger)' : 'var(--ok)'}">${need > 0 ? need : net}</div><div style="font-size:9px;color:var(--muted);font-weight:600">kcal</div></div>
     </div>
     ${need > 0 ? `<div style="font-size:12px;color:var(--danger);background:rgba(239,83,80,.07);border:1.5px solid rgba(239,83,80,.2);border-radius:11px;padding:8px 12px;font-weight:600">🔗 인슐린 ${Math.abs(save)}kcal 초과 → 운동으로 ${need}kcal 더 태우면 목표 달성</div>` : `<div style="font-size:12px;color:var(--ok);background:rgba(102,187,106,.07);border:1.5px solid rgba(102,187,106,.2);border-radius:11px;padding:8px 12px;font-weight:700">✅ NET ${net}kcal · 목표 이내</div>`}
   </div>
   <div class="card">
     <div class="cap" style="margin-bottom:8px">이번 주 운동 기록 (7일)</div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:8px">
-      ${days.map((d, i) => `<div onclick="${i === 6 ? 'openMod(\'mod-workout\')' : ''}" style="background:${wk[i].done ? 'rgba(129,199,132,.1)' : 'var(--card2)'};border:1.5px solid ${wk[i].done ? 'rgba(129,199,132,.4)' : 'var(--bdr)'};border-radius:9px;padding:7px 2px;text-align:center;cursor:pointer"><div style="font-size:9px;color:var(--muted);font-weight:700">${d}</div><div style="font-size:14px;margin:3px 0">${wk[i].done ? '🏋️' : '—'}</div>${wk[i].done ? `<div style="font-size:7px;color:var(--gro);font-weight:700">${wk[i].t}</div>` : ''}</div>`).join('')}
-    </div>
-    <button onclick="openMod('mod-workout')" style="width:100%;background:var(--gro-bg);border:1.5px solid rgba(129,199,132,.3);border-radius:10px;padding:10px;font-size:13px;color:var(--gro);font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">+ 운동 소모 칼로리 기록하기</button>
+    ${weekWorkoutGrid()}
   </div>
   <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크</div>
-  ${S.routines.growth.map(r => ckHtml(r.id, r.label, r.sub, 'var(--gro)')).join('')}`;
+  ${S.routines.growth.map(r => r.id === 'g4' ? ckHtml(r.id, r.label, r.sub, 'var(--gro)') + fastDetailHtml() : ckHtml(r.id, r.label, r.sub, 'var(--gro)')).join('')}`;
     }
-
-    function updateBurned() {
-      const s = parseInt(document.getElementById('ex-strength')?.value) || 0;
-      const h = parseInt(document.getElementById('ex-hiit')?.value) || 0;
-      const c = parseInt(document.getElementById('ex-cardio')?.value) || 0;
-      const w = parseInt(document.getElementById('ex-walk')?.value) || 0;
-      const total = s + h + c + w; setTxt('ex-total', total + ' kcal');
+    function fastDetailHtml() {
+      if (!S._showFastDetail) return '';
+      const h = fastingHours();
+      return `<div class="card2" style="margin:-4px 0 8px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--gro)">${h != null ? h + 'h' : '—'}</div><div style="font-size:10px;color:var(--muted);font-weight:600">${h != null && h >= 16 ? '✅ 16시간 달성!' : '현재 공복 유지 중'}</div></div>`;
     }
-    function saveWorkout() {
-      S.exBurned.strength = parseInt(document.getElementById('ex-strength')?.value) || 0;
-      S.exBurned.hiit = parseInt(document.getElementById('ex-hiit')?.value) || 0;
-      S.exBurned.cardio = parseInt(document.getElementById('ex-cardio')?.value) || 0;
-      S.exBurned.walk = parseInt(document.getElementById('ex-walk')?.value) || 0;
-      S.checks.g2 = true; closeMod('mod-workout'); goH('growth'); updateHome();
-      if (typeof saveChecksRow === 'function') saveChecksRow();
-      if (typeof saveWorkoutRow === 'function') saveWorkoutRow();
+    function fastingHours() {
+      const lastMealTime = S.meals.filter(m => m.foods.length > 0 || m.text).map(m => m.time).sort().pop();
+      if (!lastMealTime) return null;
+      const [hh, mm] = lastMealTime.split(':').map(Number); const now = new Date(); const last = new Date(); last.setHours(hh, mm, 0, 0); if (last > now) last.setDate(last.getDate() - 1);
+      return Math.round((now - last) / 3600000 * 10) / 10;
+    }
+    function saveWorkoutTiming(minutes) {
+      S.exBurned.minutesAfterMeal = minutes; S.checks.g1 = true; closeMod('mod-workout-timing'); goH('growth'); updateHome();
+      if (typeof saveChecksRow === 'function') saveChecksRow(); if (typeof saveWorkoutRow === 'function') saveWorkoutRow();
+    }
+    function saveWorkoutIntensity(level) {
+      S.exBurned.intensity = level; S.checks.g2 = true; upsertTodayWorkoutLog(); closeMod('mod-workout-intensity'); goH('growth'); updateHome();
+      if (typeof saveChecksRow === 'function') saveChecksRow(); if (typeof saveWorkoutRow === 'function') saveWorkoutRow();
+    }
+    function saveWorkoutDuration() {
+      const type = document.getElementById('wk-type')?.value?.trim() || '';
+      const dur = parseInt(document.getElementById('wk-duration')?.value) || 0;
+      if (dur <= 0) { alert('운동 시간을 입력해주세요'); return; }
+      S.exBurned.exerciseType = type; S.exBurned.durationMin = dur; S.checks.g3 = true;
+      upsertTodayWorkoutLog(); closeMod('mod-workout-duration'); goH('growth'); updateHome();
+      if (typeof saveChecksRow === 'function') saveChecksRow(); if (typeof saveWorkoutRow === 'function') saveWorkoutRow();
     }
 
     // ── CORTISOL ──
@@ -2256,32 +2339,82 @@
       } catch (e) { return { id: 'unknown', name: '알수없음', day: 0 }; }
     }
 
+    function todayISOLocal() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+    function todaySleepHours() { const t = todayISOLocal(); const e = (S.sleepLogs || []).find(s => s.date === t); return e ? e.hours : null; }
+    function weekSleepChart() {
+      const days = ['일', '월', '화', '수', '목', '금', '토']; const today = new Date(); const cells = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(today); d.setDate(d.getDate() - i);
+        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const e = (S.sleepLogs || []).find(s => s.date === ds);
+        cells.push({ label: days[d.getDay()], hours: e ? e.hours : 0 });
+      }
+      const maxH = Math.max(8, ...cells.map(c => c.hours));
+      return `<div style="display:flex;align-items:flex-end;gap:6px;height:70px;margin-top:6px">
+    ${cells.map(c => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end">
+      <div style="width:100%;border-radius:6px 6px 2px 2px;background:${c.hours > 0 ? 'var(--cor)' : 'var(--card2)'};height:${Math.max(4, c.hours / maxH * 46)}px"></div>
+      <div style="font-size:9px;color:var(--muted);font-weight:600">${c.label}</div>
+    </div>`).join('')}
+  </div>`;
+    }
     function renderCortisol() {
-      const pc = getCycleInfo();
+      const th = todaySleepHours();
       return `
   <div class="card" style="border-color:rgba(206,147,216,.3)">
-    <div class="cap">오늘 코르티솔 관리</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-      <div style="background:var(--sky3);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(91,184,245,.2)"><div style="font-size:18px;font-weight:800;color:var(--sky2)">7h20m</div><div style="font-size:9px;color:var(--muted);font-weight:600">어젯밤 수면</div></div>
-      <div style="background:rgba(129,199,132,.1);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(129,199,132,.2)"><div style="font-size:18px;font-weight:800;color:var(--ok)">22분</div><div style="font-size:9px;color:var(--muted);font-weight:600">햇볕 노출</div></div>
-      <div style="background:var(--cor-bg);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(206,147,216,.2)"><div style="font-size:18px;font-weight:800;color:var(--cor)">${pc.name}</div><div style="font-size:9px;color:var(--muted);font-weight:600">${pc.day}일차</div></div>
-    </div>
-    <div style="margin-top:8px;font-size:12px;color:var(--cor);background:var(--cor-bg);padding:8px 12px;border-radius:11px;line-height:1.5;font-weight:600">🌿 ${pc.name} 중 코르티솔이 상승하기 쉬워요. 명상과 규칙적인 수면이 핵심입니다.</div>
+    <div class="cap">오늘 수면</div>
+    <div style="font-size:28px;font-weight:800;color:var(--cor)">${th != null ? th.toFixed(1) + 'h' : '—'}</div>
+    <div style="font-size:11px;color:var(--muted);font-weight:500">${th == null ? '수면시간을 기록해보세요' : th >= 7 ? '✓ 충분히 잤어요' : '조금 더 자면 좋아요'}</div>
+    <div class="cap" style="margin-top:10px;margin-bottom:0">이번 주 수면 시간</div>
+    ${weekSleepChart()}
   </div>
   <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크</div>
   ${S.routines.cortisol.map(r => ckHtml(r.id, r.label, r.sub, 'var(--cor)')).join('')}`;
     }
+    function saveSleep() {
+      const bed = document.getElementById('sleep-bedtime')?.value; const wake = document.getElementById('sleep-wake')?.value;
+      if (!bed || !wake) return;
+      const [bh, bm] = bed.split(':').map(Number); const [wh, wm] = wake.split(':').map(Number);
+      let hours = (wh + wm / 60) - (bh + bm / 60); if (hours <= 0) hours += 24; // 자정 넘어가는 경우
+      const t = todayISOLocal();
+      const entry = { date: t, bedtime: bed, wake, hours: Math.round(hours * 10) / 10 };
+      const idx = S.sleepLogs.findIndex(s => s.date === t);
+      if (idx >= 0) S.sleepLogs[idx] = entry; else S.sleepLogs.push(entry);
+      S.checks.c1 = true; closeMod('mod-sleep'); goH('cortisol'); updateHome();
+      if (typeof saveChecksRow === 'function') saveChecksRow();
+      if (typeof saveSleepRow === 'function') saveSleepRow(entry);
+    }
 
-    // ── OXYTOCIN ──
+    // ── 옥시토신 → 여성호르몬/남성호르몬 (영양제 체크리스트) ──
+    function hormoneScreenLabel() { return S.gender === 'male' ? '남성호르몬' : '여성호르몬'; }
+    function addSupplement() {
+      const name = document.getElementById('supp-name-input')?.value?.trim();
+      if (!name) return;
+      const id = 'sup_' + Date.now();
+      S.routines.oxytocin.push({ id, label: '💊 ' + name, sub: '오늘 복용' });
+      document.getElementById('supp-name-input').value = '';
+      goH('oxytocin'); if (typeof saveSupplementsRow === 'function') saveSupplementsRow();
+    }
+    function removeSupplement(id) {
+      S.routines.oxytocin = S.routines.oxytocin.filter(r => r.id !== id);
+      delete S.checks[id];
+      goH('oxytocin'); if (typeof saveSupplementsRow === 'function') saveSupplementsRow();
+    }
     function renderOxytocin() {
+      const label = hormoneScreenLabel();
+      const rows = S.routines.oxytocin.map(r => `<div style="display:flex;align-items:center;gap:8px">
+    <div style="flex:1">${ckHtml(r.id, r.label, r.sub, 'var(--rose)')}</div>
+    <button onclick="removeSupplement('${r.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+  </div>`).join('');
       return `
   <div class="card" style="border-color:rgba(244,143,177,.3)">
-    <div class="cap">오늘 옥시토신</div>
-    <div style="font-size:13px;color:var(--text);line-height:1.6;font-weight:500">💗 포옹 20초 → 옥시토신 즉각 분비 · 코르티솔 억제 · 감정 안정</div>
+    <div class="cap">${label} · 영양제 체크</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500">챙겨 먹는 영양제를 추가하고 매일 복용 여부를 체크하세요</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <input class="input" id="supp-name-input" placeholder="영양제 이름 (예: 비타민D)" style="flex:1" onkeydown="if(event.key==='Enter')addSupplement()"/>
+      <button class="btn btn-p" style="width:auto;padding:0 16px" onclick="addSupplement()">+ 추가</button>
+    </div>
   </div>
-  <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크</div>
-  ${S.routines.oxytocin.map(r => ckHtml(r.id, r.label, r.sub, 'var(--rose)')).join('')}
-  ${S.checks.o4 ? `<div class="card" style="background:var(--oxy-bg);border-color:rgba(244,143,177,.3);text-align:center"><div style="font-size:24px;margin-bottom:4px">🎉</div><div style="font-size:14px;font-weight:700;color:var(--rose2)">옥시토신 100% 달성!</div><div style="font-size:11px;color:var(--muted);margin-top:3px;font-weight:500">일기가 AI 리포트에 반영됩니다</div></div>` : ''}`;
+  ${S.routines.oxytocin.length ? rows : '<div class="card" style="text-align:center;color:var(--muted);font-size:12px;font-weight:500">아직 등록된 영양제가 없어요</div>'}`;
     }
 
     // ═══════════════════════ EDITABLE ROUTINE ═══════════════════════
@@ -2300,51 +2433,71 @@
       closeMod('mod-edit-routine'); goH(hid);
     }
 
-    // ═══════════════════════ FOOD SEARCH ═══════════════════════
+    // ═══════════════════════ 식단 기록 (자유 텍스트 + AI 혈당 예측) ═══════════════════════
+    // 정확한 그램 단위 음식 검색 대신, 시간 + 대략적인 설명만 적으면 AI가 과거 2주 식단·혈당·운동
+    // 이력을 근거로 혈당 반응을 추정한다(구현 난이도·유지비용 문제로 확정된 방식).
+    const FOOD_QUICK_CHIPS = ['샐러드 파스타 1인분', '닭가슴살 현미밥', '오트밀 한그릇', '비빔밥 1인분', '두부 스테이크', '그릭요거트+견과류', '나시고랭 1인분', '김밥 1줄'];
     function openFoodModal(mealId) {
-      S.activeMealId = mealId; S.pending = [];
+      S.activeMealId = mealId;
       const m = S.meals.find(x => x.id === mealId);
       setTxt('food-title', `${['🌅', '☀️', '🌙', '🍎'][S.meals.indexOf(m) % 4]} ${m.label} — 음식 추가`);
-      document.getElementById('food-q').value = ''; document.getElementById('food-dd').style.display = 'none';
-      renderPending(); openMod('mod-food');
-      setTimeout(() => document.getElementById('food-q')?.focus(), 300);
+      const now = new Date(); const nowStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      document.getElementById('food-time').value = m.time || nowStr;
+      document.getElementById('food-text').value = m.text || '';
+      document.getElementById('food-quick-chips').innerHTML = FOOD_QUICK_CHIPS.map(c => `<span class="chip" onclick="document.getElementById('food-text').value='${c}'">${c}</span>`).join('');
+      openMod('mod-food');
+      setTimeout(() => document.getElementById('food-text')?.focus(), 300);
     }
-    function searchFood(q) {
-      const dd = document.getElementById('food-dd'); if (!q.trim()) { dd.style.display = 'none'; return; }
-      const res = FDB.filter(f => f.n.includes(q)).slice(0, 10); if (!res.length) { dd.style.display = 'none'; return; }
-      dd.innerHTML = res.map((f, i) => `<div class="ddi" onclick="addPending(${FDB.indexOf(f)})"><span style="font-weight:600">${f.n}</span><span style="font-size:10px;color:var(--muted);font-weight:600">${f.cal}kcal/100g · ${f.unit}당 ${Math.round(f.cal * f.ug / 100)}kcal</span></div>`).join('');
-      dd.style.display = 'block';
+    function saveFoodEntry() {
+      const time = document.getElementById('food-time')?.value; const text = document.getElementById('food-text')?.value?.trim();
+      if (!text) { alert('무엇을 드셨는지 적어주세요'); return; }
+      const m = S.meals.find(x => x.id === S.activeMealId); if (!m) return;
+      m.time = time || m.time; m.text = text;
+      if (typeof saveMealRow === 'function') saveMealRow(m);
+      closeMod('mod-food'); goH('insulin');
+      requestGlucosePrediction(m);
     }
-    function addPending(idx) { const food = FDB[idx]; S.pending.push({ food, qty: 1, g: food.ug }); document.getElementById('food-q').value = ''; document.getElementById('food-dd').style.display = 'none'; renderPending(); }
-    function rmPending(i) { S.pending.splice(i, 1); renderPending(); }
-    function updPendQty(i, val) { const q = parseFloat(val) || 0; S.pending[i].qty = q; S.pending[i].g = q * S.pending[i].food.ug; renderPending(); }
-    function renderPending() {
-      const list = document.getElementById('pend-list'); const prev = document.getElementById('pend-prev'); if (!S.pending.length) { list.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0;font-weight:500">음식을 검색해서 추가하세요 👆</div>'; prev.style.display = 'none'; return; }
-      const tC = S.pending.reduce((a, f) => a + Math.round(f.food.cal * f.g / 100), 0); const tCb = S.pending.reduce((a, f) => a + Math.round(f.food.c * f.g / 100), 0); const tP = S.pending.reduce((a, f) => a + Math.round(f.food.p * f.g / 100), 0); const tF = S.pending.reduce((a, f) => a + Math.round(f.food.f * f.g / 100), 0); const avgGI = tCb > 0 ? Math.round(S.pending.reduce((a, f) => a + f.food.gi * (f.food.c * f.g / 100), 0) / tCb) : 0; const gl = Math.round(avgGI * tCb / 100);
-      // 미리보기 예측도 GMODEL 사용 (가상 식사 객체 구성)
-      const nowH = new Date().getHours();
-      const virtualMeal = { foods: S.pending.map(f => ({ food: f.food, g: f.g })), time: `${nowH}:00`, bgPre: null };
-      const pred = GMODEL.predict(virtualMeal, { cyclePhase: currentCyclePhase() }, S.trainingPairs);
-      const peak = pred.peakEstimate;
-      list.innerHTML = S.pending.map((f, i) => { const cal = Math.round(f.food.cal * f.g / 100); return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr)"><span style="flex:1;font-size:13px;color:var(--text);font-weight:600">${f.food.n}</span><div style="display:flex;align-items:center;gap:4px"><input type="number" min="0.5" step="0.5" value="${f.qty}" onchange="updPendQty(${i},this.value)" style="width:46px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:8px;padding:4px 5px;color:var(--text);font-size:12px;font-weight:700;text-align:center;outline:none;font-family:'Nunito',sans-serif"/><span style="font-size:9px;color:var(--muted);white-space:nowrap;font-weight:600">${f.food.unit}<br>${Math.round(f.g)}g</span><span style="font-size:13px;font-weight:800;color:var(--sky2);width:36px;text-align:right">${cal}</span><button onclick="rmPending(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0;line-height:1">×</button></div></div>`; }).join('');
-      setTxt('pend-cal', `${tC} kcal`); setTxt('pend-carb', `${tCb}g`); setTxt('pend-prot', `${tP}g`); setTxt('pend-fat', `${tF}g`);
-      const giEl = document.getElementById('pend-gi'); if (giEl) { giEl.textContent = avgGI || '—'; giEl.style.color = avgGI > 60 ? 'var(--danger)' : avgGI > 40 ? 'var(--warn)' : 'var(--ok)'; }
-      const pb = document.getElementById('pend-pred'); if (pb) { pb.style.cssText = `background:${peak > 180 ? 'rgba(239,83,80,.08)' : peak > 140 ? 'rgba(255,167,38,.08)' : 'rgba(91,184,245,.08)'};border:1.5px solid ${peak > 180 ? 'rgba(239,83,80,.25)' : peak > 140 ? 'rgba(255,167,38,.25)' : 'rgba(91,184,245,.25)'};border-radius:11px;padding:8px 11px;font-size:12px;font-weight:700`; pb.innerHTML = `<span style="color:var(--muted);font-weight:500">식후 예측: </span><strong style="color:${peak > 180 ? 'var(--danger)' : peak > 140 ? 'var(--warn)' : 'var(--sky2)'}">${peak} mg/dL</strong> ${peak > 180 ? '⚠️ 위험' : peak > 140 ? '주의' : '✓ 안정'} · GL ${gl} · <span class="pred-badge ${pred.confidence}" style="font-size:9px">${pred.confidence === 'high' ? '신뢰↑' : pred.confidence === 'medium' ? '신뢰~' : '기본'}</span>`; }
-      prev.style.display = 'block';
+    // AI 기반 혈당 예측 호출 — 이 식사 텍스트+시간과 최근 2주 식단/운동/실측혈당 이력을 근거로 추정한다.
+    // 실패 시 GMODEL의 텍스트 키워드 기반 러프 추정으로 폴백한다(완전히 막히지 않도록).
+    async function requestGlucosePrediction(m) {
+      m.aiPending = true; goH('insulin');
+      try {
+        const recentMeals = S.meals.filter(x => x.text && x.id !== m.id).map(x => ({ text: x.text, time: x.time, bgPre: x.bgPre, bg1h: x.bg1h, bg2h: x.bg2h }));
+        const res = await fetchApi(apiUrl('/api/glucose/predict'), {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: m.text, time: m.time, recentMeals, cyclePhase: currentCyclePhase(), workoutToday: S.exBurned })
+        });
+        const json = await res.json().catch(() => null);
+        if (res.ok && json && json.success) m.aiEstimate = json.estimate;
+        else m.aiEstimate = fallbackTextEstimate(m.text);
+      } catch (e) {
+        console.error('[requestGlucosePrediction]', e);
+        m.aiEstimate = fallbackTextEstimate(m.text);
+      }
+      m.aiPending = false;
+      if (typeof saveMealRow === 'function') saveMealRow(m);
+      if (S.curH === 'insulin') goH('insulin');
     }
-    function confirmFoods() { if (!S.pending.length) { closeMod('mod-food'); return; } const m = S.meals.find(x => x.id === S.activeMealId); if (m) { S.pending.forEach(f => m.foods.push({ ...f })); if (typeof saveMealRow === 'function') saveMealRow(m); } S.pending = []; closeMod('mod-food'); goH('insulin'); }
-    function addMeal() { const labels = ['간식', '야식']; const used = S.meals.map(m => m.label); const label = labels.find(l => !used.includes(l)) || '간식'; const now = new Date(); const t = `${now.getHours()}:${now.getMinutes() < 10 ? '0' : ''}${now.getMinutes()}`; const meal = { id: S.nextMealId++, label, time: t, foods: [], bgPre: null, bg1h: null, bg2h: null }; S.meals.push(meal); if (typeof saveMealRow === 'function') saveMealRow(meal); goH('insulin'); }
+    // 텍스트 안에 흔한 고탄수 키워드가 있으면 대략 중/고위험으로, 아니면 저위험으로 추정하는 최소한의 폴백
+    function fallbackTextEstimate(text) {
+      const t = text || '';
+      const highKw = ['밥', '면', '빵', '떡', '피자', '치킨', '튀김', '케이크', '아이스크림'];
+      const hit = highKw.some(k => t.includes(k));
+      const level = hit ? 'medium' : 'low';
+      return { level, deltaPeak: hit ? 55 : 20, carb_g: hit ? 55 : 15, protein_g: 15, fat_g: 10, kcal_est: hit ? 550 : 250, gi_estimate: hit ? 65 : 40, rationale: '네트워크 오류로 간단 추정치를 보여드려요.', method: 'fallback' };
+    }
+    function addMeal() { const labels = ['간식', '야식']; const used = S.meals.map(m => m.label); const label = labels.find(l => !used.includes(l)) || '간식'; const now = new Date(); const t = `${now.getHours()}:${now.getMinutes() < 10 ? '0' : ''}${now.getMinutes()}`; const meal = { id: S.nextMealId++, label, time: t, foods: [], text: '', bgPre: null, bg1h: null, bg2h: null }; S.meals.push(meal); if (typeof saveMealRow === 'function') saveMealRow(meal); goH('insulin'); }
     function delMeal(id) { const i = S.meals.findIndex(m => m.id === id); if (i >= 0) { if (typeof deleteMealRow === 'function') deleteMealRow(S.meals[i]); S.meals.splice(i, 1); } goH('insulin'); }
-    function rmFood(mealId, fi) { const m = S.meals.find(x => x.id === mealId); if (m) { m.foods.splice(fi, 1); if (typeof saveMealRow === 'function') saveMealRow(m); goH('insulin'); } }
-    function updQty(mealId, fi, val) { const m = S.meals.find(x => x.id === mealId); if (!m) return; const q = parseFloat(val) || 0; m.foods[fi].qty = q; m.foods[fi].g = q * m.foods[fi].food.ug; if (typeof saveMealRow === 'function') saveMealRow(m); goH('insulin'); }
     // 혈당 실측 입력 → 학습쌍 생성(명세서 §3) + 예측 로그(적중률 §6) 축적
     function updBG(mealId, key, val) {
       const m = S.meals.find(x => x.id === mealId); if (!m) return;
       m[key] = val ? parseInt(val) : null;
       if (typeof saveMealRow === 'function') saveMealRow(m);
-      const ctx = { cyclePhase: currentCyclePhase(), workoutPost: !!S.checks.i2 };
-      const predBefore = GMODEL.predict(m, ctx, S.trainingPairs); // 실측 반영 전 예측(로그용)
-      const pair = GMODEL.makeTrainingPair(m, ctx);
+      const ctx = { cyclePhase: currentCyclePhase(), workoutPost: !!S.checks.i2, sleepH: todaySleepHours() ?? undefined };
+      const mForModel = mealForGMODEL(m);
+      const predBefore = GMODEL.predict(mForModel, ctx, S.trainingPairs); // 실측 반영 전 예측(로그용)
+      const pair = GMODEL.makeTrainingPair(mForModel, ctx);
       if (pair) {
         const idx = S.trainingPairs.findIndex(p => p.meal_id === m.id);
         if (idx >= 0) S.trainingPairs[idx] = pair; else S.trainingPairs.push(pair);
@@ -2458,16 +2611,19 @@
       }
 
       const overall = overallPctForChecks(day.checks);
-      const hormRows = [['🩺 인슐린', 'insulin', 'var(--sky2)'], ['💪 성장', 'growth', 'var(--gro)'], ['🌿 코르티솔', 'cortisol', 'var(--cor)'], ['💗 옥시토신', 'oxytocin', 'var(--rose)']]
+      const hormRows = [['🩺 인슐린', 'insulin', 'var(--sky2)'], ['💪 성장', 'growth', 'var(--gro)'], ['🌿 코르티솔', 'cortisol', 'var(--cor)'], ['💗 ' + hormoneScreenLabel(), 'oxytocin', 'var(--rose)']]
         .map(([l, h, c]) => `<div style="display:flex;align-items:center;gap:6px"><span style="width:64px;font-size:11px;color:var(--muted);font-weight:600">${l}</span><div class="bar-t" style="flex:1;height:5px"><div class="bar-f" style="width:${hormonePctForChecks(h, day.checks)}%;background:${c}"></div></div><span style="font-size:11px;width:28px;text-align:right;font-weight:800;color:${c}">${hormonePctForChecks(h, day.checks)}%</span></div>`).join('');
 
-      const mealsHtml = day.meals.filter(m => (m.foods || []).length > 0).map(m => {
-        const cal = mCalc(m, 'cal');
-        return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bdr);font-size:12px"><span style="color:var(--text);font-weight:600">${m.label} ${m.time ? '· ' + String(m.time).slice(0, 5) : ''}</span><span style="color:var(--sky2);font-weight:800">${cal}kcal${m.bg_pre != null || m.bg_1h != null || m.bg_2h != null ? ` · 혈당 ${[m.bg_pre, m.bg_1h, m.bg_2h].filter(v => v != null).join('→')}` : ''}</span></div>`;
+      const mealsHtml = day.meals.filter(m => (m.foods || []).length > 0 || m.description).map(m => {
+        const cal = m.ai_estimate ? m.ai_estimate.kcal_est : mCalc(m, 'cal');
+        return `<div style="padding:6px 0;border-bottom:1px solid var(--bdr);font-size:12px">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--text);font-weight:600">${m.label} ${m.time ? '· ' + String(m.time).slice(0, 5) : ''}</span><span style="color:var(--sky2);font-weight:800">${cal || 0}kcal${m.bg_pre != null || m.bg_1h != null || m.bg_2h != null ? ` · 혈당 ${[m.bg_pre, m.bg_1h, m.bg_2h].filter(v => v != null).join('→')}` : ''}</span></div>
+      ${m.description ? `<div style="color:var(--muted);margin-top:2px">${m.description}</div>` : ''}
+    </div>`;
       }).join('') || `<div style="font-size:12px;color:var(--muted);padding:6px 0">식사 기록 없음</div>`;
 
-      const workoutTxt = day.workout
-        ? `근력 ${day.workout.strength || 0} · HIIT ${day.workout.hiit || 0} · 유산소 ${day.workout.cardio || 0} · 걷기 ${day.workout.walk || 0}`
+      const workoutTxt = day.workout && day.workout.intensity
+        ? `${INTENSITY_ICON[day.workout.intensity] || ''} ${INTENSITY_LABEL[day.workout.intensity] || ''} · ${day.workout.exercise_type || ''} ${day.workout.duration_min || 0}분`
         : '운동 기록 없음';
 
       body.innerHTML = `
@@ -2496,8 +2652,10 @@
     function buildDayReportPayload(dateStr, day) {
       return {
         date: dateStr,
-        meals: (day.meals || []).map(m => ({ label: m.label, time: m.time, foods: m.foods, bg_pre: m.bg_pre, bg_1h: m.bg_1h, bg_2h: m.bg_2h })),
-        workout: day.workout || null,
+        meals: (day.meals || []).map(m => ({ label: m.label, time: m.time, description: m.description, ai_estimate: m.ai_estimate, bg_pre: m.bg_pre, bg_1h: m.bg_1h, bg_2h: m.bg_2h })),
+        workout: day.workout ? { intensity: day.workout.intensity, duration_min: day.workout.duration_min, exercise_type: day.workout.exercise_type, minutes_after_meal: day.workout.minutes_after_meal } : null,
+        recentWorkouts: S.workoutLogs.slice(-7),
+        sleepThisWeek: S.sleepLogs.slice(-7),
         routineChecksThatDay: day.checks,
         overallRoutinePct: overallPctForChecks(day.checks),
         hormonePct: {
@@ -2507,10 +2665,27 @@
         weightThatDay: day.weight,
         goalWeight: S.goalWeight, initWeight: S.initWeight, dailyKcalGoal: S.goalCal,
         periodContext: day.period,
-        diaryThatDay: day.diary
+        diaryThatDay: day.diary,
+        supplementsChecked: (S.routines.oxytocin || []).filter(r => day.checks && day.checks[r.id]).map(r => r.label)
       };
     }
 
+    // ① 목표일자 도달 예상 몸무게 — "오늘과 같은 칼로리를 유지한다면" 가정. AI가 아니라 결정론적으로 계산.
+    function computeWeightProjection() {
+      const goalMs = getGoalDateMs(); const today = new Date(); today.setHours(0, 0, 0, 0);
+      const daysRemain = Math.max(0, Math.ceil((goalMs - today.getTime()) / 86400000));
+      const currentW = S.weights.length ? S.weights[S.weights.length - 1].w : S.initWeight;
+      const netPerDay = getNet(); // 오늘 섭취-소모 (kcal). 음수면 감량 방향
+      const projected = currentW + (netPerDay * daysRemain) / 7700;
+      return { daysRemain, currentW, projected: Math.round(projected * 10) / 10, netPerDay };
+    }
+    // 간단한 3구간 도넛(탄수/단백/지방, g 비율 기준) — SVG stroke-dasharray 트릭
+    function macroDonutSvg(carb, prot, fat) {
+      const total = Math.max(carb + prot + fat, 1); const R = 40, C = 2 * Math.PI * R;
+      const segs = [{ v: carb, col: 'var(--warn)' }, { v: prot, col: 'var(--lav2)' }, { v: fat, col: 'var(--muted)' }];
+      let offset = 0; const circles = segs.map(s => { const len = s.v / total * C; const el = `<circle cx="50" cy="50" r="${R}" fill="none" stroke="${s.col}" stroke-width="14" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 50 50)"/>`; offset += len; return el; }).join('');
+      return `<svg width="100" height="100" viewBox="0 0 100 100">${circles}</svg>`;
+    }
     async function generateDayReport() {
       if (!_dayDetailCache) return;
       const { dateStr, day } = _dayDetailCache;
@@ -2527,28 +2702,95 @@
           slot.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--danger);font-size:12px;font-weight:700">리포트 생성에 실패했어요.</div><button class="btn btn-p" style="margin-top:8px" onclick="generateDayReport()">다시 시도</button>`;
           return;
         }
-        const r = json.report;
-        const scores = r.scores || {};
-        const keywords = Array.isArray(r.emotion_keywords) ? r.emotion_keywords : [];
-        const kwColor = t => t === 'positive' ? ['rgba(91,184,245,.2)', 'var(--sky2)'] : t === 'negative' ? ['rgba(239,83,80,.15)', 'var(--danger)'] : ['var(--card2)', 'var(--muted)'];
-        const wc = keywords.map(k => { const [bg, col] = kwColor(k.type); return `<div style="padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;background:${bg};color:${col}">${k.word} <span style="font-size:9px;opacity:.7">${k.count || 1}</span></div>`; }).join('');
-        const insights = Array.isArray(r.insights) ? r.insights : [];
-        const actions = Array.isArray(r.actions) ? r.actions : [];
-        slot.innerHTML = `
+        if (dateStr === todayISOLocal()) { S.reportGeneratedDate = dateStr; S._todayReport = { date: dateStr, report: json.report, day }; saveState(); }
+        slot.innerHTML = renderReportSections(json.report, day);
+      } catch (e) {
+        console.error('[generateDayReport]', e);
+        slot.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--danger);font-size:12px;font-weight:700">네트워크 오류가 발생했어요.</div><button class="btn btn-p" style="margin-top:8px" onclick="generateDayReport()">다시 시도</button>`;
+      }
+      // 인슐린 섹션의 혈당 그래프는 AI가 그리는 게 아니라 인슐린 화면과 동일한 로직 기반 차트를 재사용한다.
+      const rlg = document.getElementById('report-bg-line-g'), rdg = document.getElementById('report-bg-dot-g');
+      if (rlg && rdg) paintBGChart(rlg, rdg, (day.meals || []).map(normalizeDbMeal), day.workout);
+    }
+    // AI 리포트 5개 섹션 렌더링 (①목표체중 예측 ②인슐린 ③성장호르몬 ④코르티솔 ⑤호르몬/일기)
+    function renderReportSections(r, day) {
+      const scores = r.scores || {}; const mb = r.macro_breakdown || {};
+      const proj = computeWeightProjection();
+      const keywords = Array.isArray(r.emotion_keywords) ? r.emotion_keywords : [];
+      const kwColor = t => t === 'positive' ? ['rgba(91,184,245,.2)', 'var(--sky2)'] : t === 'negative' ? ['rgba(239,83,80,.15)', 'var(--danger)'] : ['var(--card2)', 'var(--muted)'];
+      const wc = keywords.map(k => { const [bg, col] = kwColor(k.type); return `<div style="padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;background:${bg};color:${col}">${k.word} <span style="font-size:9px;opacity:.7">${k.count || 1}</span></div>`; }).join('');
+      const insights = Array.isArray(r.insights) ? r.insights : [];
+      const actions = Array.isArray(r.actions) ? r.actions : [];
+      return `
       <div class="card" style="background:linear-gradient(135deg,var(--sky3),var(--lav3));margin-bottom:12px">
         <div class="cap">AI 리포트</div>
         ${r.headline ? `<div style="font-size:13px;color:var(--text);font-weight:700;margin-bottom:8px">"${r.headline}"</div>` : ''}
         ${typeof scores.overall === 'number' ? `<div style="font-size:38px;font-weight:800;color:var(--text)">${scores.overall}<span style="font-size:11px;color:var(--muted);font-weight:600"> /100</span></div>` : ''}
       </div>
-      ${keywords.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">감정 키워드</div><div style="display:flex;flex-wrap:wrap;gap:6px">${wc}</div></div>` : ''}
+      <div class="card" style="margin-bottom:12px">
+        <div class="cap">① 목표일자 도달 예상 몸무게</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:500">오늘과 같은 칼로리를 남은 ${proj.daysRemain}일간 유지한다면</div>
+        <div style="font-size:26px;font-weight:800;color:var(--sky2)">${proj.projected}kg</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:500">현재 ${proj.currentW}kg → 목표일자 예상치 (오늘 NET ${proj.netPerDay > 0 ? '+' : ''}${proj.netPerDay}kcal 기준)</div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="cap">② 인슐린 · 식단</div>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px">
+          ${macroDonutSvg(mb.carb_g || 0, mb.protein_g || 0, mb.fat_g || 0)}
+          <div style="flex:1;display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600">
+            <div><span style="color:var(--warn)">●</span> 탄수 ${mb.carb_g || 0}g</div>
+            <div><span style="color:var(--lav2)">●</span> 단백 ${mb.protein_g || 0}g</div>
+            <div><span style="color:var(--muted)">●</span> 지방 ${mb.fat_g || 0}g</div>
+            <div style="color:var(--text)">총 ${mb.kcal_total || 0}kcal</div>
+          </div>
+        </div>
+        <svg width="100%" height="90" viewBox="0 0 310 90" id="report-bg-svg">
+          <rect x="0" y="14" width="310" height="17" fill="rgba(91,184,245,.06)" rx="2"/>
+          <g id="report-bg-line-g"></g><g id="report-bg-dot-g"></g>
+        </svg>
+      </div>
+      ${r.tomorrow_workout ? `<div class="card" style="margin-bottom:12px"><div class="cap">③ 성장호르몬 · 내일 운동 추천</div><div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.tomorrow_workout}</div></div>` : ''}
+      <div class="card" style="margin-bottom:12px">
+        <div class="cap">④ 코르티솔 · 이번 주 수면</div>
+        ${weekSleepChart()}
+        ${r.sleep_suggestion ? `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;margin-top:8px">${r.sleep_suggestion}</div>` : ''}
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="cap">⑤ ${hormoneScreenLabel()} · 일기</div>
+        ${wc ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${wc}</div>` : ''}
+        ${r.diary_word_health ? `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.diary_word_health}</div>` : '<div style="font-size:11px;color:var(--muted)">일기를 쓰면 단어 기반 분석을 볼 수 있어요</div>'}
+      </div>
       ${insights.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">인사이트</div>${insights.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:4px 0;border-bottom:1px solid var(--bdr)">${t}</div>`).join('')}</div>` : ''}
       ${actions.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">추천 행동</div>${actions.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:3px 0">・ ${t}</div>`).join('')}</div>` : ''}
       ${r.pcos_insight ? `<div class="card" style="margin-bottom:12px;border-color:rgba(244,143,177,.3);background:rgba(244,143,177,.05)"><div class="cap" style="color:var(--rose2)">PCOS 인사이트</div><div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.pcos_insight}</div></div>` : ''}
       <button class="btn btn-o" onclick="generateDayReport()">🔄 다시 생성</button>`;
-      } catch (e) {
-        console.error('[generateDayReport]', e);
-        slot.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--danger);font-size:12px;font-weight:700">네트워크 오류가 발생했어요.</div><button class="btn btn-p" style="margin-top:8px" onclick="generateDayReport()">다시 시도</button>`;
+    }
+
+    // ═══════════════════════ 하루 한 번, 지정 시각 AI 리포트 자동 생성 ═══════════════════════
+    function saveReportTime(val) { if (!val) return; S.reportTime = val; if (typeof saveProfileRow === 'function') saveProfileRow(); }
+    async function openTodayReport() {
+      await showDayDetail(todayISOLocal());
+      if (S._todayReport && S._todayReport.date === todayISOLocal()) {
+        const slot = document.getElementById('day-report-slot');
+        if (slot) slot.innerHTML = renderReportSections(S._todayReport.report, S._todayReport.day);
+        const rlg = document.getElementById('report-bg-line-g'), rdg = document.getElementById('report-bg-dot-g');
+        if (rlg && rdg) paintBGChart(rlg, rdg, (S._todayReport.day.meals || []).map(normalizeDbMeal), S._todayReport.day.workout);
+      } else {
+        generateDayReport();
       }
+    }
+    async function checkAutoGenerateReport() {
+      if (!S.reportTime) return;
+      const today = todayISOLocal(); if (S.reportGeneratedDate === today) return;
+      const now = new Date(); const nowStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      if (nowStr < S.reportTime) return;
+      try {
+        const res = await fetchApi(apiUrl(`/api/data/day?date=${today}`), { credentials: 'include' }); if (!res.ok) return;
+        const day = await res.json(); if (!day.hasAnyRecord) return;
+        const rres = await fetchApi(apiUrl('/api/report'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: buildDayReportPayload(today, day) }) });
+        const json = await rres.json().catch(() => null);
+        if (rres.ok && json && json.success) { S.reportGeneratedDate = today; S._todayReport = { date: today, report: json.report, day }; saveState(); updateProfileHeader(); const rBtn = document.getElementById('prof-report-btn'); if (rBtn) rBtn.classList.add('report-ready'); }
+      } catch (e) { console.error('[checkAutoGenerateReport]', e); }
     }
 
     // ═══════════════════════ RECIPES ═══════════════════════
@@ -2562,6 +2804,10 @@
       { n: '닭가슴살 레몬허브볼', t: 10, tp: '양식', cal: 260, cost: 7000, img: '🌿', ingredients: ['닭가슴살 150g', '레몬 1개', '로즈마리 약간', '올리브오일 1큰술', '소금·후추'], steps: ['닭가슴살에 소금, 후추, 레몬즙을 발라 10분 재워요', '팬을 달궈 올리브오일을 두르고 구워요', '로즈마리를 올려 향을 입혀요', '얇게 썰어 샐러드 위에 올려요'], cpgQ: '슬라이스 닭가슴살' },
       { n: '훈제연어 샐러드', t: 5, tp: '일식', cal: 200, cost: 9000, img: '🥗', ingredients: ['훈제연어 100g', '루꼴라 50g', '케이퍼 1큰술', '레몬즙 1큰술', '올리브오일 1큰술'], steps: ['루꼴라를 깨끗이 씻어 물기를 제거해요', '접시에 루꼴라를 깔아요', '훈제연어를 올리고 케이퍼를 뿌려요', '레몬즙과 올리브오일을 드레싱으로 뿌려요'], cpgQ: '훈제연어 슬라이스' },
     ];
+    // 칼로리가 가장 비슷한 저장된 레시피를 찾는다 (마이페이지 예시식단 ↔ 레시피 연동용)
+    function findClosestRecipe(kcal) {
+      return RCPS.reduce((best, r) => Math.abs(r.cal - kcal) < Math.abs(best.cal - kcal) ? r : best, RCPS[0]);
+    }
     function rfil(el, k, v) { S.rFilters[k] = S.rFilters[k] === v ? null : v; document.querySelectorAll(`.chip[dfk="${k}"]`).forEach(c => { c.classList.remove('on'); }); el.setAttribute('dfk', k); if (S.rFilters[k]) el.classList.add('on'); else el.classList.remove('on'); renderRecipes(); }
     function renderRecipes() {
       const g = document.getElementById('rcp-grid'); if (!g) return;
@@ -2618,9 +2864,11 @@
     // ═══════════════════════ 칼로리 구간별 예시 식단 ═══════════════════════
     // MEALPLANS/mealPlanForBucket()은 js/data-meal-plans.js에서 로드된다 (500~2000kcal, 100kcal 구간).
     function mealSlotHtml(label, emoji, slot) {
-      return `<div style="margin-bottom:10px">
+      const recipe = findClosestRecipe(slot.kcal); const idx = RCPS.indexOf(recipe);
+      return `<div style="margin-bottom:10px;cursor:pointer" onclick="showRecipeDetail(${idx})">
     <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">${emoji} ${label} <span style="color:var(--sky2);font-weight:800">· ${slot.kcal}kcal</span></div>
     <div style="font-size:11px;color:var(--muted);font-weight:500;line-height:1.6">${slot.items.join(' · ')}</div>
+    <div style="font-size:10px;color:var(--sky2);font-weight:700;margin-top:3px">${recipe.img} 가장 비슷한 레시피: ${recipe.n} (${recipe.cal}kcal) 보기 →</div>
   </div>`;
     }
     function renderMealPlan(kcal) {
@@ -2697,7 +2945,7 @@
     // ═══════════════════════ EXCEL EXPORT ═══════════════════════
     function doExport() {
       const BOM = '\uFEFF';
-      const mealInfo = S.meals.map(m => `${m.label}:${m.foods.map(f => `${f.food.n}${f.qty}${f.food.unit}`).join('+')}`).join(' / ');
+      const mealInfo = S.meals.map(m => `${m.label}:${m.foods.length ? m.foods.map(f => `${f.food.n}${f.qty}${f.food.unit}`).join('+') : (m.text || '')}`).join(' / ');
       const mealCals = S.meals.map(m => mCalc(m, 'cal'));
       const bgInfo = S.meals.map(m => `공복${m.bgPre || '—'}/1h${m.bg1h || '—'}/2h${m.bg2h || '—'}`).join(' | ');
       const rows = [
@@ -2717,7 +2965,7 @@
 
     // ═══════════════════════ MISC ═══════════════════════
     document.addEventListener('click', e => {
-      ['food-dd', 'cheat-dd'].forEach(id => { const dd = document.getElementById(id); if (dd && !dd.contains(e.target) && e.target.id !== id.replace('-dd', '-q')) dd.style.display = 'none'; });
+      ['cheat-dd'].forEach(id => { const dd = document.getElementById(id); if (dd && !dd.contains(e.target) && e.target.id !== id.replace('-dd', '-q')) dd.style.display = 'none'; });
     });
     function tick() { const n = new Date(); document.getElementById('clk').textContent = n.getHours() + ':' + (n.getMinutes() < 10 ? '0' : '') + n.getMinutes(); }
     tick(); setInterval(tick, 30000);

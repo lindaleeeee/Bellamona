@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const authRoutes = require('./auth');
 const dataRoutes = require('./routes/data');
 const reportRoutes = require('./routes/report');
+const glucoseRoutes = require('./routes/glucose');
 const userRoutes = require('./routes/user');
 const authMiddleware = require('./middleware/auth');
 const cookieParser = require('cookie-parser');
@@ -57,6 +58,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/report', reportRoutes);
+app.use('/api/glucose', glucoseRoutes);
 
 // Protected routes
 app.use('/api/user', authMiddleware, userRoutes);

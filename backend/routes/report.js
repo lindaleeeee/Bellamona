@@ -52,8 +52,11 @@ router.post('/', authenticateToken, async (req, res) => {
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
         const prompt = `
-이 사용자의 건강 데이터를 분석하여 저속노화 및 호르몬 관리를 위한 통찰과 추천을 제공해 주세요. 
+이 사용자의 건강 데이터를 분석하여 저속노화 및 호르몬 관리를 위한 통찰과 추천을 제공해 주세요.
 반드시 JSON 형식으로만 응답해야 합니다. 의학적 진단은 금지합니다.
+
+이 리포트는 5개 섹션으로 구성됩니다: ① 목표 체중 예측(프론트에서 계산하므로 응답 불필요)
+② 인슐린(식단 매크로+혈당) ③ 성장호르몬(내일 운동 추천) ④ 코르티솔(수면) ⑤ 호르몬/일기.
 
 데이터: ${JSON.stringify(data)}
 
@@ -64,10 +67,17 @@ router.post('/', authenticateToken, async (req, res) => {
     "overall": 80, // 종합 점수 (0-100)
     "biological_age_delta": -1.2 // 생물학적 나이 변화량 시뮬레이션
   },
+  "macro_breakdown": {
+    "carb_g": 120, "protein_g": 80, "fat_g": 50, "kcal_total": 1400
+    // meals 배열의 description/ai_estimate를 근거로 하루 총 매크로를 추정 (인슐린 섹션 도넛차트용)
+  },
+  "tomorrow_workout": "오늘 부위/강도 기록을 근거로 내일 추천하는 운동 부위·강도 한두 문장 (예: 오늘 팔+유산소를 했으니 내일은 하체 위주로)",
+  "sleep_suggestion": "최근 수면 패턴을 근거로 내일 목표 수면시간과 이유 한두 문장",
   "emotion_keywords": [
     { "word": "뿌듯", "count": 2, "type": "positive" },
     { "word": "피곤", "count": 1, "type": "negative" }
   ],
+  "diary_word_health": "일기 속 단어가 건강과 어떤 관련이 있는지 설명 (예: '피곤'이 반복되면 코르티솔 상승/수면 부족과 관련)",
   "insights": [
     "통찰력 있는 분석 문장 1",
     "통찰력 있는 분석 문장 2"
