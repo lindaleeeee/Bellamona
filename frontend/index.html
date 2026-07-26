@@ -645,6 +645,43 @@
       margin-bottom: 6px;
       border: 1px solid var(--bdr)
     }
+
+    /* 혈당 예측 신뢰도 배지 (GMODEL) */
+    .pred-badge {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+
+    .pred-badge.high {
+      background: rgba(102, 187, 106, .15);
+      color: var(--ok)
+    }
+
+    .pred-badge.medium {
+      background: rgba(255, 167, 38, .15);
+      color: var(--warn)
+    }
+
+    .pred-badge.low {
+      background: var(--card2);
+      color: var(--muted)
+    }
+
+    .pred-method {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 600
+    }
+
+    .pred-disclaimer {
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 5px;
+      font-weight: 500;
+      opacity: .8
+    }
   </style>
 </head>
 
@@ -731,8 +768,15 @@
                 </select>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <input class="input" placeholder="키 (cm)" type="number" id="ob-h" />
-                <input class="input" placeholder="현재 체중 (kg)" type="number" id="ob-cw" />
+                <input class="input" placeholder="키 (cm)" type="number" id="ob-h" oninput="calcBmi()" />
+                <input class="input" placeholder="현재 체중 (kg)" type="number" id="ob-cw" oninput="calcBmi()" />
+              </div>
+              <div class="card" style="margin:0;background:var(--sky3);border-color:rgba(91,184,245,.3)" id="ob-bmi-card">
+                <div class="cap">BMI (체질량지수)</div>
+                <div style="display:flex;align-items:baseline;gap:8px">
+                  <div style="font-size:28px;font-weight:800;color:var(--sky2)" id="ob-bmi-val">-</div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)" id="ob-bmi-cat">키·체중을 입력해주세요</div>
+                </div>
               </div>
             </div>
           </div>
@@ -741,7 +785,7 @@
             <div style="font-size:13px;color:var(--muted);margin-bottom:20px;font-weight:500">칼로리 목표를 자동 계산해드려요</div>
             <div style="display:flex;flex-direction:column;gap:10px">
               <input class="input" placeholder="목표 체중 (kg)" type="number" id="ob-gw" oninput="calcGoal()" />
-              <input class="input" placeholder="목표 기간 (개월)" type="number" id="ob-gm" oninput="calcGoal()" />
+              <input class="input" placeholder="목표 기간 (일)" type="number" id="ob-gd" oninput="calcGoal()" />
               <div class="card" style="margin:0;background:var(--sky3);border-color:rgba(91,184,245,.3)">
                 <div class="cap">자동 계산 하루 목표 칼로리</div>
                 <div style="font-size:32px;font-weight:800;color:var(--sky2)" id="ob-cal">입력 대기중</div>
@@ -1100,7 +1144,7 @@
                   onclick="toggleMyInfo()">🔒 정보 보기</span>
                 <span
                   style="font-size:10px;color:var(--sky2);cursor:pointer;font-weight:700;background:var(--sky3);padding:3px 8px;border-radius:6px"
-                  onclick="restartOnboard()">수정하기</span>
+                  onclick="openMod('mod-edit-goal')">수정하기</span>
               </div>
             </div>
             <div style="display:none;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px" id="prof-my-info-body">
@@ -1120,16 +1164,22 @@
                 <div style="font-size:10px;color:var(--muted);font-weight:600">하루 목표 칼로리</div>
                 <div style="font-size:13px;font-weight:800;color:var(--text)" id="pi-goal-cal">-</div>
               </div>
-              <div
-                style="grid-column:1/3;background:var(--card2);padding:10px;border-radius:10px;border:1px solid var(--bdr)">
-                <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">생리 및 배란 주기</div>
-                <div style="font-size:13px;font-weight:700;color:var(--text)" id="pi-period">-</div>
+            </div>
+          </div>
+
+          <div class="card" onclick="openMod('mod-mealplan')"
+            style="cursor:pointer;background:linear-gradient(135deg,rgba(91,184,245,.08),rgba(179,157,219,.06));border-color:rgba(91,184,245,.3);margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--sky2)">🍽 오늘 목표 칼로리 식단 예시</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:1px;font-weight:500">아침·점심·저녁·간식 예시 보기</div>
               </div>
+              <div style="font-size:20px;font-weight:800;color:var(--text)" id="prof-goalcal-btn-val">- kcal</div>
             </div>
           </div>
 
           <div class="card" style="margin-bottom:10px">
-            <div class="cap">이번 달 달성률 · 친구 비교</div>
+            <div class="cap">하루 달성률 · 친구 비교</div>
             <div style="display:flex;flex-direction:column;gap:8px">
               <div style="display:flex;align-items:center;gap:8px"><span id="prof-avatar-mini"
                   style="font-size:16px">🦋</span>
@@ -1204,7 +1254,7 @@
           <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg><span>홈</span></div>
-      <div class="ni" onclick="navTo(this,'s-dash');renderDash()" id="nav-dash"><svg viewBox="0 0 24 24" fill="none"
+      <div class="ni" onclick="navTo(this,'s-dash')" id="nav-dash"><svg viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="7" />
           <rect x="14" y="3" width="7" height="7" />
@@ -1439,9 +1489,44 @@
         <button class="btn btn-o" onclick="closeMod('mod-edit-routine')">취소</button>
       </div>
     </div>
+
+    <div class="mov" id="mod-glucose-example">
+      <div class="msh">
+        <div class="mh"></div>
+        <div id="glucose-example-body"></div>
+      </div>
+    </div>
+
+    <div class="mov" id="mod-mealplan">
+      <div class="msh">
+        <div class="mh"></div>
+        <div id="mealplan-body"></div>
+      </div>
+    </div>
+
+    <div class="mov" id="mod-edit-goal">
+      <div class="msh">
+        <div class="mh"></div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">🎯 시작/목표 일자·몸무게 수정</div>
+        <div class="cap" style="margin-bottom:5px">시작일자</div>
+        <input class="input" type="date" id="eg-start-date" style="margin-bottom:10px" />
+        <div class="cap" style="margin-bottom:5px">시작 몸무게 (kg)</div>
+        <input class="input" type="number" step="0.1" id="eg-start-weight" style="margin-bottom:10px" />
+        <div class="cap" style="margin-bottom:5px">목표일자</div>
+        <input class="input" type="date" id="eg-goal-date" style="margin-bottom:10px" />
+        <div class="cap" style="margin-bottom:5px">목표 몸무게 (kg)</div>
+        <input class="input" type="number" step="0.1" id="eg-goal-weight" style="margin-bottom:14px" />
+        <button class="btn btn-p" style="margin-bottom:8px" onclick="saveEditGoal()">저장</button>
+        <button class="btn btn-o" onclick="closeMod('mod-edit-goal')">취소</button>
+      </div>
+    </div>
   </div>
 
   <script src="/js/sync.js"></script>
+  <script src="/js/glucose-model.js"></script>
+  <script src="/js/data-cheat-foods.js"></script>
+  <script src="/js/data-meal-plans.js"></script>
+  <script src="/js/data-glucose-example.js"></script>
   <script>
     // js/sync.js가 쓰는 백엔드 연결 설정. Vite가 빌드/개발 시 frontend/.env 값으로 치환한다.
     const API_BASE = "%VITE_API_URL%";
@@ -1516,6 +1601,7 @@
       name: '혜림', goalCal: 1090, baseBurned: 380,
       exBurned: { strength: 0, hiit: 0, cardio: 0, walk: 0 },
       savedTotal: 0, calMon: { y: 2026, m: 3 },
+      trainingPairs: [], predLogs: [],
       periods: [{ start: '2026-04-01', days: 5 }], cycleLen: 28,
       checks: { i1: false, i2: false, i3: false, i4: false, g1: false, g2: false, g3: false, g4: false, c1: false, c2: false, c3: false, c4: false, o1: false, o2: false, o3: false, o4: false },
       meals: [
@@ -1531,7 +1617,7 @@
         { d: '04/22', t: '오늘도 운동했는데 힘들었지만 뿌듯해요. 혈당이 많이 안정됐어요. 가족이랑 저녁 먹어서 행복했어요.' },
       ],
       weights: [{ d: '04/19', w: 52.3 }, { d: '04/20', w: 52.1 }, { d: '04/21', w: 52.0 }, { d: '04/22', w: 52.0 }],
-      initWeight: 52, goalWeight: 48, goalMonths: 3,
+      initWeight: 52, goalWeight: 48, goalDays: 90, goalDate: null,
       rFilters: { time: null, type: null, cost: null },
       avatar: '🦋',
       streakDays: 0, gapDays: 0, totalLoggedDays: 0,
@@ -1583,6 +1669,9 @@
       if (id === 'mod-cheat') { renderCheat(); document.getElementById('ch-avail').textContent = S.savedTotal; }
       if (id === 'mod-edit-routine') renderEditRoutine();
       if (id === 'mod-friends') setTxt('my-friend-code', S.friendCode || '발급 중...');
+      if (id === 'mod-glucose-example') renderGlucoseExample();
+      if (id === 'mod-mealplan') renderMealPlan(S.goalCal);
+      if (id === 'mod-edit-goal') fillEditGoalForm();
       document.getElementById(id)?.classList.add('open');
     }
     function closeMod(id) { document.getElementById(id).classList.remove('open') }
@@ -1598,7 +1687,6 @@
     function mGI(m) { const cb = mCarb(m); if (!cb) return 0; return Math.round(m.foods.reduce((a, f) => a + f.food.gi * (f.food.c * f.g / 100), 0) / cb); }
     function getNet() { return totalIntake() - totalBurned(); }
     function getSave() { return S.goalCal - getNet(); }
-    function predBG(baseBG, gi, carbG) { return Math.round((baseBG || 90) + (gi * carbG / 100) * 2.5); }
 
     function hormonePct(hid) {
       const rts = S.routines[hid]; if (!rts) return 0;
@@ -1609,6 +1697,13 @@
       const all = Object.values(S.routines).flat();
       const done = all.filter(r => S.checks[r.id]).length;
       return Math.round(done / all.length * 100);
+    }
+
+    // goalDate가 없는 예전 데이터(goalMonths만 저장된 경우)도 대비한 폴백 계산
+    function getGoalDateMs() {
+      if (S.goalDate) return S.goalDate;
+      const days = S.goalDays || (S.goalMonths ? S.goalMonths * 30 : 90);
+      return (S.startDate || Date.now()) + days * 86400000;
     }
 
     function updateHome() {
@@ -1629,7 +1724,8 @@
       const lastWt = S.weights.length ? S.weights[S.weights.length - 1].w : S.initWeight;
       setTxt('h-wt', lastWt.toFixed(1) + ' kg');
       const wtLost = S.initWeight - lastWt; const wtRemain = Math.max(0, lastWt - S.goalWeight);
-      setTxt('h-wt-remain', `${S.goalWeight}kg까지 ${wtRemain.toFixed(1)}kg · D-${Math.max(0, S.goalMonths * 30 - 4)}`);
+      const dDay = Math.max(0, Math.ceil((getGoalDateMs() - Date.now()) / 86400000));
+      setTxt('h-wt-remain', `${S.goalWeight}kg까지 ${wtRemain.toFixed(1)}kg · D-${dDay}`);
       const wtPct = Math.min(Math.round(wtLost / Math.max(S.initWeight - S.goalWeight, 0.1) * 100), 100);
       const wtBar = document.getElementById('wt-bar'); if (wtBar) wtBar.style.width = wtPct + '%';
       renderWtMiniChart();
@@ -1642,10 +1738,9 @@
       const pname = document.getElementById('prof-me-name'); if (pname) pname.textContent = S.name + '님 (나)';
       setTxt('pi-init-w', S.initWeight + ' kg');
       setTxt('pi-goal-w', S.goalWeight + ' kg');
-      setTxt('pi-goal-m', S.goalMonths + '개월');
+      const goalDateStr = new Date(getGoalDateMs()); setTxt('pi-goal-m', `D-${dDay} (~${goalDateStr.getMonth() + 1}/${goalDateStr.getDate()})`);
       setTxt('pi-goal-cal', S.goalCal.toLocaleString() + ' kcal');
-      if (S.periods && S.periods.length) { setTxt('pi-period', `최근: ${S.periods[0].start}부터 ${S.periods[0].days}일간 / 평균 주기 ${S.cycleLen}일`); }
-      else { setTxt('pi-period', `입력 안됨 / 평균 주기 ${S.cycleLen}일`); }
+      setTxt('prof-goalcal-btn-val', S.goalCal.toLocaleString() + ' kcal');
       saveState();
     }
 
@@ -1657,8 +1752,8 @@
 
       if (!S.startDate) S.startDate = new Date().getTime() - (S.weights.length * 86400000);
       S.weights.forEach((w, i) => { if (!w.t) w.t = S.startDate + i * 86400000; });
-      const totalMs = S.goalMonths * 30 * 86400000;
-      const endMs = S.startDate + totalMs;
+      const endMs = getGoalDateMs();
+      const totalMs = Math.max(endMs - S.startDate, 86400000);
 
       // Determine Y scale
       const maxW = Math.max(S.initWeight, ...ws) + 1;
@@ -1699,8 +1794,19 @@
         svg.appendChild(path);
       }
 
+      // 기록마다 점을 찍으면 촘촘해 보기 불편하므로, 첫/마지막 + 구간을 최대 6개로 균등 샘플링한
+      // 지점에만 마커·라벨을 표시한다 (추세선 자체는 위에서 이미 모든 실측값을 지나도록 그렸다).
+      const MAX_MARKERS = 6;
+      let markerIdx;
+      if (pts.length <= MAX_MARKERS) markerIdx = pts.map((_, i) => i);
+      else {
+        const step = (pts.length - 1) / (MAX_MARKERS - 1);
+        markerIdx = Array.from({ length: MAX_MARKERS }, (_, i) => Math.round(i * step));
+        markerIdx = [...new Set(markerIdx)];
+      }
       let lastTxtX = -999;
-      pts.forEach((p, i) => {
+      markerIdx.forEach(i => {
+        const p = pts[i];
         const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         c.setAttribute("cx", p.x); c.setAttribute("cy", p.y); c.setAttribute("r", "5");
         c.setAttribute("fill", "#fff"); c.setAttribute("stroke", "var(--sky2)"); c.setAttribute("stroke-width", "2.5");
@@ -1736,16 +1842,33 @@
     // doGoogleLogin() is defined in js/sync.js (real Google Identity Services token login).
 
     // ═══════════════════════ ONBOARDING ═══════════════════════
+    // BMI 분류: <18.5 마름 / 18.5~22.9 정상 / 23~24.9 경도비만 / 25+ 비만
+    function bmiCategory(bmi) {
+      if (bmi < 18.5) return { label: '마름', color: 'var(--sky2)' };
+      if (bmi < 23) return { label: '정상', color: 'var(--ok)' };
+      if (bmi < 25) return { label: '경도비만', color: 'var(--warn)' };
+      return { label: '비만', color: 'var(--danger)' };
+    }
+    function calcBmi() {
+      const h = parseFloat(document.getElementById('ob-h')?.value);
+      const w = parseFloat(document.getElementById('ob-cw')?.value);
+      const valEl = document.getElementById('ob-bmi-val'); const catEl = document.getElementById('ob-bmi-cat');
+      if (!h || !w) { if (valEl) valEl.textContent = '-'; if (catEl) { catEl.textContent = '키·체중을 입력해주세요'; catEl.style.color = 'var(--text)'; } return; }
+      const bmi = w / ((h / 100) ** 2);
+      const cat = bmiCategory(bmi);
+      if (valEl) valEl.textContent = bmi.toFixed(1);
+      if (catEl) { catEl.textContent = cat.label; catEl.style.color = cat.color; }
+    }
     function calcGoal() {
       const cw = parseFloat(document.getElementById('ob-cw')?.value) || 52;
       const gw = parseFloat(document.getElementById('ob-gw')?.value) || 48;
-      const gm = parseFloat(document.getElementById('ob-gm')?.value) || 3;
+      const gd = parseFloat(document.getElementById('ob-gd')?.value) || 90;
       const h = parseFloat(document.getElementById('ob-h')?.value) || 165;
       const bmr = Math.round(655 + 9.563 * cw + 1.85 * h - 4.676 * 32);
-      S.goalCal = Math.max(Math.round(bmr * 1.375) - Math.round((cw - gw) * 7700 / (gm * 30)), 1000);
-      S.initWeight = cw; S.goalWeight = gw; S.goalMonths = gm; S.heightCm = h;
+      S.goalCal = Math.max(Math.round(bmr * 1.375) - Math.round((cw - gw) * 7700 / gd), 1000);
+      S.initWeight = cw; S.goalWeight = gw; S.goalDays = gd; S.heightCm = h;
       setTxt('ob-cal', S.goalCal.toLocaleString());
-      const d = document.getElementById('ob-cal-d'); if (d) d.textContent = `체중 -${(cw - gw).toFixed(1)}kg ÷ ${gm * 30}일 × 7,700kcal`;
+      const d = document.getElementById('ob-cal-d'); if (d) d.textContent = `체중 -${(cw - gw).toFixed(1)}kg ÷ ${gd}일 × 7,700kcal`;
     }
     function obNext() {
       if (S.obStep < 3) { document.getElementById(`ob-p${S.obStep}`).style.display = 'none'; S.obStep++; document.getElementById(`ob-p${S.obStep}`).style.display = 'block'; document.getElementById('ob-back').style.display = 'flex'; if (S.obStep === 3) document.getElementById('ob-next').textContent = '시작하기 →'; if (S.obStep === 2) calcGoal(); document.querySelectorAll('.step-dot').forEach((d, i) => d.classList.toggle('on', i === S.obStep - 1)); }
@@ -1753,6 +1876,7 @@
         S.name = document.getElementById('ob-name')?.value || '혜림';
         S.cycleLen = parseInt(document.getElementById('ob-cycle')?.value) || 28;
         S.startDate = new Date().getTime();
+        S.goalDate = S.startDate + (S.goalDays || 90) * 86400000;
         S.weights = [{ d: '오늘', w: S.initWeight, t: S.startDate }];
         const ps = document.getElementById('ob-period-start')?.value;
         const pe = document.getElementById('ob-period-end')?.value;
@@ -1768,16 +1892,30 @@
       }
     }
     function obPrev() { if (S.obStep > 1) { document.getElementById(`ob-p${S.obStep}`).style.display = 'none'; S.obStep--; document.getElementById(`ob-p${S.obStep}`).style.display = 'block'; if (S.obStep === 1) document.getElementById('ob-back').style.display = 'none'; document.getElementById('ob-next').textContent = '다음'; document.querySelectorAll('.step-dot').forEach((d, i) => d.classList.toggle('on', i === S.obStep - 1)); } }
-    function restartOnboard() {
-      S.obStep = 1;
-      document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
-      document.getElementById('s-onboard').classList.add('on');
-      document.getElementById('ob-p1').style.display = 'block';
-      document.getElementById('ob-p2').style.display = 'none';
-      document.getElementById('ob-p3').style.display = 'none';
-      document.getElementById('ob-back').style.display = 'none';
-      document.getElementById('ob-next').textContent = '다음';
-      document.querySelectorAll('.step-dot').forEach((d, i) => d.classList.toggle('on', i === 0));
+    // ═══════════════════════ 시작/목표 일자·몸무게 수정 (마이페이지) ═══════════════════════
+    function dtToInputVal(ms) { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+    function fillEditGoalForm() {
+      setInputVal('eg-start-date', dtToInputVal(S.startDate || Date.now()));
+      setInputVal('eg-start-weight', S.initWeight);
+      setInputVal('eg-goal-date', dtToInputVal(getGoalDateMs()));
+      setInputVal('eg-goal-weight', S.goalWeight);
+    }
+    function setInputVal(id, v) { const el = document.getElementById(id); if (el) el.value = v; }
+    function saveEditGoal() {
+      const startDateStr = document.getElementById('eg-start-date')?.value;
+      const startWeight = parseFloat(document.getElementById('eg-start-weight')?.value);
+      const goalDateStr = document.getElementById('eg-goal-date')?.value;
+      const goalWeight = parseFloat(document.getElementById('eg-goal-weight')?.value);
+      if (!startDateStr || !goalDateStr || !startWeight || !goalWeight) { alert('모든 값을 올바르게 입력해주세요'); return; }
+      const startMs = new Date(startDateStr).getTime(); const goalMs = new Date(goalDateStr).getTime();
+      if (goalMs <= startMs) { alert('목표일자는 시작일자보다 이후여야 해요'); return; }
+      S.startDate = startMs; S.initWeight = startWeight; S.goalDate = goalMs; S.goalWeight = goalWeight;
+      S.goalDays = Math.round((goalMs - startMs) / 86400000);
+      const h = S.heightCm || 165; const bmr = Math.round(655 + 9.563 * startWeight + 1.85 * h - 4.676 * 32);
+      S.goalCal = Math.max(Math.round(bmr * 1.375) - Math.round((startWeight - goalWeight) * 7700 / S.goalDays), 1000);
+      if (S.weights.length) S.weights[0] = { ...S.weights[0], w: startWeight, t: startMs };
+      closeMod('mod-edit-goal'); updateHome();
+      if (typeof saveProfileRow === 'function') saveProfileRow();
     }
     function initMain() {
       setTxt('h-greet', `오늘도 빛나는 ${S.name}님 ✨`);
@@ -1827,13 +1965,25 @@
     function saveDiary() { S.checks.o4 = true; const txt = document.getElementById('diary-txt')?.value; let entry = null; if (txt) { entry = { d: '오늘', t: txt }; S.diaries.push(entry); } closeMod('mod-diary'); goH('oxytocin'); updateHome(); if (typeof saveChecksRow === 'function') saveChecksRow(); if (entry && typeof saveDiaryRow === 'function') saveDiaryRow(entry); }
 
     // ── INSULIN ──
+    // 생리주기 phase는 대시보드/코르티솔과 동일한 getCycleInfo()를 그대로 재사용한다.
+    function currentCyclePhase() { return getCycleInfo().id; }
+    // 식사 → 예측 결과 (BELLAMONA_혈당예측모델_개발명세서.md §4 구현체인 GMODEL 호출). history=개인 학습쌍.
+    function predictMeal(m) {
+      const ctx = { cyclePhase: currentCyclePhase(), workoutPost: !!S.checks.i2 };
+      return GMODEL.predict(m, ctx, S.trainingPairs);
+    }
+
     function renderInsulin() {
       const intake = totalIntake(); const net = getNet(); const save = getSave();
       const lastMealTime = S.meals.filter(m => m.foods.length > 0).map(m => m.time).sort().pop();
       let fastHours = 0;
       if (lastMealTime) { const [hh, mm] = lastMealTime.split(':').map(Number); const now = new Date(); const last = new Date(); last.setHours(hh, mm, 0, 0); if (last > now) last.setDate(last.getDate() - 1); fastHours = Math.round((now - last) / 3600000 * 10) / 10; }
+      // 개인화 진행도(명세서 §7): 학습쌍 개수로 예측 단계 안내
+      const nPairs = S.trainingPairs.filter(p => p.valid).length;
+      const hr = GMODEL.hitRate(S.predLogs);
       const mHtml = S.meals.map((m, mi) => {
-        const cal = mCalc(m, 'cal'); const carb = mCarb(m); const prot = mProt(m); const fat = mFat(m); const gi = mGI(m); const hasFoods = m.foods.length > 0; const peak = hasFoods ? predBG(m.bgPre, gi, carb) : null; const gl = hasFoods ? Math.round(gi * carb / 100) : 0;
+        const cal = mCalc(m, 'cal'); const carb = mCarb(m); const prot = mProt(m); const fat = mFat(m); const gi = mGI(m); const hasFoods = m.foods.length > 0; const gl = hasFoods ? Math.round(gi * carb / 100) : 0;
+        const pred = hasFoods ? predictMeal(m) : null; const peak = pred ? pred.peakEstimate : null;
         const foodRows = m.foods.map((f, fi) => `
       <div class="fi"><span style="flex:1;font-size:12px;color:var(--text);font-weight:600">${f.food.n}</span>
         <input type="number" min="0.5" step="0.5" value="${f.qty}" onchange="updQty(${m.id},${fi},this.value)" style="width:50px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:8px;padding:4px 5px;color:var(--text);font-size:12px;font-weight:700;text-align:center;outline:none;font-family:'Nunito',sans-serif"/>
@@ -1841,6 +1991,28 @@
         <span style="font-size:12px;font-weight:800;color:var(--sky2);width:38px;text-align:right">${Math.round(f.food.cal * f.g / 100)}</span>
         <button onclick="rmFood(${m.id},${fi})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px;line-height:1">×</button>
       </div>`).join('');
+        // 예측 카드 (신뢰도 배지/방법/근거/disclaimer 포함, GMODEL 결과 기반)
+        let predHtml = '';
+        if (carb > 0 && pred) {
+          const lvColor = pred.level === 'high' ? 'var(--danger)' : pred.level === 'medium' ? 'var(--warn)' : 'var(--sky2)';
+          const lvBg = pred.level === 'high' ? 'rgba(239,83,80,.08)' : pred.level === 'medium' ? 'rgba(255,167,38,.08)' : 'rgba(91,184,245,.08)';
+          const lvBd = pred.level === 'high' ? 'rgba(239,83,80,.25)' : pred.level === 'medium' ? 'rgba(255,167,38,.25)' : 'rgba(91,184,245,.25)';
+          const methodLabel = { rule: '기본 추정', knn: '개인 데이터', ml: 'AI 모델', ml_personal: '개인 AI' }[pred.method] || '추정';
+          const rangeTxt = pred.range ? ` (${pred.range[0]}~${pred.range[1]})` : '';
+          predHtml = `<div style="background:${lvBg};border:1.5px solid ${lvBd};border-radius:12px;padding:10px 12px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px;align-items:center">
+          <span style="font-size:11px;font-weight:800;padding:2px 9px;border-radius:99px;background:${gl < 10 ? 'rgba(102,187,106,.15)' : gl < 20 ? 'rgba(255,167,38,.15)' : 'rgba(239,83,80,.15)'};color:${gl < 10 ? 'var(--ok)' : gl < 20 ? 'var(--warn)' : 'var(--danger)'}">GL ${gl}</span>
+          <span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--lav3);color:var(--lav2)">GI ${gi}</span>
+          <span class="pred-badge ${pred.confidence}">${pred.confidence === 'high' ? '신뢰 높음' : pred.confidence === 'medium' ? '신뢰 보통' : '신뢰 낮음'}</span>
+          <span class="pred-method">· ${methodLabel}${pred.similarN ? ` ${pred.similarN}건` : ''}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text);font-weight:600">예측 상승폭 <strong style="color:${lvColor}">+${pred.deltaPeak} mg/dL</strong> → 예상 피크 <strong style="color:${lvColor}">${peak}${rangeTxt}</strong> ${pred.level === 'high' ? '⚠️ 높음' : pred.level === 'medium' ? '주의' : '✓ 양호'}</div>
+        ${pred.evidence ? `<div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:500">📊 ${pred.evidence}</div>` : ''}
+        ${pred.lowData ? '<div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">데이터가 더 쌓이면 정확해져요 (2주 목표)</div>' : ''}
+        ${!m.bgPre ? '<div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">공복 혈당 입력 시 더 정확해져요</div>' : ''}
+        <div class="pred-disclaimer">※ ${pred.disclaimer}</div>
+      </div>`;
+        }
         return `<div class="mb${hasFoods ? ' hd' : ''}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${hasFoods ? '10px' : '0'}">
         <div style="display:flex;align-items:center;gap:8px">
@@ -1875,14 +2047,7 @@
           <div style="display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:var(--muted);text-align:center;font-weight:600">식후 2시간</div><input class="bg-inp" type="number" placeholder="mg/dL" value="${m.bg2h || ''}" onchange="updBG(${m.id},'bg2h',this.value)"/></div>
         </div>
       </div>
-      ${carb > 0 ? `<div style="background:${peak > 180 ? 'rgba(239,83,80,.08)' : peak > 140 ? 'rgba(255,167,38,.08)' : 'rgba(91,184,245,.08)'};border:1.5px solid ${peak > 180 ? 'rgba(239,83,80,.25)' : peak > 140 ? 'rgba(255,167,38,.25)' : 'rgba(91,184,245,.25)'};border-radius:12px;padding:10px 12px">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px">
-          <span style="font-size:11px;font-weight:800;padding:2px 9px;border-radius:99px;background:${gl < 10 ? 'rgba(102,187,106,.15)' : gl < 20 ? 'rgba(255,167,38,.15)' : 'rgba(239,83,80,.15)'};color:${gl < 10 ? 'var(--ok)' : gl < 20 ? 'var(--warn)' : 'var(--danger)'}">GL ${gl}</span>
-          <span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--lav3);color:var(--lav2)">GI ${gi}</span>
-        </div>
-        <div style="font-size:12px;color:var(--text);font-weight:600">예측 식후 1h: <strong style="color:${peak > 180 ? 'var(--danger)' : peak > 140 ? 'var(--warn)' : 'var(--sky2)'}">${peak} mg/dL</strong> ${peak > 180 ? '⚠️ 위험' : peak > 140 ? '주의' : '✓ 양호'}</div>
-        ${!m.bgPre ? '<div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">공복 혈당 입력 시 더 정확해져요</div>' : ''}
-      </div>`: ''}
+      ${predHtml}
       `: `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">+ 음식 버튼으로 식사를 기록하세요</div>`}
     </div>`;
       }).join('');
@@ -1895,6 +2060,18 @@
         ${fastHours ? `마지막 식사: ${lastMealTime}<br><span style="color:${fastHours >= 16 ? 'var(--ok)' : 'var(--sky2)'};font-weight:700">${fastHours >= 16 ? '✅ 16시간 달성!' : '목표까지 ' + (16 - fastHours).toFixed(1) + 'h'}</span>` : '식사를 기록하면 시작돼요'}
       </div>
     </div>
+  </div>
+  <div class="card" style="border-color:rgba(179,157,219,.3);background:linear-gradient(135deg,var(--lav3),var(--sky3))">
+    <div class="cap" style="color:var(--lav2)">🤖 AI 혈당 예측 개인화</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="flex:1">
+        <div class="bar-t" style="height:7px;margin-bottom:5px"><div class="bar-f" style="width:${Math.min(nPairs / 40 * 100, 100)}%;background:linear-gradient(90deg,var(--lav2),var(--sky2))"></div></div>
+        <div style="font-size:11px;color:var(--text);font-weight:600">학습 데이터 <strong style="color:var(--lav2)">${nPairs}</strong>건 / 개인화 목표 40건(약 2주)</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">${nPairs >= 40 ? '✅ 개인 예측 안정 단계' : nPairs >= 5 ? '개인 데이터 예측 작동 중' : '현재 기본 추정 단계 · 혈당을 기록하면 정확해져요'}</div>
+      </div>
+      ${hr != null ? `<div style="text-align:center;background:var(--surf);border-radius:12px;padding:8px 12px;border:1px solid var(--bdr)"><div style="font-size:18px;font-weight:800;color:var(--ok)">${hr}%</div><div style="font-size:9px;color:var(--muted);font-weight:600">예측 적중률</div></div>` : ''}
+    </div>
+    <button onclick="openMod('mod-glucose-example')" style="width:100%;margin-top:10px;background:var(--surf);border:1.5px solid var(--lav2);border-radius:10px;padding:9px;font-size:12px;color:var(--lav2);font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">🔬 예시로 2주 식단-혈당 예측 리포트 보기</button>
   </div>
   <div class="card" style="border-color:rgba(91,184,245,.25)">
     <div class="cap">칼로리 — 인슐린 ↔ 성장호르몬 연동</div>
@@ -1936,12 +2113,14 @@
 
     function updMealTime(id, val) { const m = S.meals.find(x => x.id === id); if (m) { m.time = val; if (typeof saveMealRow === 'function') saveMealRow(m); } goH('insulin'); }
 
+    // 혈당 추이 차트 (원본 로직 보존, 예측 피크만 GMODEL로 계산)
     function renderBGChart() {
       const lg = document.getElementById('bg-line-g'); const dg = document.getElementById('bg-dot-g'); if (!lg || !dg) return; lg.innerHTML = ''; dg.innerHTML = '';
       const pts = [];
       S.meals.forEach((m, mi) => {
         if (!m.foods.length) return;
-        const x = 20 + mi * 90; const carb = mCarb(m); const gi = mGI(m); const base = m.bgPre || 90; const peak = predBG(m.bgPre, gi, carb);
+        const x = 20 + mi * 90; const carb = mCarb(m); const base = m.bgPre || 90;
+        const pred = predictMeal(m); const peak = pred ? pred.peakEstimate : base;
         // Y mapping: 70–250 range → 81→5px (top)
         const toY = bg => 81 - Math.round((Math.min(Math.max(bg, 70), 250) - 70) / (250 - 70) * 76);
         if (m.bgPre) pts.push({ x, y: toY(m.bgPre), v: m.bgPre, real: true });
@@ -1959,6 +2138,62 @@
       const pl = document.createElementNS('http://www.w3.org/2000/svg', 'path'); pl.setAttribute('d', pD); pl.setAttribute('fill', 'none'); pl.setAttribute('stroke', 'rgba(255,167,38,.6)'); pl.setAttribute('stroke-width', '2'); pl.setAttribute('stroke-dasharray', '4 3'); pl.setAttribute('stroke-linecap', 'round'); lg.appendChild(pl);
       const rPts = pts.filter(p => p.real); if (rPts.length >= 2) { const rD = rPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' '); const rl = document.createElementNS('http://www.w3.org/2000/svg', 'path'); rl.setAttribute('d', rD); rl.setAttribute('fill', 'none'); rl.setAttribute('stroke', 'var(--sky2)'); rl.setAttribute('stroke-width', '2.5'); rl.setAttribute('stroke-linecap', 'round'); lg.appendChild(rl); }
       pts.forEach(p => { const col = p.v > 180 ? 'var(--danger)' : p.v > 140 ? 'var(--warn)' : p.real ? 'var(--sky2)' : 'rgba(255,167,38,.8)'; const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', p.real ? '4' : '3'); if (p.real) c.setAttribute('fill', col); else { c.setAttribute('fill', 'none'); c.setAttribute('stroke', col); c.setAttribute('stroke-width', '1.5'); } dg.appendChild(c); const t = document.createElementNS('http://www.w3.org/2000/svg', 'text'); t.setAttribute('x', p.x); t.setAttribute('y', p.y - 7); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '9'); t.setAttribute('fill', col); t.setAttribute('font-family', 'Nunito'); t.setAttribute('font-weight', '700'); t.textContent = p.v; dg.appendChild(t); });
+    }
+
+    // ═══════════════════════ 예시: 2주 식단-혈당 예측 리포트 ═══════════════════════
+    // 실제 CGM 기록이 없을 때, GMODEL(§4)이 2주 로그가 쌓이면 어떻게 예측을 계산하는지
+    // 그대로 보여주기 위한 데모. GLUCOSE_EXAMPLE_DAYS의 날짜 순서를 따라가며 "이 시점까지 쌓인
+    // 학습쌍"만으로 그 다음 식사를 예측해, 규칙기반→개인 k-NN으로 전환되는 과정을 실시간 계산한다.
+    function renderGlucoseExample() {
+      const body = document.getElementById('glucose-example-body'); if (!body) return;
+      const history = []; const logs = []; let firstKnnDay = null;
+      const dayCards = GLUCOSE_EXAMPLE_DAYS.map((day, di) => {
+        const ctx = { cyclePhase: day.cyclePhase };
+        const mealRows = day.meals.map(meal => {
+          const pred = GMODEL.predict(meal, ctx, history);
+          if (pred.method === 'knn' && firstKnnDay == null) firstKnnDay = di + 1;
+          const pair = GMODEL.makeTrainingPair(meal, ctx);
+          if (pair) { history.push(pair); logs.push({ predicted_delta: pred.deltaPeak, actual_delta: pair.delta_peak }); }
+          const lvColor = pred.level === 'high' ? 'var(--danger)' : pred.level === 'medium' ? 'var(--warn)' : 'var(--sky2)';
+          const methodLabel = { rule: '기본 추정', knn: '개인 데이터', ml: 'AI 모델', ml_personal: '개인 AI' }[pred.method] || '추정';
+          const actualPeak = Math.max(meal.bg1h || 0, meal.bg2h || 0) || null;
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:11px">
+        <span style="color:var(--text);font-weight:600">${meal.label} · ${meal.time.slice(0,5)}</span>
+        <span style="color:var(--muted)">실측(예시) ${meal.bgPre}→${meal.bg1h}→${meal.bg2h}</span>
+        <span style="font-weight:800;color:${lvColor}">예측 +${pred.deltaPeak} (${methodLabel})</span>
+      </div>`;
+        }).join('');
+        return `<div class="card2" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:var(--text)">${day.date}</span><span style="font-size:10px;color:var(--muted);font-weight:600">${{follicular:'난포기',ovulation:'배란기',luteal:'황체기',menstrual:'생리기'}[day.cyclePhase]||''}</span></div>
+      ${mealRows}
+    </div>`;
+      }).join('');
+      const hr = GMODEL.hitRate(logs);
+      const dist = { low: 0, medium: 0, high: 0 };
+      logs.forEach(l => { const lv = l.predicted_delta > 70 ? 'high' : l.predicted_delta >= 40 ? 'medium' : 'low'; dist[lv]++; });
+      body.innerHTML = `
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">🔬 예시: 2주 식단-혈당 예측 리포트</div>
+    <div style="font-size:11px;color:var(--rose2);background:rgba(244,143,177,.1);border:1.5px solid rgba(244,143,177,.3);border-radius:11px;padding:9px 11px;margin-bottom:10px;line-height:1.6;font-weight:600">
+      ⚠️ 아직 연속혈당측정기(CGM) 기록이 없어 아래는 <strong>예시 데이터</strong>입니다. 실제 식단·운동을 2주간 기록하면
+      이 화면과 같은 방식(BELLAMONA 혈당예측모델 §4)으로 회원님의 실제 예측 리포트가 계산됩니다.
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="cap">14일 요약</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px">
+        <div style="text-align:center;background:var(--sky3);border-radius:9px;padding:8px 3px"><div style="font-size:15px;font-weight:800;color:var(--sky2)">${dist.low}</div><div style="font-size:9px;color:var(--muted);font-weight:600">낮음 끼니</div></div>
+        <div style="text-align:center;background:rgba(255,167,38,.1);border-radius:9px;padding:8px 3px"><div style="font-size:15px;font-weight:800;color:var(--warn)">${dist.medium}</div><div style="font-size:9px;color:var(--muted);font-weight:600">보통 끼니</div></div>
+        <div style="text-align:center;background:rgba(239,83,80,.08);border-radius:9px;padding:8px 3px"><div style="font-size:15px;font-weight:800;color:var(--danger)">${dist.high}</div><div style="font-size:9px;color:var(--muted);font-weight:600">높음 끼니</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--text);font-weight:600">예측 적중률(±20mg/dL 이내) <strong style="color:var(--ok)">${hr != null ? hr + '%' : '-'}</strong></div>
+      ${firstKnnDay ? `<div style="font-size:10px;color:var(--muted);margin-top:2px;font-weight:500">${firstKnnDay}일차부터 개인 데이터 기반(k-NN) 예측으로 전환됨</div>` : ''}
+    </div>
+    ${dayCards}
+    <div class="card" style="margin-bottom:10px">
+      <div class="cap">참고 논문 (방법론적 근거)</div>
+      ${GLUCOSE_EXAMPLE_REFS.map(r => `<div style="font-size:10px;color:var(--muted);line-height:1.6;padding:3px 0;font-weight:500">・ ${r}</div>`).join('')}
+      <div class="pred-disclaimer" style="margin-top:6px">※ 본 예측은 참고용 추정치이며 의료적 진단이 아닙니다. 운동(식후 30분 내 활동)이 혈당을 완충한다는 것은 Liu et al./van Doorn et al.의 공통된 결론이나, 현재 규칙 기반(콜드스타트) 단계는 이를 수치에 아직 반영하지 않으며 개인 데이터가 쌓인 k-NN/개인화 단계부터 반영됩니다.</div>
+    </div>
+    <button class="btn btn-o" onclick="closeMod('mod-glucose-example')">닫기</button>`;
     }
 
     // ── GROWTH ──
@@ -2085,11 +2320,16 @@
     function updPendQty(i, val) { const q = parseFloat(val) || 0; S.pending[i].qty = q; S.pending[i].g = q * S.pending[i].food.ug; renderPending(); }
     function renderPending() {
       const list = document.getElementById('pend-list'); const prev = document.getElementById('pend-prev'); if (!S.pending.length) { list.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0;font-weight:500">음식을 검색해서 추가하세요 👆</div>'; prev.style.display = 'none'; return; }
-      const tC = S.pending.reduce((a, f) => a + Math.round(f.food.cal * f.g / 100), 0); const tCb = S.pending.reduce((a, f) => a + Math.round(f.food.c * f.g / 100), 0); const tP = S.pending.reduce((a, f) => a + Math.round(f.food.p * f.g / 100), 0); const tF = S.pending.reduce((a, f) => a + Math.round(f.food.f * f.g / 100), 0); const avgGI = tCb > 0 ? Math.round(S.pending.reduce((a, f) => a + f.food.gi * (f.food.c * f.g / 100), 0) / tCb) : 0; const gl = Math.round(avgGI * tCb / 100); const peak = 90 + Math.round(gl * 2.5);
+      const tC = S.pending.reduce((a, f) => a + Math.round(f.food.cal * f.g / 100), 0); const tCb = S.pending.reduce((a, f) => a + Math.round(f.food.c * f.g / 100), 0); const tP = S.pending.reduce((a, f) => a + Math.round(f.food.p * f.g / 100), 0); const tF = S.pending.reduce((a, f) => a + Math.round(f.food.f * f.g / 100), 0); const avgGI = tCb > 0 ? Math.round(S.pending.reduce((a, f) => a + f.food.gi * (f.food.c * f.g / 100), 0) / tCb) : 0; const gl = Math.round(avgGI * tCb / 100);
+      // 미리보기 예측도 GMODEL 사용 (가상 식사 객체 구성)
+      const nowH = new Date().getHours();
+      const virtualMeal = { foods: S.pending.map(f => ({ food: f.food, g: f.g })), time: `${nowH}:00`, bgPre: null };
+      const pred = GMODEL.predict(virtualMeal, { cyclePhase: currentCyclePhase() }, S.trainingPairs);
+      const peak = pred.peakEstimate;
       list.innerHTML = S.pending.map((f, i) => { const cal = Math.round(f.food.cal * f.g / 100); return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr)"><span style="flex:1;font-size:13px;color:var(--text);font-weight:600">${f.food.n}</span><div style="display:flex;align-items:center;gap:4px"><input type="number" min="0.5" step="0.5" value="${f.qty}" onchange="updPendQty(${i},this.value)" style="width:46px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:8px;padding:4px 5px;color:var(--text);font-size:12px;font-weight:700;text-align:center;outline:none;font-family:'Nunito',sans-serif"/><span style="font-size:9px;color:var(--muted);white-space:nowrap;font-weight:600">${f.food.unit}<br>${Math.round(f.g)}g</span><span style="font-size:13px;font-weight:800;color:var(--sky2);width:36px;text-align:right">${cal}</span><button onclick="rmPending(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0;line-height:1">×</button></div></div>`; }).join('');
       setTxt('pend-cal', `${tC} kcal`); setTxt('pend-carb', `${tCb}g`); setTxt('pend-prot', `${tP}g`); setTxt('pend-fat', `${tF}g`);
       const giEl = document.getElementById('pend-gi'); if (giEl) { giEl.textContent = avgGI || '—'; giEl.style.color = avgGI > 60 ? 'var(--danger)' : avgGI > 40 ? 'var(--warn)' : 'var(--ok)'; }
-      const pb = document.getElementById('pend-pred'); if (pb) { pb.style.cssText = `background:${peak > 180 ? 'rgba(239,83,80,.08)' : peak > 140 ? 'rgba(255,167,38,.08)' : 'rgba(91,184,245,.08)'};border:1.5px solid ${peak > 180 ? 'rgba(239,83,80,.25)' : peak > 140 ? 'rgba(255,167,38,.25)' : 'rgba(91,184,245,.25)'};border-radius:11px;padding:8px 11px;font-size:12px;font-weight:700`; pb.innerHTML = `<span style="color:var(--muted);font-weight:500">식후 예측: </span><strong style="color:${peak > 180 ? 'var(--danger)' : peak > 140 ? 'var(--warn)' : 'var(--sky2)'}">${peak} mg/dL</strong> ${peak > 180 ? '⚠️ 위험' : peak > 140 ? '주의' : '✓ 안정'} · GL ${gl}`; }
+      const pb = document.getElementById('pend-pred'); if (pb) { pb.style.cssText = `background:${peak > 180 ? 'rgba(239,83,80,.08)' : peak > 140 ? 'rgba(255,167,38,.08)' : 'rgba(91,184,245,.08)'};border:1.5px solid ${peak > 180 ? 'rgba(239,83,80,.25)' : peak > 140 ? 'rgba(255,167,38,.25)' : 'rgba(91,184,245,.25)'};border-radius:11px;padding:8px 11px;font-size:12px;font-weight:700`; pb.innerHTML = `<span style="color:var(--muted);font-weight:500">식후 예측: </span><strong style="color:${peak > 180 ? 'var(--danger)' : peak > 140 ? 'var(--warn)' : 'var(--sky2)'}">${peak} mg/dL</strong> ${peak > 180 ? '⚠️ 위험' : peak > 140 ? '주의' : '✓ 안정'} · GL ${gl} · <span class="pred-badge ${pred.confidence}" style="font-size:9px">${pred.confidence === 'high' ? '신뢰↑' : pred.confidence === 'medium' ? '신뢰~' : '기본'}</span>`; }
       prev.style.display = 'block';
     }
     function confirmFoods() { if (!S.pending.length) { closeMod('mod-food'); return; } const m = S.meals.find(x => x.id === S.activeMealId); if (m) { S.pending.forEach(f => m.foods.push({ ...f })); if (typeof saveMealRow === 'function') saveMealRow(m); } S.pending = []; closeMod('mod-food'); goH('insulin'); }
@@ -2097,7 +2337,23 @@
     function delMeal(id) { const i = S.meals.findIndex(m => m.id === id); if (i >= 0) { if (typeof deleteMealRow === 'function') deleteMealRow(S.meals[i]); S.meals.splice(i, 1); } goH('insulin'); }
     function rmFood(mealId, fi) { const m = S.meals.find(x => x.id === mealId); if (m) { m.foods.splice(fi, 1); if (typeof saveMealRow === 'function') saveMealRow(m); goH('insulin'); } }
     function updQty(mealId, fi, val) { const m = S.meals.find(x => x.id === mealId); if (!m) return; const q = parseFloat(val) || 0; m.foods[fi].qty = q; m.foods[fi].g = q * m.foods[fi].food.ug; if (typeof saveMealRow === 'function') saveMealRow(m); goH('insulin'); }
-    function updBG(mealId, key, val) { const m = S.meals.find(x => x.id === mealId); if (m) { m[key] = val ? parseInt(val) : null; if (typeof saveMealRow === 'function') saveMealRow(m); } renderBGChart(); }
+    // 혈당 실측 입력 → 학습쌍 생성(명세서 §3) + 예측 로그(적중률 §6) 축적
+    function updBG(mealId, key, val) {
+      const m = S.meals.find(x => x.id === mealId); if (!m) return;
+      m[key] = val ? parseInt(val) : null;
+      if (typeof saveMealRow === 'function') saveMealRow(m);
+      const ctx = { cyclePhase: currentCyclePhase(), workoutPost: !!S.checks.i2 };
+      const predBefore = GMODEL.predict(m, ctx, S.trainingPairs); // 실측 반영 전 예측(로그용)
+      const pair = GMODEL.makeTrainingPair(m, ctx);
+      if (pair) {
+        const idx = S.trainingPairs.findIndex(p => p.meal_id === m.id);
+        if (idx >= 0) S.trainingPairs[idx] = pair; else S.trainingPairs.push(pair);
+        const li = S.predLogs.findIndex(l => l.meal_id === m.id);
+        const log = { meal_id: m.id, predicted_delta: predBefore.deltaPeak, actual_delta: pair.delta_peak };
+        if (li >= 0) S.predLogs[li] = log; else S.predLogs.push(log);
+      }
+      goH('insulin'); // 예측·진행도·차트 즉시 갱신
+    }
 
     // ═══════════════════════ CALENDAR ═══════════════════════
     function getPDays(y, m) { const r = []; S.periods.forEach(p => { const s = new Date(p.start); for (let i = 0; i < p.days; i++) { const d = new Date(s); d.setDate(d.getDate() + i); if (d.getFullYear() === y && d.getMonth() === m) r.push(d.getDate()); } }); return r; }
@@ -2359,8 +2615,37 @@
       openMod('mod-recipe-detail');
     }
 
+    // ═══════════════════════ 칼로리 구간별 예시 식단 ═══════════════════════
+    // MEALPLANS/mealPlanForBucket()은 js/data-meal-plans.js에서 로드된다 (500~2000kcal, 100kcal 구간).
+    function mealSlotHtml(label, emoji, slot) {
+      return `<div style="margin-bottom:10px">
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">${emoji} ${label} <span style="color:var(--sky2);font-weight:800">· ${slot.kcal}kcal</span></div>
+    <div style="font-size:11px;color:var(--muted);font-weight:500;line-height:1.6">${slot.items.join(' · ')}</div>
+  </div>`;
+    }
+    function renderMealPlan(kcal) {
+      const body = document.getElementById('mealplan-body'); if (!body) return;
+      const p = mealPlanForBucket(kcal);
+      const options = MEALPLANS.map(mp => `<option value="${mp.range[0]}" ${mp.range[0] === p.range[0] ? 'selected' : ''}>${mp.range[0]}-${mp.range[1]}kcal</option>`).join('');
+      body.innerHTML = `
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">🍽 칼로리 구간별 예시 식단</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:500">저속노화·저GI 컨셉의 참고용 예시입니다. 실제 처방이 아니에요.</div>
+    <select class="input" style="margin-bottom:12px" onchange="renderMealPlan(parseInt(this.value)+50)">${options}</select>
+    <div class="card" style="margin-bottom:8px;background:var(--sky3);border-color:rgba(91,184,245,.3)">
+      <div class="cap" style="margin-bottom:0">이 구간 하루 총합</div>
+      <div style="font-size:22px;font-weight:800;color:var(--sky2)">${mealPlanTotal(p)} kcal</div>
+    </div>
+    <div class="card">
+      ${mealSlotHtml('아침', '🌅', p.breakfast)}
+      ${mealSlotHtml('점심', '☀️', p.lunch)}
+      ${mealSlotHtml('저녁', '🌙', p.dinner)}
+      ${mealSlotHtml('간식', '🍎', p.snack)}
+    </div>
+    <button class="btn btn-o" style="margin-top:10px" onclick="closeMod('mod-mealplan')">닫기</button>`;
+    }
+
     // ═══════════════════════ CHEAT DAY ═══════════════════════
-    const CHEATS_ALL = [{ n: '피자 한 조각', cal: 285, img: '🍕' }, { n: '초콜릿 케이크', cal: 350, img: '🎂' }, { n: '감자튀김', cal: 320, img: '🍟' }, { n: '아이스크림', cal: 270, img: '🍦' }, { n: '치킨 윙 4개', cal: 290, img: '🍗' }, { n: '버블티', cal: 380, img: '🧋' }, { n: '떡볶이', cal: 450, img: '🍢' }, { n: '크로와상', cal: 240, img: '🥐' }, { n: '마카롱 2개', cal: 160, img: '🍩' }, { n: '팬케이크', cal: 310, img: '🥞' }];
+    // CHEATS_ALL은 js/data-cheat-foods.js에서 로드된다 (0~1500kcal, 50kcal 구간 x 30개+).
     function renderCheat() {
       const avail = CHEATS_ALL.filter(f => f.cal <= S.savedTotal).slice(0, 5);
       document.getElementById('cheat-list').innerHTML = avail.length ? avail.map((f, i) => `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:12px;border:1.5px solid var(--bdr);cursor:pointer;transition:all .15s" onclick="pickCheat(${CHEATS_ALL.indexOf(f)})" onmouseenter="this.style.borderColor='var(--rose)'" onmouseleave="this.style.borderColor='var(--bdr)'"><span style="font-size:24px">${f.img}</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--text)">${f.n}</div><div style="font-size:11px;color:var(--muted);font-weight:500">${f.cal}kcal</div></div><div style="font-size:11px;color:var(--ok);font-weight:700">선택</div></div>`).join('')

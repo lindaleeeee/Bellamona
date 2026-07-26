@@ -211,22 +211,24 @@ router.get('/', async (req, res) => {
 // 프로필 저장 (UPSERT)
 router.post('/profiles', async (req, res) => {
     const { userId } = req.user;
-    const { height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len } = req.body;
+    const { height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date, goal_date } = req.body;
     console.log('[DATA] POST /profiles for userId:', userId, req.body);
     try {
         await pool.query(`
-      INSERT INTO profiles (user_id, height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (user_id) 
-      DO UPDATE SET 
+      INSERT INTO profiles (user_id, height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date, goal_date)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ON CONFLICT (user_id)
+      DO UPDATE SET
         height_cm = EXCLUDED.height_cm,
         weight_kg = EXCLUDED.weight_kg,
         goal_weight_kg = EXCLUDED.goal_weight_kg,
         goal_months = EXCLUDED.goal_months,
         daily_kcal_target = EXCLUDED.daily_kcal_target,
         cycle_len = EXCLUDED.cycle_len,
+        start_date = EXCLUDED.start_date,
+        goal_date = EXCLUDED.goal_date,
         updated_at = CURRENT_TIMESTAMP
-    `, [userId, height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len]);
+    `, [userId, height_cm, weight_kg, goal_weight_kg, goal_months, daily_kcal_target, cycle_len, start_date || null, goal_date || null]);
         console.log('[DATA] POST /profiles success for userId:', userId);
         res.json({ success: true });
     } catch (err) {

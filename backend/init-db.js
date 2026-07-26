@@ -52,6 +52,11 @@ const initDB = async () => {
       );
     `);
 
+    // 마이페이지에서 시작/목표 일자를 직접 편집할 수 있도록 지원 (기존엔 goal_months만 있어 정확한 날짜가 없었음)
+    await client.query('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS start_date DATE;');
+    await client.query('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS goal_date DATE;');
+    console.log('[DB] profiles.start_date / goal_date 컬럼 확인 완료');
+
     // 3. meals
     await client.query(`
       CREATE TABLE IF NOT EXISTS meals (

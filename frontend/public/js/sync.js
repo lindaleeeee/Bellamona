@@ -129,6 +129,8 @@ async function restoreFromServer() {
       if (d.profile.daily_kcal_target != null) S.goalCal = d.profile.daily_kcal_target;
       if (d.profile.cycle_len != null) S.cycleLen = d.profile.cycle_len;
       if (d.profile.height_cm != null) S.heightCm = Number(d.profile.height_cm);
+      if (d.profile.start_date) S.startDate = new Date(d.profile.start_date).getTime();
+      if (d.profile.goal_date) S.goalDate = new Date(d.profile.goal_date).getTime();
     }
 
     if (d.weights && d.weights.length) {
@@ -200,9 +202,11 @@ function saveProfileRow() {
       height_cm: S.heightCm || null,
       weight_kg: S.initWeight,
       goal_weight_kg: S.goalWeight,
-      goal_months: S.goalMonths,
+      goal_months: S.goalMonths || (S.goalDays ? Math.round(S.goalDays / 30) : null),
       daily_kcal_target: S.goalCal,
-      cycle_len: S.cycleLen
+      cycle_len: S.cycleLen,
+      start_date: S.startDate ? new Date(S.startDate).toISOString().split('T')[0] : null,
+      goal_date: S.goalDate ? new Date(S.goalDate).toISOString().split('T')[0] : null
     })
   }).catch(e => console.error('[saveProfileRow]', e));
 }
