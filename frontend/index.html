@@ -1421,7 +1421,11 @@
         <div class="cap" style="margin-bottom:6px">자주 먹는 메뉴</div>
         <div id="food-quick-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
         <div class="cap" style="margin-bottom:5px">무엇을 드셨나요? (대략적으로 적어도 괜찮아요)</div>
-        <textarea class="input" id="food-text" rows="3" placeholder="예: 샐러드 파스타 1/2인분, 나시고랭 1인분..." style="margin-bottom:14px"></textarea>
+        <textarea class="input" id="food-text" rows="3" placeholder="예: 샐러드 파스타 1/2인분, 나시고랭 1인분..." style="margin-bottom:10px"></textarea>
+        <input type="file" accept="image/*" capture="environment" id="food-photo-input" style="display:none" onchange="onFoodPhotoSelected(event)" />
+        <button class="btn btn-o" onclick="document.getElementById('food-photo-input').click()" style="margin-bottom:10px">📷 사진으로 기록하기</button>
+        <div id="food-photo-preview" style="margin-bottom:10px"></div>
+        <div style="font-size:10px;color:var(--muted);font-weight:500;margin-bottom:14px">사진을 찍으면 AI가 음식을 인식해서 자동으로 채워줘요. 글 또는 사진, 둘 중 하나만 있어도 기록할 수 있어요.</div>
         <button class="btn btn-p" onclick="saveFoodEntry()" style="margin-bottom:8px">저장</button>
         <button class="btn btn-o" onclick="closeMod('mod-food')">취소</button>
       </div>
@@ -2467,6 +2471,7 @@
     // 정확한 그램 단위 음식 검색 대신, 시간 + 대략적인 설명만 적으면 AI가 과거 2주 식단·혈당·운동
     // 이력을 근거로 혈당 반응을 추정한다(구현 난이도·유지비용 문제로 확정된 방식).
     const FOOD_QUICK_CHIPS = ['샐러드 파스타 1인분', '닭가슴살 현미밥', '오트밀 한그릇', '비빔밥 1인분', '두부 스테이크', '그릭요거트+견과류', '나시고랭 1인분', '김밥 1줄'];
+    let _pendingFoodPhoto = null; // { base64, mimeType } — 저장 버튼을 누르기 전까지 임시로 들고 있는 촬영된 사진
     function openFoodModal(mealId) {
       S.activeMealId = mealId;
       const m = S.meals.find(x => x.id === mealId);
@@ -2475,17 +2480,56 @@
       document.getElementById('food-time').value = m.time || nowStr;
       document.getElementById('food-text').value = m.text || '';
       document.getElementById('food-quick-chips').innerHTML = FOOD_QUICK_CHIPS.map(c => `<span class="chip" onclick="document.getElementById('food-text').value='${c}'">${c}</span>`).join('');
+      _pendingFoodPhoto = null;
+      const prev = document.getElementById('food-photo-preview'); if (prev) prev.innerHTML = '';
       openMod('mod-food');
       setTimeout(() => document.getElementById('food-text')?.focus(), 300);
     }
+    // 촬영/선택한 사진을 그대로 보내면 업로드 용량과 Gemini 비전 토큰 비용이 사진 해상도에 따라
+    // 들쭉날쭉해지므로, 캔버스로 최대 800px까지 축소 + JPEG 압축한 뒤 base64로 변환해서 크기를 고정한다.
+    function readAndCompressImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX_DIM = 800;
+            let { width, height } = img;
+            if (width > MAX_DIM || height > MAX_DIM) {
+              if (width > height) { height = Math.round(height * MAX_DIM / width); width = MAX_DIM; }
+              else { width = Math.round(width * MAX_DIM / height); height = MAX_DIM; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width; canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            resolve({ base64: dataUrl.split(',')[1], mimeType: 'image/jpeg' });
+          };
+          img.onerror = reject;
+          img.src = reader.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+    async function onFoodPhotoSelected(event) {
+      const file = event.target.files && event.target.files[0]; if (!file) return;
+      try {
+        _pendingFoodPhoto = await readAndCompressImage(file);
+        const prev = document.getElementById('food-photo-preview');
+        if (prev) prev.innerHTML = `<img src="data:${_pendingFoodPhoto.mimeType};base64,${_pendingFoodPhoto.base64}" style="width:100%;border-radius:10px" />`;
+      } catch (e) { console.error('[onFoodPhotoSelected]', e); alert('사진을 처리하지 못했어요'); }
+      event.target.value = '';
+    }
     function saveFoodEntry() {
       const time = document.getElementById('food-time')?.value; const text = document.getElementById('food-text')?.value?.trim();
-      if (!text) { alert('무엇을 드셨는지 적어주세요'); return; }
+      if (!text && !_pendingFoodPhoto) { alert('무엇을 드셨는지 적거나 사진을 찍어주세요'); return; }
       const m = S.meals.find(x => x.id === S.activeMealId); if (!m) return;
-      m.time = time || m.time; m.text = text;
+      m.time = time || m.time; if (text) m.text = text;
       if (typeof saveMealRow === 'function') saveMealRow(m);
       closeMod('mod-food'); goH('insulin');
-      requestGlucosePrediction(m);
+      if (_pendingFoodPhoto) { const photo = _pendingFoodPhoto; _pendingFoodPhoto = null; requestGlucosePredictionPhoto(m, photo); }
+      else requestGlucosePrediction(m);
     }
     // AI 기반 혈당 예측 호출 — 이 식사 텍스트+시간과 최근 2주 식단/운동/실측혈당 이력을 근거로 추정한다.
     // 실패 시 GMODEL의 텍스트 키워드 기반 러프 추정으로 폴백한다(완전히 막히지 않도록).
@@ -2504,6 +2548,33 @@
       } catch (e) {
         console.error('[requestGlucosePrediction]', e);
         m.aiEstimate = fallbackTextEstimate(m.text);
+      }
+      m.aiPending = false;
+      if (typeof saveMealRow === 'function') saveMealRow(m);
+      if (S.curH === 'insulin') goH('insulin');
+    }
+    // 사진으로 기록한 식사용 — 이미지+컨텍스트를 서버로 보내 Gemini 비전으로 음식을 인식하고 추정치를 받는다.
+    // 사용자가 텍스트를 안 적었으면 인식된 음식명(foodGuess)을 m.text에 채워 넣어, 이후 화면 곳곳에서
+    // m.text/m.description을 참조하는 로직이 텍스트 기록과 동일하게 동작하도록 한다.
+    async function requestGlucosePredictionPhoto(m, photo) {
+      m.aiPending = true; goH('insulin');
+      try {
+        const recentMeals = S.meals.filter(x => x.text && x.id !== m.id).map(x => ({ text: x.text, time: x.time, bgPre: x.bgPre, bg1h: x.bg1h, bg2h: x.bg2h }));
+        const res = await fetchApi(apiUrl('/api/glucose/predict-photo'), {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: photo.base64, mimeType: photo.mimeType, time: m.time, recentMeals, cyclePhase: currentCyclePhase(), workoutToday: S.exBurned })
+        });
+        const json = await res.json().catch(() => null);
+        if (res.ok && json && json.success) {
+          m.aiEstimate = json.estimate;
+          if (!m.text && json.estimate.foodGuess) m.text = json.estimate.foodGuess;
+        } else {
+          m.aiEstimate = fallbackTextEstimate(m.text || '사진 속 음식');
+        }
+      } catch (e) {
+        console.error('[requestGlucosePredictionPhoto]', e);
+        m.aiEstimate = fallbackTextEstimate(m.text || '사진 속 음식');
       }
       m.aiPending = false;
       if (typeof saveMealRow === 'function') saveMealRow(m);

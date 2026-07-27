@@ -45,8 +45,9 @@ app.use(cors({
     },
     credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// 기본 100kb 제한으로는 사진 식단 기록(base64 이미지, ~2MB까지 허용)이 막히므로 늘려준다.
+app.use(express.json({ limit: '3mb' }));
+app.use(express.urlencoded({ extended: true, limit: '3mb' }));
 app.use(cookieParser());
 
 // 요청 로깅 미들웨어

@@ -24,16 +24,19 @@ function isModelUnavailableError(error) {
  * 후보 모델을 순서대로 시도해 첫 성공 응답의 텍스트를 반환한다.
  * 실패 시 어떤 모델까지 시도했고 마지막 에러가 무엇인지 로그로 남긴다.
  * @param {string} apiKey
- * @param {string} prompt
+ * @param {string|Array} promptOrParts 텍스트 프롬프트 또는 멀티모달 parts 배열
+ *   (예: [{text:'...'}, {inlineData:{mimeType:'image/jpeg', data: base64}}]) — 사진 식단 인식에 사용
  * @param {string} tag 로그 접두사 (예: '[REPORT]')
+ * @param {object} [generationConfig] 예: { maxOutputTokens: 800 } — 응답 토큰 상한을 걸어서
+ *   호출당 비용 상한을 고정한다(응답이 너무 길어져 비용이 들쭉날쭉해지는 걸 방지).
  */
-async function generateWithFallback(apiKey, prompt, tag) {
+async function generateWithFallback(apiKey, promptOrParts, tag, generationConfig) {
     const genAI = new GoogleGenerativeAI(apiKey);
     let lastError = null;
     for (const modelName of MODEL_CANDIDATES) {
         try {
-            const model = genAI.getGenerativeModel({ model: modelName });
-            const result = await model.generateContent(prompt);
+            const model = genAI.getGenerativeModel({ model: modelName, generationConfig });
+            const result = await model.generateContent(promptOrParts);
             console.log(`${tag} Gemini 호출 성공 (모델: ${modelName})`);
             return { text: result.response.text(), modelUsed: modelName };
         } catch (error) {
