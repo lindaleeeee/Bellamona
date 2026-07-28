@@ -51,35 +51,6 @@ function logGeminiError(tag, error) {
     console.error(`${tag} stack:`, error?.stack);
 }
 
-// meals 배열의 ai_estimate(자유 텍스트 식단 기록)를 우선으로 쓰고, 그게 없으면(레거시 그램 단위
-// 구조화 식단 기록) foods 배열에서 직접 합산한다 — 예전 방식으로 기록된 식사만 있는 날은 ai_estimate가
-// 없어서 매크로가 전부 0으로 나오는 버그가 있었다.
-// AI 응답에 맡기지 않는 이유: 같은 입력에 항상 같은 숫자가 나와야 하고, Gemini 호출이 실패해도
-// 이 섹션만은 항상 정확하게 보여야 하기 때문이다(사용자 요청: "데이터가 적어도 정해진 규칙대로 보여야").
-function macroFromFoods(foods) {
-    return (foods || []).reduce((acc, f) => {
-        const g = f.g || 0; const food = f.food || {};
-        acc.carb_g += (food.c || 0) * g / 100;
-        acc.protein_g += (food.p || 0) * g / 100;
-        acc.fat_g += (food.f || 0) * g / 100;
-        acc.kcal_total += (food.cal || 0) * g / 100;
-        return acc;
-    }, { carb_g: 0, protein_g: 0, fat_g: 0, kcal_total: 0 });
-}
-function computeMacroBreakdown(meals) {
-    const totals = (meals || []).reduce((acc, m) => {
-        const src = m.ai_estimate
-            ? { carb_g: m.ai_estimate.carb_g || 0, protein_g: m.ai_estimate.protein_g || 0, fat_g: m.ai_estimate.fat_g || 0, kcal_total: m.ai_estimate.kcal_est || 0 }
-            : macroFromFoods(m.foods);
-        acc.carb_g += src.carb_g; acc.protein_g += src.protein_g; acc.fat_g += src.fat_g; acc.kcal_total += src.kcal_total;
-        return acc;
-    }, { carb_g: 0, protein_g: 0, fat_g: 0, kcal_total: 0 });
-    return {
-        carb_g: Math.round(totals.carb_g), protein_g: Math.round(totals.protein_g),
-        fat_g: Math.round(totals.fat_g), kcal_total: Math.round(totals.kcal_total),
-    };
-}
-
 // 프롬프트 입력 크기를 내부에서 고정해 호출당 비용을 예측 가능한 범위로 묶어둔다 — 일기를 아주 길게
 // 쓰거나 식사를 아주 많이 기록한 날에도 입력 토큰이 무제한으로 커지지 않도록, 프롬프트에 넣기 전에
 // 필드별로 잘라낸다(사용자 요청: 글자수를 내부에서 고정해서 회당 비용을 고정치에 맞추고 싶다).
@@ -119,6 +90,7 @@ function fallbackReport(data) {
         sleep_suggestion: '최근 수면 기록이 쌓이면 적정 수면시간을 제안해드릴게요.',
         emotion_keywords: [],
         diary_word_health: data.diaryThatDay ? '일기를 분석하는 데 문제가 있었어요. 잠시 후 다시 시도해주세요.' : '일기를 쓰면 감정 단어 기반 분석을 볼 수 있어요.',
+        meal_pattern_insight: (data.meals || []).length ? '식사 기록을 분석하는 데 문제가 있었어요. 잠시 후 다시 시도해주세요.' : '식사를 기록하면 시간대 패턴을 분석해드려요.',
         insights: ['기록이 쌓일수록 더 구체적인 인사이트를 볼 수 있어요.'],
         actions: ['오늘도 루틴 체크를 이어가 보세요.'],
         pcos_insight: null,
@@ -172,8 +144,6 @@ router.post('/', authenticateToken, async (req, res) => {
         }
     }
 
-    const macro_breakdown = computeMacroBreakdown(data.meals);
-
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
@@ -183,8 +153,8 @@ router.post('/', authenticateToken, async (req, res) => {
 반드시 JSON 형식으로만 응답해야 합니다. 의학적 진단은 금지합니다. 데이터가 부족한 항목은 "기록이 더
 쌓이면 알려드릴게요" 같은 정직한 문구로 채우고, 절대 필드를 비우거나 JSON을 깨뜨리지 마세요.
 
-이 리포트는 5개 섹션으로 구성됩니다: ① 목표 체중 예측(프론트에서 계산) ② 인슐린(식단+혈당, 매크로는
-서버에서 이미 계산함) ③ 성장호르몬(내일 운동 추천) ④ 코르티솔(수면) ⑤ 호르몬/일기.
+이 리포트는 5개 섹션으로 구성됩니다: ① 목표 체중 예측(프론트에서 계산) ② 인슐린(식사 시간+메모 기록)
+③ 성장호르몬(내일 운동 추천) ④ 코르티솔(수면) ⑤ 호르몬/일기.
 비용 관리를 위해 응답은 짧고 간결하게 작성하세요 — 문장형 필드는 각각 1~2문장(최대 60자 내외)으로,
 insights/actions는 각 항목 1문장씩 최대 2개로 제한합니다.
 
@@ -198,6 +168,7 @@ insights/actions는 각 항목 1문장씩 최대 2개로 제한합니다.
   "sleep_suggestion": "최근 수면 패턴을 근거로 내일 목표 수면시간과 이유",
   "emotion_keywords": [ { "word": "뿌듯", "count": 2, "type": "positive" } ],
   "diary_word_health": "일기 속 단어가 건강과 어떤 관련이 있는지 설명 (일기 없으면 그렇다고 안내)",
+  "meal_pattern_insight": "식사 시간·메모 기록에서 보이는 패턴에 대한 한줄 코멘트 (식사 기록 없으면 그렇다고 안내)",
   "insights": ["통찰력 있는 분석 문장 1", "통찰력 있는 분석 문장 2"],
   "actions": ["구체적인 추천 행동 1", "구체적인 추천 행동 2"],
   "pcos_insight": "PCOS 맞춤형 통찰 (선택, 생리주기 데이터 기반)"
@@ -219,7 +190,6 @@ insights/actions는 각 항목 1문장씩 최대 2개로 제한합니다.
             if (!match) throw parseErr;
             reportJSON = JSON.parse(match[0]);
         }
-        reportJSON.macro_breakdown = macro_breakdown; // 항상 서버 계산값으로 덮어써서 정확성 보장
         console.log('[REPORT] Successfully parsed report JSON for userId:', req.user?.userId);
 
         // 실제 Gemini 응답이 성공한 경우만 저장 — 이후 같은 날 재요청은 위 캐시 조회에서 바로 반환되어
@@ -242,7 +212,6 @@ insights/actions는 각 항목 1문장씩 최대 2개로 제한합니다.
         console.error('[REPORT] Gemini API failed for userId:', req.user?.userId, '— returning fallback report. 아래 로그로 실제 원인을 확인하세요:');
         logGeminiError('[REPORT]', error);
         const report = fallbackReport(data);
-        report.macro_breakdown = macro_breakdown;
         res.json({ success: true, report });
     }
 });
