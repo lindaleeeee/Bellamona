@@ -1627,16 +1627,19 @@
     function todayWorkoutKcal() { return todayWorkoutEntries().reduce((a, w) => a + exerciseKcal(w.intensity, w.durationMin, w.met), 0); }
     function totalBurned() { return S.baseBurned + todayWorkoutKcal(); }
 
-    function hormonePct(hid) {
-      const rts = S.routines[hid]; if (!rts || !rts.length) return 0;
-      const done = rts.filter(r => S.checks[r.id]).length;
-      return Math.round(done / rts.length * 100);
+    // 성장호르몬은 다른 3개 카테고리(비율 채점)와 달리 고정 점수제다.
+    // 저속노화 점수 100점 중 성장호르몬 몫은 최대 25점: 강도(g1/g2/g3) 1개 체크 시 16점,
+    // 2개 이상 체크 시 25점(만점). 나머지 3개 카테고리(인슐린/코르티솔/옥시토신)가 남은 75점을
+    // 체크 비율대로 나눠 갖는다.
+    function growthScorePoints(checksObj) {
+      const c = checksObj || S.checks;
+      const n = ['g1', 'g2', 'g3'].filter(id => c && c[id]).length;
+      if (n >= 2) return 25;
+      if (n === 1) return 16;
+      return 0;
     }
-    function overallPct() {
-      const all = Object.values(S.routines).flat();
-      const done = all.filter(r => S.checks[r.id]).length;
-      return Math.round(done / all.length * 100);
-    }
+    function hormonePct(hid) { return hormonePctForChecks(hid, S.checks); }
+    function overallPct() { return overallPctForChecks(S.checks); }
 
     // goalDate가 없는 예전 데이터(goalMonths만 저장된 경우)도 대비한 폴백 계산
     function getGoalDateMs() {
@@ -2266,7 +2269,6 @@
 
       const today = new Date(); const isCur = y === today.getFullYear() && m === today.getMonth(); const todayDate = today.getDate();
 
-      const reqTotal = S.routines ? Object.values(S.routines).flat().length : 16;
       let monthDays = [];
       try {
         const res = await fetchApi(apiUrl(`/api/data/month-summary?year=${y}&month=${m + 1}`), { credentials: 'include' });
@@ -2275,8 +2277,7 @@
 
       const dayPctByDate = {};
       monthDays.forEach(dh => {
-        const done = Object.values(dh.checks || {}).filter(Boolean).length;
-        dayPctByDate[dh.date] = Math.round(done / reqTotal * 100);
+        dayPctByDate[dh.date] = overallPctForChecks(dh.checks || {});
       });
       const goodDays = monthDays.filter(dh => (dayPctByDate[dh.date] || 0) >= 100).map(dh => parseInt(dh.date.split('-')[2], 10));
 
@@ -2307,14 +2308,18 @@
 
     // ═══════════════════════ 달력 날짜 클릭 → 일별 상세 ═══════════════════════
     function hormonePctForChecks(hid, checksObj) {
+      if (hid === 'growth') return Math.round(growthScorePoints(checksObj) / 25 * 100);
       const rts = S.routines[hid]; if (!rts || !rts.length) return 0;
       const done = rts.filter(r => checksObj && checksObj[r.id]).length;
       return Math.round(done / rts.length * 100);
     }
+    // 성장호르몬을 뺀 나머지 카테고리(인슐린/코르티솔/옥시토신)가 75점을 비율대로 나눠 갖고,
+    // 성장호르몬은 growthScorePoints()가 반환하는 고정 점수(0/16/25)를 그대로 더한다.
     function overallPctForChecks(checksObj) {
-      const all = Object.values(S.routines).flat(); if (!all.length) return 0;
-      const done = all.filter(r => checksObj && checksObj[r.id]).length;
-      return Math.round(done / all.length * 100);
+      const otherIds = Object.entries(S.routines).filter(([h]) => h !== 'growth').flatMap(([, rts]) => rts);
+      const otherDone = otherIds.filter(r => checksObj && checksObj[r.id]).length;
+      const otherPct = otherIds.length ? otherDone / otherIds.length : 0;
+      return Math.round(otherPct * 75 + growthScorePoints(checksObj));
     }
 
     let _dayDetailCache = null; // { dateStr, label, day }
