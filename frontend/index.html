@@ -1024,8 +1024,10 @@
             <div class="cap" style="margin-bottom:5px">조리 시간</div>
             <div style="display:flex;gap:5px;flex-wrap:wrap">
               <span class="chip" onclick="rfil(this,'time',5)">5분</span><span class="chip"
-                onclick="rfil(this,'time',10)">10분</span><span class="chip" onclick="rfil(this,'time',15)">15분 이상</span>
+                onclick="rfil(this,'time',10)">10분</span><span class="chip" onclick="rfil(this,'time',-15)">15분 이상</span>
             </div>
+            <div class="cap" style="margin-bottom:5px;margin-top:10px">칼로리</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap" id="rcp-cal-chips"></div>
             <div class="cap" style="margin-bottom:5px;margin-top:10px">카테고리</div>
             <div style="display:flex;gap:5px;flex-wrap:wrap" id="rcp-category-chips"></div>
             <div class="cap" style="margin-bottom:5px;margin-top:10px">비용</div>
@@ -1548,7 +1550,7 @@
       ],
       weights: [{ d: '04/19', w: 52.3 }, { d: '04/20', w: 52.1 }, { d: '04/21', w: 52.0 }, { d: '04/22', w: 52.0 }],
       initWeight: 52, goalWeight: 48, goalDays: 90, goalDate: null,
-      rFilters: { time: null, type: null, cost: null },
+      rFilters: { time: null, type: null, cost: null, cal: null },
       avatar: '🦋',
       streakDays: 0, gapDays: 0, totalLoggedDays: 0,
       friendCode: '',
@@ -1596,7 +1598,7 @@
       // rFilters는 화면 탐색용 UI 상태일 뿐 사용자 데이터가 아니므로 세션마다 초기화한다.
       // (예전에 필터 칩을 눌렀던 기기는 새로고침해도 계속 필터가 걸려 있어
       //  레시피 목록이 사람마다 다르게 보이는 것처럼 보였던 원인)
-      S.rFilters = { time: null, type: null, cost: null };
+      S.rFilters = { time: null, type: null, cost: null, cal: null };
       S._schemaVersion = SCHEMA_VERSION;
     } catch (e) { }
 
@@ -2277,7 +2279,10 @@
     function recipeSuggestionsFor(label) {
       const slotKey = MEAL_SLOT_KEY[label]; if (!slotKey) return [];
       const target = mealPlanForBucket(phaseGoalCal())[slotKey].kcal;
-      return RCPS_CURATED.filter(r => r.cal != null && r.cal >= target * 0.6 && r.cal <= target * 1.4);
+      // RCPS_IMPORTED도 이제 대부분 cal이 있어 전체 레시피 풀(RCPS_CURATED+RCPS_IMPORTED, 약 1100개)에서 찾는다.
+      // 대역에 맞는 게 너무 많을 수 있어 목표 kcal에 가까운 순으로 상위 몇 개만 보여준다.
+      const matches = RCPS.filter(r => r.cal != null && r.cal >= target * 0.6 && r.cal <= target * 1.4);
+      return matches.sort((a, b) => Math.abs(a.cal - target) - Math.abs(b.cal - target)).slice(0, 8);
     }
     function renderFoodSuggestions(label) {
       const wrap = document.getElementById('food-suggest-wrap'); const list = document.getElementById('food-suggest-list');
@@ -2701,11 +2706,26 @@
       const withCal = RCPS.filter(r => r.cal != null);
       return withCal.reduce((best, r) => Math.abs(r.cal - kcal) < Math.abs(best.cal - kcal) ? r : best, withCal[0]);
     }
+    // 조리시간 칩은 "N분 이내"(양수)와 "15분 이상"(음수로 표시해 방향을 반대로 준다) 두 방향이 섞여 있다.
+    // 예전엔 셋 다 r.t > v면 제외하는 동일한 방향이라 "15분 이상"이 사실상 "15분 이내"처럼 동작했다.
+    const CAL_BANDS = [
+      { key: 'lt100', label: '100kcal 미만', min: -Infinity, max: 100 },
+      { key: 'b100', label: '100-300kcal', min: 100, max: 300 },
+      { key: 'b300', label: '300-500kcal', min: 300, max: 500 },
+      { key: 'b500', label: '500-700kcal', min: 500, max: 700 },
+      { key: 'b700', label: '700-900kcal', min: 700, max: 900 },
+      { key: 'b900', label: '900-1100kcal', min: 900, max: 1100 },
+      { key: 'gte1100', label: '1100kcal+', min: 1100, max: Infinity },
+    ];
     function rfil(el, k, v) { S.rFilters[k] = S.rFilters[k] === v ? null : v; document.querySelectorAll(`.chip[dfk="${k}"]`).forEach(c => { c.classList.remove('on'); }); el.setAttribute('dfk', k); if (S.rFilters[k]) el.classList.add('on'); else el.classList.remove('on'); renderRecipes(); }
     function renderRecipeCategoryChips() {
       const box = document.getElementById('rcp-category-chips'); if (!box || box.childElementCount) return; // 한 번만 생성
       const cats = [...new Set(RCPS.map(r => r.tp))].sort((a, b) => a.localeCompare(b, 'ko'));
       box.innerHTML = cats.map(c => `<span class="chip" onclick="rfil(this,'type','${c}')">${c}</span>`).join('');
+      const calBox = document.getElementById('rcp-cal-chips');
+      if (calBox && !calBox.childElementCount) {
+        calBox.innerHTML = CAL_BANDS.map(b => `<span class="chip" onclick="rfil(this,'cal','${b.key}')">${b.label}</span>`).join('');
+      }
     }
     // 필터에 걸리는 레시피가 1000개 넘게 있을 수 있어(엑셀에서 가져온 것들) 한 번에 다 그리지 않고
     // 일정 개수만 보여준 뒤 "더 보기"로 이어서 불러온다.
@@ -2715,9 +2735,16 @@
       if (reset) S.rcpShowCount = RCP_PAGE_SIZE;
       const g = document.getElementById('rcp-grid'); if (!g) return;
       const f = RCPS.filter(r => {
-        if (S.rFilters.time && r.t > S.rFilters.time) return false;
+        if (S.rFilters.time) {
+          if (S.rFilters.time > 0 && r.t > S.rFilters.time) return false;
+          if (S.rFilters.time < 0 && r.t < -S.rFilters.time) return false;
+        }
         if (S.rFilters.type && r.tp !== S.rFilters.type) return false;
         if (S.rFilters.cost && r.cost > S.rFilters.cost) return false;
+        if (S.rFilters.cal) {
+          const band = CAL_BANDS.find(b => b.key === S.rFilters.cal);
+          if (r.cal == null || r.cal < band.min || r.cal >= band.max) return false;
+        }
         return true;
       });
       const shown = f.slice(0, S.rcpShowCount || RCP_PAGE_SIZE);
