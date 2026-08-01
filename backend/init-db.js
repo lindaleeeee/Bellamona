@@ -87,6 +87,10 @@ const initDB = async () => {
     await client.query('ALTER TABLE meals ADD COLUMN IF NOT EXISTS ai_estimate JSONB;');
     console.log('[DB] meals.description / ai_estimate 컬럼 확인 완료');
 
+    // 레시피 연동 식단 기록: AI 추정 대신 레시피 DB(칼로리 있음) 선택 또는 사용자 직접 입력으로 kcal을 남긴다.
+    await client.query('ALTER TABLE meals ADD COLUMN IF NOT EXISTS kcal INTEGER;');
+    console.log('[DB] meals.kcal 컬럼 확인 완료');
+
     // 4. workouts
     await client.query(`
       CREATE TABLE IF NOT EXISTS workouts (

@@ -158,6 +158,7 @@ async function restoreFromServer() {
         foods: row.foods || [],
         text: row.description || '',
         aiEstimate: row.ai_estimate || null,
+        kcal: row.kcal ?? null,
         bgPre: row.bg_pre, bg1h: row.bg_1h, bg2h: row.bg_2h
       }));
       S.nextMealId = S.meals.length;
@@ -322,6 +323,7 @@ function saveMealRow(meal) {
       foods: meal.foods,
       description: meal.text || null,
       ai_estimate: meal.aiEstimate || null,
+      kcal: meal.kcal ?? null,
       bg_pre: meal.bgPre, bg_1h: meal.bg1h, bg_2h: meal.bg2h
     })
   })

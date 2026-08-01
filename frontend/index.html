@@ -1344,15 +1344,34 @@
     </div>
 
     <div class="mov" id="mod-food">
-      <div class="msh">
+      <div class="msh" style="max-height:92%">
         <div class="mh"></div>
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px" id="food-title">음식 추가</div>
-        <div class="cap" style="margin-bottom:5px">먹은 시간</div>
-        <input class="input" type="time" id="food-time" style="margin-bottom:12px" />
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <div style="flex:1">
+            <div class="cap" style="margin-bottom:5px">구분</div>
+            <select class="input" id="food-label"></select>
+          </div>
+          <div style="flex:1">
+            <div class="cap" style="margin-bottom:5px">먹은 시간</div>
+            <input class="input" type="time" id="food-time" />
+          </div>
+        </div>
+        <div id="food-suggest-wrap" style="margin-bottom:12px">
+          <div class="cap" style="margin-bottom:6px">이 끼니 목표 칼로리에 맞는 추천 레시피</div>
+          <div id="food-suggest-list" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <div class="cap" style="margin-bottom:5px">레시피 검색</div>
+        <div style="position:relative;margin-bottom:12px">
+          <input class="input" id="food-recipe-search" placeholder="레시피 이름으로 검색" oninput="searchFoodRecipe(this.value)" autocomplete="off" />
+          <div class="dd" id="food-recipe-dd" style="display:none"></div>
+        </div>
         <div class="cap" style="margin-bottom:6px">자주 먹는 메뉴</div>
         <div id="food-quick-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
-        <div class="cap" style="margin-bottom:5px">무엇을 드셨나요? (메모만 남겨두면 돼요)</div>
-        <textarea class="input" id="food-text" rows="3" placeholder="예: 샐러드 파스타 1/2인분, 나시고랭 1인분..." style="margin-bottom:14px"></textarea>
+        <div class="cap" style="margin-bottom:5px">무엇을 드셨나요?</div>
+        <textarea class="input" id="food-text" rows="3" placeholder="예: 샐러드 파스타 1/2인분, 나시고랭 1인분..." style="margin-bottom:12px"></textarea>
+        <div class="cap" style="margin-bottom:5px">섭취 칼로리 (kcal, 직접 수정 가능)</div>
+        <input class="input" type="number" id="food-kcal" placeholder="예: 350" style="margin-bottom:14px" />
         <button class="btn btn-p" onclick="saveFoodEntry()" style="margin-bottom:8px">저장</button>
         <button class="btn btn-o" onclick="closeMod('mod-food')">취소</button>
       </div>
@@ -1516,9 +1535,9 @@
       periods: [{ start: '2026-04-01', days: 5 }], cycleLen: 28,
       checks: { i1: false, i2: false, i3: false, i4: false, g1: false, g2: false, g3: false, c1: false, c2: false, c3: false, c4: false },
       meals: [
-        { id: 0, label: '아침', time: '07:30', text: '' },
-        { id: 1, label: '점심', time: '12:30', text: '' },
-        { id: 2, label: '저녁', time: '18:45', text: '' },
+        { id: 0, label: '아침', time: '07:30', text: '', kcal: null },
+        { id: 1, label: '점심', time: '12:30', text: '', kcal: null },
+        { id: 2, label: '저녁', time: '18:45', text: '', kcal: null },
       ],
       nextMealId: 3, activeMealId: null,
       diaries: [
@@ -1597,7 +1616,7 @@
       if (id === 'mod-cheat') { renderCheat(); document.getElementById('ch-avail').textContent = S.savedTotal; }
       if (id === 'mod-edit-routine') renderEditRoutine();
       if (id === 'mod-friends') setTxt('my-friend-code', S.friendCode || '발급 중...');
-      if (id === 'mod-mealplan') renderMealPlan(S.goalCal);
+      if (id === 'mod-mealplan') renderMealPlan(phaseGoalCal());
       if (id === 'mod-edit-goal') fillEditGoalForm();
       document.getElementById(id)?.classList.add('open');
     }
@@ -1610,10 +1629,18 @@
     // 검색해서 구체적인 운동을 고르면 그 운동의 실제 MET(EXERCISE_DB, data-exercises.js)를 쓰고,
     // 직접 입력해 목록에 없으면 강도 구간의 평균 MET로 대체한다.
     const INTENSITY_MET = { low: 3, medium: 6, high: 9 };
-    function exerciseKcal(intensity, durationMin, met) {
+    // bodyWeightKg를 넘기면 그 체중으로 계산한다(달력의 과거 날짜처럼 "오늘 체중"이 아닌 그날 체중을 써야 할 때용).
+    function exerciseKcalAt(intensity, durationMin, met, bodyWeightKg) {
       const m = met || INTENSITY_MET[intensity] || 0;
-      const bw = (S.weights && S.weights.length ? S.weights[S.weights.length - 1].w : S.initWeight) || 55;
+      const bw = bodyWeightKg || (S.weights && S.weights.length ? S.weights[S.weights.length - 1].w : S.initWeight) || 55;
       return Math.round(m * 3.5 * bw / 200 * (durationMin || 0));
+    }
+    function exerciseKcal(intensity, durationMin, met) { return exerciseKcalAt(intensity, durationMin, met, null); }
+    // 운동 이름으로 EXERCISE_DB에서 정확한 MET을 찾고, 없으면(직접 입력한 이름 등) 강도 평균 MET로 대체한다.
+    function metForWorkout(w) {
+      const list = (typeof EXERCISE_DB !== 'undefined' && EXERCISE_DB[w.intensity]) || [];
+      const found = list.find(e => e.n === w.exercise_type);
+      return found ? found.met : (INTENSITY_MET[w.intensity] || 0);
     }
     // 오늘 하루 저/중/고강도 운동을 여러 번 기록할 수 있으므로(식사 기록과 동일한 리스트 구조) 모두 합산한다.
     function todayWorkoutEntries() { const t = todayISOLocal(); return S.workoutLogs.filter(w => w.date === t); }
@@ -1677,8 +1704,10 @@
       setTxt('pi-init-w', S.initWeight + ' kg');
       setTxt('pi-goal-w', S.goalWeight + ' kg');
       const goalDateStr = new Date(getGoalDateMs()); setTxt('pi-goal-m', `D-${dDay} (~${goalDateStr.getMonth() + 1}/${goalDateStr.getDate()})`);
-      setTxt('pi-goal-cal', S.goalCal.toLocaleString() + ' kcal');
-      setTxt('prof-goalcal-btn-val', S.goalCal.toLocaleString() + ' kcal');
+      const todayPhase = getCycleInfo(); const pctExtra = Math.round((PHASE_CAL_RATIO[todayPhase.id] - 1) * 100);
+      const goalCalTxt = `${phaseGoalCal().toLocaleString()} kcal · ${todayPhase.name}${pctExtra ? ` +${pctExtra}%` : ''}`;
+      setTxt('pi-goal-cal', goalCalTxt);
+      setTxt('prof-goalcal-btn-val', goalCalTxt);
       const rtEl = document.getElementById('report-time-input'); if (rtEl && document.activeElement !== rtEl) rtEl.value = S.reportTime || '21:00';
       const rBtn = document.getElementById('prof-report-btn'); if (rBtn) rBtn.classList.toggle('report-ready', S.reportGeneratedDate === todayISOLocal() && !!S._todayReport);
       saveState();
@@ -1959,9 +1988,11 @@
           <button onclick="delMeal(${m.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0">×</button>
         </div>
       </div>
-      ${hasEntry ? `<div style="font-size:13px;color:var(--text);font-weight:600">${m.text}</div>` : `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">+ 음식 버튼으로 식사를 기록하세요</div>`}
+      ${hasEntry ? `<div style="font-size:13px;color:var(--text);font-weight:600">${m.text}${m.kcal != null ? ` <span style="color:var(--sky2);font-weight:800">· ${m.kcal}kcal</span>` : ''}</div>` : `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">+ 음식 버튼으로 식사를 기록하세요</div>`}
     </div>`;
       }).join('');
+      const mealsKcalTotal = S.meals.reduce((a, m) => a + (m.kcal || 0), 0);
+      const todayGoalCal = phaseGoalCal(); const todayPhase = getCycleInfo();
       return `
   <div class="card" style="border-color:rgba(91,184,245,.3)">
     <div class="cap">⏱ 공복 타이머</div>
@@ -1970,6 +2001,13 @@
       <div style="font-size:12px;color:var(--muted);font-weight:500;text-align:right">
         ${fastHours ? `마지막 식사: ${lastMealTime}<br><span style="color:${fastHours >= 16 ? 'var(--ok)' : 'var(--sky2)'};font-weight:700">${fastHours >= 16 ? '✅ 16시간 달성!' : '목표까지 ' + (16 - fastHours).toFixed(1) + 'h'}</span>` : '식사를 기록하면 시작돼요'}
       </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="cap">🍽 오늘 섭취 칼로리</div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <div style="font-size:22px;font-weight:800;color:var(--text)">${mealsKcalTotal}<span style="font-size:12px;color:var(--muted);font-weight:600"> / ${todayGoalCal}kcal</span></div>
+      <div style="font-size:11px;color:var(--sky2);font-weight:700">${todayPhase.name}${PHASE_CAL_RATIO[todayPhase.id] !== 1 ? ` ${PHASE_CAL_RATIO[todayPhase.id] > 1 ? '+' : ''}${Math.round((PHASE_CAL_RATIO[todayPhase.id] - 1) * 100)}%` : ''}</div>
     </div>
   </div>
   <div class="card">
@@ -2099,22 +2137,41 @@
     }
 
     // ── CORTISOL ──
-    function getCycleInfo() {
+    // period(시작일 + 기간)와 기준 날짜 하나만 있으면 생리기/배란기/황체기/난포기를 판별할 수 있게
+    // 핵심 로직을 분리했다. day-detail(과거 날짜)에서는 서버가 내려주는 day.period(start_date/duration_days)를
+    // 그대로 넣어 재사용하고, 오늘 기준 화면들은 getCycleInfo()가 S.periods에서 알아서 골라 넘긴다.
+    function phaseFromPeriod(period, dateInput) {
       try {
-        const p = S.periods && S.periods.length ? S.periods[S.periods.length - 1] : null;
-        if (!p) return { id: 'unknown', name: '알수없음', day: 0 };
-        const start = new Date(p.start); start.setHours(0, 0, 0, 0);
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const totalDays = Math.floor((today - start) / 86400000);
+        if (!period) return { id: 'unknown', name: '알수없음', day: 0 };
+        const start = new Date(period.start); start.setHours(0, 0, 0, 0);
+        const target = dateInput ? new Date(dateInput) : new Date(); target.setHours(0, 0, 0, 0);
+        const totalDays = Math.floor((target - start) / 86400000);
         if (totalDays < 0) return { id: 'unknown', name: '알수없음', day: 0 };
+        const days = period.days || 5;
         const dayIdx = totalDays % S.cycleLen;
         const dayNum = dayIdx + 1;
-        if (dayIdx < p.days) return { id: 'menstrual', name: '생리기', day: dayNum };
+        if (dayIdx < days) return { id: 'menstrual', name: '생리기', day: dayNum };
         if (dayIdx >= S.cycleLen - 18 && dayIdx <= S.cycleLen - 10) return { id: 'ovulation', name: '배란기', day: dayNum };
         if (dayIdx >= S.cycleLen - 9) return { id: 'luteal', name: '황체기', day: dayNum };
         return { id: 'follicular', name: '난포기', day: dayNum };
       } catch (e) { return { id: 'unknown', name: '알수없음', day: 0 }; }
     }
+    // 인자를 안 주면 "오늘" 기준(예전 동작 그대로). 인자를 주면 그 날짜 이전에 시작한 가장 최근
+    // S.periods 항목을 골라 그 날짜의 단계를 계산한다(달력에서 과거 날짜를 볼 때 필요).
+    function getCycleInfo(dateInput) {
+      const target = dateInput ? new Date(dateInput) : new Date(); target.setHours(0, 0, 0, 0);
+      const applicable = (S.periods || []).filter(p => { const s = new Date(p.start); s.setHours(0, 0, 0, 0); return s <= target; });
+      const p = applicable.length ? applicable[applicable.length - 1] : null;
+      return phaseFromPeriod(p, target);
+    }
+    // 서버 day.period는 {start_date, duration_days} 형태라 phaseFromPeriod가 기대하는 {start, days}로 변환한다.
+    function phaseFromServerPeriod(serverPeriod, dateInput) {
+      if (!serverPeriod) return { id: 'unknown', name: '알수없음', day: 0 };
+      return phaseFromPeriod({ start: serverPeriod.start_date, days: serverPeriod.duration_days }, dateInput);
+    }
+    const PHASE_CAL_RATIO = { follicular: 1.00, ovulation: 1.00, luteal: 1.10, menstrual: 1.05, unknown: 1.00 };
+    // 그날의 생리주기 단계를 반영한 하루 섭취 가능 칼로리. dateInput을 안 주면 오늘 기준.
+    function phaseGoalCal(dateInput) { return Math.round(S.goalCal * PHASE_CAL_RATIO[getCycleInfo(dateInput).id]); }
 
     function todayISOLocal() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
     function todaySleepHours() { const t = todayISOLocal(); const e = (S.sleepLogs || []).find(s => s.date === t); return e ? e.hours : null; }
@@ -2210,25 +2267,71 @@
       closeMod('mod-edit-routine'); goH(hid);
     }
 
-    // ═══════════════════════ 식단 기록 (시간 + 메모만) ═══════════════════════
-    // AI 매크로/혈당 추정 없이, 언제(시간) 무엇을(메모) 먹었는지만 남기는 단순 기록으로 운영한다.
+    // ═══════════════════════ 식단 기록 (시간 + 메모 + 레시피 연동 kcal) ═══════════════════════
+    // AI 매크로/혈당 추정은 다시 넣지 않는다. 대신 이미 칼로리를 아는 레시피 DB(RCPS)에서
+    // 그 끼니 목표 구간에 맞는 것을 추천하거나 검색해서 고르면 kcal이 자동으로 채워지고,
+    // 언제든 직접 숫자를 고쳐 쓸 수 있다.
     const FOOD_QUICK_CHIPS = ['샐러드 파스타 1인분', '닭가슴살 현미밥', '오트밀 한그릇', '비빔밥 1인분', '두부 스테이크', '그릭요거트+견과류', '나시고랭 1인분', '김밥 1줄'];
+    const MEAL_SLOT_KEY = { '아침': 'breakfast', '점심': 'lunch', '저녁': 'dinner', '간식': 'snack', '야식': 'snack' };
+    // RCPS_CURATED(칼로리 있는 것)만 대상으로, 그 끼니 목표 kcal의 ±40% 범위에 드는 레시피를 추천한다.
+    function recipeSuggestionsFor(label) {
+      const slotKey = MEAL_SLOT_KEY[label]; if (!slotKey) return [];
+      const target = mealPlanForBucket(phaseGoalCal())[slotKey].kcal;
+      return RCPS_CURATED.filter(r => r.cal != null && r.cal >= target * 0.6 && r.cal <= target * 1.4);
+    }
+    function renderFoodSuggestions(label) {
+      const wrap = document.getElementById('food-suggest-wrap'); const list = document.getElementById('food-suggest-list');
+      const suggestions = recipeSuggestionsFor(label);
+      if (!suggestions.length) { wrap.style.display = 'none'; return; }
+      wrap.style.display = 'block';
+      list.innerHTML = suggestions.map(r => `<div onclick="pickFoodText('${r.n.replace(/'/g, "\\'")}', ${r.cal})" style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:10px;cursor:pointer">
+        <span style="font-size:20px">${r.img}</span>
+        <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">${r.n}</div></div>
+        <span style="font-size:11px;font-weight:800;color:var(--sky2)">${r.cal}kcal</span>
+      </div>`).join('');
+    }
+    function pickFoodText(name, kcal) {
+      document.getElementById('food-text').value = name;
+      if (kcal != null) document.getElementById('food-kcal').value = kcal;
+      document.getElementById('food-recipe-search').value = '';
+      document.getElementById('food-recipe-dd').style.display = 'none';
+    }
+    // 성장호르몬 화면의 searchExercise/pickExercise와 동일한 검색 드롭다운 패턴.
+    // RCPS(큐레이션+엑셀 전체)를 대상으로 하되, cal이 없는 레시피는 kcal을 채우지 않고 직접 입력을 유도한다.
+    function searchFoodRecipe(q) {
+      const dd = document.getElementById('food-recipe-dd');
+      if (!q.trim()) { dd.style.display = 'none'; return; }
+      const res = RCPS.filter(r => r.n.includes(q)).slice(0, 8);
+      if (!res.length) { dd.style.display = 'none'; return; }
+      dd.innerHTML = res.map(r => `<div class="ddi" onclick="pickFoodText('${r.n.replace(/'/g, "\\'")}', ${r.cal != null ? r.cal : 'null'})"><span style="font-weight:600">${r.n}</span><span style="font-size:10px;color:var(--muted);font-weight:600">${r.cal != null ? r.cal + 'kcal' : '칼로리 직접 입력'}</span></div>`).join('');
+      dd.style.display = 'block';
+    }
     function openFoodModal(mealId) {
       S.activeMealId = mealId;
       const m = S.meals.find(x => x.id === mealId);
       setTxt('food-title', `${['🌅', '☀️', '🌙', '🍎'][S.meals.indexOf(m) % 4]} ${m.label} — 음식 추가`);
       const now = new Date(); const nowStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const labelSel = document.getElementById('food-label');
+      labelSel.innerHTML = MEAL_LABEL_OPTIONS.map(l => `<option value="${l}" ${l === m.label ? 'selected' : ''}>${l}</option>`).join('');
       document.getElementById('food-time').value = m.time || nowStr;
       document.getElementById('food-text').value = m.text || '';
+      document.getElementById('food-kcal').value = m.kcal != null ? m.kcal : '';
+      document.getElementById('food-recipe-search').value = ''; document.getElementById('food-recipe-dd').style.display = 'none';
       document.getElementById('food-quick-chips').innerHTML = FOOD_QUICK_CHIPS.map(c => `<span class="chip" onclick="document.getElementById('food-text').value='${c}'">${c}</span>`).join('');
+      renderFoodSuggestions(m.label);
+      labelSel.onchange = () => renderFoodSuggestions(labelSel.value);
       openMod('mod-food');
       setTimeout(() => document.getElementById('food-text')?.focus(), 300);
     }
     function saveFoodEntry() {
       const time = document.getElementById('food-time')?.value; const text = document.getElementById('food-text')?.value?.trim();
+      const label = document.getElementById('food-label')?.value;
+      const kcalRaw = document.getElementById('food-kcal')?.value;
+      const kcal = kcalRaw !== '' && !isNaN(parseInt(kcalRaw)) ? parseInt(kcalRaw) : null;
       if (!text) { alert('무엇을 드셨는지 적어주세요'); return; }
       const m = S.meals.find(x => x.id === S.activeMealId); if (!m) return;
-      m.time = time || m.time; m.text = text;
+      m.time = time || m.time; m.text = text; m.kcal = kcal;
+      if (label && label !== m.label) m.label = label; // 다른 끼니 슬롯으로 옮기면 그 슬롯에 upsert됨(기존 기록 있으면 덮어씀)
       if (typeof saveMealRow === 'function') saveMealRow(m);
       closeMod('mod-food'); goH('insulin');
     }
@@ -2244,7 +2347,7 @@
     }
     function addMeal(label) {
       const now = new Date(); const t = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      const meal = { id: S.nextMealId++, label, time: t, text: '' };
+      const meal = { id: S.nextMealId++, label, time: t, text: '', kcal: null };
       S.meals.push(meal); if (typeof saveMealRow === 'function') saveMealRow(meal);
       closeMod('mod-add-meal'); goH('insulin');
       openFoodModal(meal.id);
@@ -2342,6 +2445,21 @@
       }
     }
 
+    // 일별 상세의 호르몬별 점수 도넛. 홈 화면 h-ring과 같은 stroke-dasharray 링 기법을 쓴다(1652행 부근 참고).
+    function donutSvg(pct, color, label) {
+      const r = 26, circ = 2 * Math.PI * r;
+      const dash = Math.max(0, Math.min(pct, 100)) / 100 * circ;
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div style="position:relative;width:64px;height:64px">
+        <svg width="64" height="64" style="transform:rotate(-90deg)">
+          <circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--sub)" stroke-width="6" />
+          <circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="6" stroke-dasharray="${dash} ${circ}" stroke-linecap="round" />
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--text)">${pct}%</div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);font-weight:700">${label}</div>
+    </div>`;
+    }
     function renderDayDetail() {
       if (!_dayDetailCache) return;
       const { dateStr, label, day } = _dayDetailCache;
@@ -2356,17 +2474,24 @@
       }
 
       const overall = overallPctForChecks(day.checks);
-      const hormRows = [['🩺 인슐린', 'insulin', 'var(--sky2)'], ['💪 성장', 'growth', 'var(--gro)'], ['🌿 코르티솔', 'cortisol', 'var(--cor)'], ['💗 ' + hormoneScreenLabel(), 'oxytocin', 'var(--rose)']]
-        .map(([l, h, c]) => `<div style="display:flex;align-items:center;gap:6px"><span style="width:64px;font-size:11px;color:var(--muted);font-weight:600">${l}</span><div class="bar-t" style="flex:1;height:5px"><div class="bar-f" style="width:${hormonePctForChecks(h, day.checks)}%;background:${c}"></div></div><span style="font-size:11px;width:28px;text-align:right;font-weight:800;color:${c}">${hormonePctForChecks(h, day.checks)}%</span></div>`).join('');
+
+      const dayWorkouts = (day.workouts || []).filter(w => w.intensity);
+      const mealsKcal = (day.meals || []).reduce((a, m) => a + (m.kcal || 0), 0);
+      const workoutsKcal = dayWorkouts.reduce((a, w) => a + exerciseKcalAt(w.intensity, w.duration_min, metForWorkout(w), day.weight), 0);
+      const netKcal = mealsKcal - workoutsKcal;
+      const dayPhase = phaseFromServerPeriod(day.period, dateStr);
+      const dayGoalCal = Math.round(S.goalCal * PHASE_CAL_RATIO[dayPhase.id]);
+
+      const donuts = [['인슐린', 'insulin', 'var(--sky2)'], ['성장', 'growth', 'var(--gro)'], ['코르티솔', 'cortisol', 'var(--cor)'], [hormoneScreenLabel(), 'oxytocin', 'var(--rose)']]
+        .map(([l, h, c]) => donutSvg(hormonePctForChecks(h, day.checks), c, l)).join('');
 
       const mealsHtml = day.meals.filter(m => m.description).map(m => {
         return `<div style="padding:6px 0;border-bottom:1px solid var(--bdr);font-size:12px">
-      <div style="color:var(--text);font-weight:600">${m.label}${m.time ? ' · ' + String(m.time).slice(0, 5) : ''}</div>
+      <div style="color:var(--text);font-weight:600">${m.label}${m.time ? ' · ' + String(m.time).slice(0, 5) : ''}${m.kcal != null ? ` <span style="color:var(--sky2);font-weight:800">· ${m.kcal}kcal</span>` : ''}</div>
       <div style="color:var(--muted);margin-top:2px">${m.description}</div>
     </div>`;
       }).join('') || `<div style="font-size:12px;color:var(--muted);padding:6px 0">식사 기록 없음</div>`;
 
-      const dayWorkouts = (day.workouts || []).filter(w => w.intensity);
       const workoutTxt = dayWorkouts.length
         ? dayWorkouts.map(w => `${INTENSITY_ICON[w.intensity] || ''} ${INTENSITY_LABEL[w.intensity] || ''} · ${w.exercise_type || ''} ${w.duration_min || 0}분`).join(' / ')
         : '운동 기록 없음';
@@ -2374,10 +2499,20 @@
       body.innerHTML = `
     <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px">📅 ${label}</div>
     <div class="card" style="margin-bottom:12px">
-      <div class="cap">그날의 호르몬 기록 점수</div>
-      <div style="font-size:26px;font-weight:800;color:var(--text);margin-bottom:8px">${overall}<span style="font-size:12px;color:var(--muted);font-weight:600">/100</span></div>
-      <div style="display:flex;flex-direction:column;gap:5px">${hormRows}</div>
+      <div class="cap">그날의 저속노화 점수</div>
+      <div style="font-size:26px;font-weight:800;color:var(--text)">${overall}<span style="font-size:12px;color:var(--muted);font-weight:600">/100</span></div>
     </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="cap">칼로리</div>
+      <div style="font-size:26px;font-weight:800;color:${netKcal > 0 ? 'var(--warn)' : 'var(--ok)'};margin-bottom:6px">${netKcal > 0 ? '+' : ''}${netKcal}<span style="font-size:12px;color:var(--muted);font-weight:600"> net kcal</span></div>
+      <div style="font-size:12px;color:var(--text);font-weight:600">🍽 섭취 ${mealsKcal}kcal · 🔥 운동 소모 ${workoutsKcal}kcal</div>
+      <div style="font-size:10px;color:var(--muted);font-weight:600;margin-top:4px">이날 목표 ${dayGoalCal}kcal (${dayPhase.name})</div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="cap" style="margin-bottom:8px">호르몬별 점수</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;justify-items:center">${donuts}</div>
+    </div>
+    ${day.diary ? `<div class="card" style="margin-bottom:12px"><div class="cap">일기</div><div style="font-size:12px;color:var(--text);line-height:1.6;font-weight:500">${day.diary}</div></div>` : ''}
     <div class="card" style="margin-bottom:12px">
       <div class="cap">식사</div>
       ${mealsHtml}
@@ -2387,7 +2522,6 @@
       <div style="font-size:12px;color:var(--text);font-weight:600">${workoutTxt}</div>
       ${day.weight != null ? `<div style="font-size:12px;color:var(--text);font-weight:600;margin-top:6px">체중 ${Number(day.weight).toFixed(1)}kg</div>` : ''}
     </div>
-    ${day.diary ? `<div class="card" style="margin-bottom:12px"><div class="cap">일기</div><div style="font-size:12px;color:var(--text);line-height:1.6;font-weight:500">${day.diary}</div></div>` : ''}
     <div id="day-report-slot">
       <button class="btn btn-p" style="margin-bottom:8px" onclick="generateDayReport()">🤖 이 날의 AI 리포트 생성</button>
     </div>
@@ -2429,7 +2563,8 @@
           cortisol: hormonePctForChecks('cortisol', day.checks), oxytocin: hormonePctForChecks('oxytocin', day.checks)
         },
         weightThatDay: day.weight,
-        goalWeight: S.goalWeight, initWeight: S.initWeight, dailyKcalGoal: S.goalCal,
+        goalWeight: S.goalWeight, initWeight: S.initWeight,
+        dailyKcalGoal: Math.round(S.goalCal * PHASE_CAL_RATIO[phaseFromServerPeriod(day.period, dateStr).id]),
         periodContext: day.period,
         diaryThatDay: day.diary,
         supplementsChecked: (S.routines.oxytocin || []).filter(r => day.checks && day.checks[r.id]).map(r => r.label)

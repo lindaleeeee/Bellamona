@@ -252,8 +252,8 @@ router.post('/profiles', async (req, res) => {
 // 식사 저장 (같은 날짜+끼니 라벨이면 UPSERT)
 router.post('/meals', async (req, res) => {
     const { userId } = req.user;
-    const { eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h, description, ai_estimate } = req.body;
-    console.log('[DATA] POST /meals for userId:', userId, { eaten_date, label, time, bg_pre, bg_1h, bg_2h, description });
+    const { eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h, description, ai_estimate, kcal } = req.body;
+    console.log('[DATA] POST /meals for userId:', userId, { eaten_date, label, time, bg_pre, bg_1h, bg_2h, description, kcal });
     try {
         const today = eaten_date || new Date().toISOString().split('T')[0];
         const exist = await pool.query('SELECT id FROM meals WHERE user_id=$1 AND eaten_date=$2 AND label=$3', [userId, today, label]);
@@ -261,15 +261,15 @@ router.post('/meals', async (req, res) => {
         if (exist.rows.length > 0) {
             console.log('[DATA] Existing meal slot found, updating id:', exist.rows[0].id);
             const r = await pool.query(
-                `UPDATE meals SET time=$1, foods=$2, bg_pre=$3, bg_1h=$4, bg_2h=$5, description=$6, ai_estimate=$7 WHERE id=$8 RETURNING *`,
-                [time, JSON.stringify(foods), bg_pre, bg_1h, bg_2h, description || null, ai_estimate ? JSON.stringify(ai_estimate) : null, exist.rows[0].id]);
+                `UPDATE meals SET time=$1, foods=$2, bg_pre=$3, bg_1h=$4, bg_2h=$5, description=$6, ai_estimate=$7, kcal=$8 WHERE id=$9 RETURNING *`,
+                [time, JSON.stringify(foods), bg_pre, bg_1h, bg_2h, description || null, ai_estimate ? JSON.stringify(ai_estimate) : null, kcal ?? null, exist.rows[0].id]);
             row = r.rows[0];
         } else {
             console.log('[DATA] No existing meal slot, inserting new row');
             const r = await pool.query(
-                `INSERT INTO meals (user_id, eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h, description, ai_estimate)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-                [userId, today, label, time, JSON.stringify(foods), bg_pre, bg_1h, bg_2h, description || null, ai_estimate ? JSON.stringify(ai_estimate) : null]);
+                `INSERT INTO meals (user_id, eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h, description, ai_estimate, kcal)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+                [userId, today, label, time, JSON.stringify(foods), bg_pre, bg_1h, bg_2h, description || null, ai_estimate ? JSON.stringify(ai_estimate) : null, kcal ?? null]);
             row = r.rows[0];
         }
         console.log('[DATA] POST /meals success, meal id:', row.id);
