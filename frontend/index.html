@@ -296,6 +296,12 @@
       display: flex
     }
 
+    /* 레시피 상세는 예시 식단/레시피 목록 모달 "위에" 겹쳐 뜨는 팝업으로 써서(같은 z-index면 DOM 순서상
+       뒤에 오는 mod-mealplan에 가려졌었다), 그 모달을 안 닫고도 바로 보이게 한다. */
+    #mod-recipe-detail.open {
+      z-index: 301;
+    }
+
     .msh {
       background: var(--surf);
       border-radius: 28px 28px 0 0;
@@ -1696,8 +1702,8 @@
       setTxt('pi-init-w', S.initWeight + ' kg');
       setTxt('pi-goal-w', S.goalWeight + ' kg');
       const goalDateStr = new Date(getGoalDateMs()); setTxt('pi-goal-m', `D-${dDay} (~${goalDateStr.getMonth() + 1}/${goalDateStr.getDate()})`);
-      const todayPhase = getCycleInfo(); const pctExtra = Math.round((PHASE_CAL_RATIO[todayPhase.id] - 1) * 100);
-      const goalCalTxt = `${phaseGoalCal().toLocaleString()} kcal · ${todayPhase.name}${pctExtra ? ` +${pctExtra}%` : ''}`;
+      // 생리주기 단계(난포기 등)는 목표칼로리 계산에만 내부적으로 쓰고 마이페이지엔 숫자만 보여준다.
+      const goalCalTxt = `${phaseGoalCal().toLocaleString()} kcal`;
       setTxt('pi-goal-cal', goalCalTxt);
       setTxt('prof-goalcal-btn-val', goalCalTxt);
       const rtEl = document.getElementById('report-time-input'); if (rtEl && document.activeElement !== rtEl) rtEl.value = S.reportTime || '21:00';
@@ -2829,11 +2835,21 @@
       { n: '훈제연어 샐러드', t: 5, tp: '일식', cal: 200, cost: 9000, img: '🥗', ingredients: ['훈제연어 100g', '루꼴라 50g', '케이퍼 1큰술', '레몬즙 1큰술', '올리브오일 1큰술'], steps: ['루꼴라를 깨끗이 씻어 물기를 제거해요', '접시에 루꼴라를 깔아요', '훈제연어를 올리고 케이퍼를 뿌려요', '레몬즙과 올리브오일을 드레싱으로 뿌려요'], cpgQ: '훈제연어 슬라이스' },
     ];
     const RCPS = [...RCPS_CURATED, ...(typeof RCPS_IMPORTED !== 'undefined' ? RCPS_IMPORTED : [])];
+    // 간식/디저트류 카테고리 — 아침·점심·저녁 슬롯에는 제외하고, 간식 슬롯에는 이것만 우선한다.
+    // (전엔 칼로리만 보고 골라서 저녁 슬롯에 디저트가 "가장 비슷한 레시피"로 뜨는 경우가 있었다.)
+    const SNACK_CATEGORIES = ['디저트', '간식', '음료', '소스'];
     // 칼로리가 가장 비슷한 저장된 레시피를 찾는다 (마이페이지 예시식단 ↔ 레시피 연동용).
-    // 엑셀에서 가져온 레시피는 칼로리 정보가 없어 cal이 있는 것들(RCPS_CURATED)에서만 찾는다.
-    function findClosestRecipe(kcal) {
-      const withCal = RCPS.filter(r => r.cal != null);
-      return withCal.reduce((best, r) => Math.abs(r.cal - kcal) < Math.abs(best.cal - kcal) ? r : best, withCal[0]);
+    // mealType이 'meal'이면 디저트/간식류를 제외하고, 'snack'이면 그것만 우선 찾는다(둘 다 없으면 전체에서 폴백).
+    function findClosestRecipe(kcal, mealType) {
+      let pool = RCPS.filter(r => r.cal != null);
+      if (mealType === 'meal') {
+        const filtered = pool.filter(r => !SNACK_CATEGORIES.includes(r.tp));
+        if (filtered.length) pool = filtered;
+      } else if (mealType === 'snack') {
+        const filtered = pool.filter(r => SNACK_CATEGORIES.includes(r.tp));
+        if (filtered.length) pool = filtered;
+      }
+      return pool.reduce((best, r) => Math.abs(r.cal - kcal) < Math.abs(best.cal - kcal) ? r : best, pool[0]);
     }
     // 조리시간 칩은 "N분 이내"(양수)와 "15분 이상"(음수로 표시해 방향을 반대로 준다) 두 방향이 섞여 있다.
     // 예전엔 셋 다 r.t > v면 제외하는 동일한 방향이라 "15분 이상"이 사실상 "15분 이내"처럼 동작했다.
@@ -2942,8 +2958,8 @@
 
     // ═══════════════════════ 칼로리 구간별 예시 식단 ═══════════════════════
     // MEALPLANS/mealPlanForBucket()은 js/data-meal-plans.js에서 로드된다 (500~2000kcal, 100kcal 구간).
-    function mealSlotHtml(label, emoji, slot) {
-      const recipe = findClosestRecipe(slot.kcal); const idx = RCPS.indexOf(recipe);
+    function mealSlotHtml(label, emoji, slot, mealType) {
+      const recipe = findClosestRecipe(slot.kcal, mealType); const idx = RCPS.indexOf(recipe);
       return `<div style="margin-bottom:10px;cursor:pointer" onclick="showRecipeDetail(${idx})">
     <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">${emoji} ${label} <span style="color:var(--sky2);font-weight:800">· ${slot.kcal}kcal</span></div>
     <div style="font-size:11px;color:var(--muted);font-weight:500;line-height:1.6">${slot.items.join(' · ')}</div>
@@ -2963,10 +2979,10 @@
       <div style="font-size:22px;font-weight:800;color:var(--sky2)">${mealPlanTotal(p)} kcal</div>
     </div>
     <div class="card">
-      ${mealSlotHtml('아침', '🌅', p.breakfast)}
-      ${mealSlotHtml('점심', '☀️', p.lunch)}
-      ${mealSlotHtml('저녁', '🌙', p.dinner)}
-      ${mealSlotHtml('간식', '🍎', p.snack)}
+      ${mealSlotHtml('아침', '🌅', p.breakfast, 'meal')}
+      ${mealSlotHtml('점심', '☀️', p.lunch, 'meal')}
+      ${mealSlotHtml('저녁', '🌙', p.dinner, 'meal')}
+      ${mealSlotHtml('간식', '🍎', p.snack, 'snack')}
     </div>
     <button class="btn btn-o" style="margin-top:10px" onclick="closeMod('mod-mealplan')">닫기</button>`;
     }
