@@ -38,6 +38,18 @@ const initDB = async () => {
     await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS friend_code VARCHAR(16) UNIQUE;');
     console.log('[DB] users.friend_code 컬럼 확인 완료');
 
+    // 친구관계: 코드로 친구를 추가하면 양방향으로 두 행을 넣는다(각자 자기 쪽에서 SELECT 한 번으로 조회).
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS friendships (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        friend_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, friend_id)
+      );
+    `);
+    console.log('[DB] friendships 테이블 확인 완료');
+
     // 2. profiles
     await client.query(`
       CREATE TABLE IF NOT EXISTS profiles (

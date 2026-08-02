@@ -1115,22 +1115,7 @@
                   </div>
                 </div><span style="font-size:12px;font-weight:800;color:var(--sky2)" id="prof-me-pct">0%</span>
               </div>
-              <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🦊</span>
-                <div style="flex:1">
-                  <div style="font-size:12px;font-weight:700;color:var(--text)">도파민헌터</div>
-                  <div class="bar-t" style="height:4px;margin-top:3px">
-                    <div class="bar-f" style="width:82%;background:var(--gro)"></div>
-                  </div>
-                </div><span style="font-size:12px;font-weight:800;color:var(--gro)">82%</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🐨</span>
-                <div style="flex:1">
-                  <div style="font-size:12px;font-weight:700;color:var(--text)">바이오PM</div>
-                  <div class="bar-t" style="height:4px;margin-top:3px">
-                    <div class="bar-f" style="width:68%;background:var(--lav2)"></div>
-                  </div>
-                </div><span style="font-size:12px;font-weight:800;color:var(--lav2)">68%</span>
-              </div>
+              <div id="prof-friends-list"></div>
             </div>
           </div>
           <div class="card" onclick="openMod('mod-cheat')"
@@ -1285,21 +1270,10 @@
           </div>
           <button class="btn" style="padding:6px 12px;font-size:12px" onclick="copyFriendCode()">복사</button>
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
-          <div class="card2" style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">🦊</span>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:700;color:var(--text)">도파민헌터</div>
-              <div style="font-size:11px;color:var(--muted);font-weight:500">오늘 82% · 🔥12일</div>
-            </div><span style="font-size:11px;color:var(--sky2);font-weight:700">연결됨</span>
-          </div>
-          <div class="card2" style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">🐨</span>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:700;color:var(--text)">바이오PM</div>
-              <div style="font-size:11px;color:var(--muted);font-weight:500">오늘 68% · 🔥7일</div>
-            </div><span style="font-size:11px;color:var(--sky2);font-weight:700">연결됨</span>
-          </div>
-        </div><input class="input" placeholder="친구 코드 입력 (BELLA-XXXX)" style="margin-bottom:10px" /><button
-          class="btn btn-p" onclick="closeMod('mod-friends')">친구 추가</button>
+        <div id="friends-modal-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+        <div id="friend-add-error" style="font-size:11px;color:var(--danger);font-weight:600;margin-bottom:6px;display:none"></div>
+        <input class="input" id="friend-code-input" placeholder="친구 코드 입력 (BELLA-XXXX)" style="margin-bottom:10px" /><button
+          class="btn btn-p" id="friend-add-btn" onclick="submitFriendCode()">친구 추가</button>
       </div>
     </div>
 
@@ -1550,7 +1524,7 @@
       rFilters: { time: null, type: null, cost: null, cal: null },
       avatar: '🦋',
       streakDays: 0, gapDays: 0, totalLoggedDays: 0,
-      friendCode: '',
+      friendCode: '', friends: [],
       routines: {
         insulin: [
           { id: 'i1', label: '⏱ 간헐적 단식 16시간', sub: '마지막 식사 기준 자동 계산' },
@@ -1614,7 +1588,7 @@
     function openMod(id) {
       if (id === 'mod-cheat') { renderCheat(); document.getElementById('ch-avail').textContent = S.savedTotal; }
       if (id === 'mod-edit-routine') renderEditRoutine();
-      if (id === 'mod-friends') setTxt('my-friend-code', S.friendCode || '발급 중...');
+      if (id === 'mod-friends') { setTxt('my-friend-code', S.friendCode || '발급 중...'); renderFriendsModalList(); }
       if (id === 'mod-mealplan') renderMealPlan(phaseGoalCal());
       if (id === 'mod-edit-goal') fillEditGoalForm();
       if (id === 'mod-period') { const el = document.getElementById('per-start'); if (el) el.value = todayISOLocal(); }
@@ -1699,6 +1673,7 @@
       // Profile
       const pmb = document.getElementById('prof-me-bar'); if (pmb) pmb.style.width = op + '%'; setTxt('prof-me-pct', op + '%');
       const pname = document.getElementById('prof-me-name'); if (pname) pname.textContent = S.name + '님 (나)';
+      if (typeof renderFriendsCompare === 'function') renderFriendsCompare();
       setTxt('pi-init-w', S.initWeight + ' kg');
       setTxt('pi-goal-w', S.goalWeight + ' kg');
       const goalDateStr = new Date(getGoalDateMs()); setTxt('pi-goal-m', `D-${dDay} (~${goalDateStr.getMonth() + 1}/${goalDateStr.getDate()})`);
@@ -3009,6 +2984,50 @@
       navigator.clipboard.writeText(S.friendCode)
         .then(() => alert(`✅ 내 코드(${S.friendCode})가 복사되었어요!`))
         .catch(() => alert('복사에 실패했어요. 코드를 직접 선택해서 복사해주세요: ' + S.friendCode));
+    }
+    // 친구의 달성률은 "나"와 똑같은 overallPctForChecks(S.routines 기반)로 계산한다 —
+    // 서버는 오늘 checks 원본만 내려주고, 채점 로직은 여기 하나로 유지한다.
+    const FRIEND_COLORS = ['var(--gro)', 'var(--lav2)', 'var(--cor)', 'var(--rose)', 'var(--sky2)'];
+    function friendRowHtml(f, idx) {
+      const pct = overallPctForChecks(f.todayChecks || {});
+      const color = FRIEND_COLORS[idx % FRIEND_COLORS.length];
+      return `<div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">${f.avatar || '🦋'}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${f.name || '친구'}</div>
+        <div class="bar-t" style="height:4px;margin-top:3px"><div class="bar-f" style="width:${pct}%;background:${color}"></div></div>
+      </div><span style="font-size:12px;font-weight:800;color:${color}">${pct}%</span>
+    </div>`;
+    }
+    function renderFriendsCompare() {
+      const box = document.getElementById('prof-friends-list'); if (!box) return;
+      box.innerHTML = S.friends.length
+        ? S.friends.map((f, i) => friendRowHtml(f, i)).join('')
+        : `<div style="font-size:11px;color:var(--muted);font-weight:500;text-align:center;padding:6px 0">아직 연동된 친구가 없어요 — 아래 "친구 연동"에서 코드로 추가해보세요</div>`;
+    }
+    function renderFriendsModalList() {
+      const box = document.getElementById('friends-modal-list'); if (!box) return;
+      box.innerHTML = S.friends.length
+        ? S.friends.map(f => `<div class="card2" style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">${f.avatar || '🦋'}</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${f.name || '친구'}</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:500">오늘 ${overallPctForChecks(f.todayChecks || {})}% · 🔥${f.streakDays || 0}일</div>
+        </div><span style="font-size:11px;color:var(--sky2);font-weight:700">연결됨</span>
+      </div>`).join('')
+        : `<div style="font-size:12px;color:var(--muted);font-weight:500;text-align:center;padding:10px 0">아직 연동된 친구가 없어요</div>`;
+    }
+    async function submitFriendCode() {
+      const input = document.getElementById('friend-code-input');
+      const errEl = document.getElementById('friend-add-error');
+      const code = input?.value?.trim();
+      if (errEl) errEl.style.display = 'none';
+      if (!code) return;
+      if (typeof addFriendByCode !== 'function') return;
+      const btn = document.getElementById('friend-add-btn');
+      if (btn) { btn.disabled = true; btn.textContent = '추가 중...'; }
+      const result = await addFriendByCode(code);
+      if (btn) { btn.disabled = false; btn.textContent = '친구 추가'; }
+      if (result.ok) { input.value = ''; }
+      else if (errEl) { errEl.textContent = result.message; errEl.style.display = 'block'; }
     }
 
     // ═══════════════════════ 오늘 달성률 · Lv./연속기록 ═══════════════════════

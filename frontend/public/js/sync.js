@@ -199,10 +199,46 @@ async function restoreFromServer() {
     if (d.profile) initMain();
     else go('s-onboard');
 
+    if (typeof loadFriends === 'function') loadFriends(); // 친구 비교는 앱 렌더를 막을 필요 없어 기다리지 않는다
+
     return true;
   } catch (e) {
     console.error('[restoreFromServer]', e);
     return false;
+  }
+}
+
+// ── 친구 연동 ──────────────────────────────────────────────
+// 달성률 계산(overallPctForChecks, S.routines 기반)은 프론트에만 있으므로 서버는 각 친구의
+// 오늘 checks 원본만 내려주고, 프론트가 "나"와 똑같은 함수로 계산해서 보여준다.
+async function loadFriends() {
+  try {
+    const res = await fetchApi(apiUrl('/api/user/friends'), { credentials: 'include' });
+    if (!res.ok) return;
+    const data = await res.json();
+    S.friends = data.friends || [];
+    if (typeof renderFriendsCompare === 'function') renderFriendsCompare();
+    if (typeof renderFriendsModalList === 'function') renderFriendsModalList();
+  } catch (e) { console.error('[loadFriends]', e); }
+}
+async function addFriendByCode(code) {
+  try {
+    const res = await fetchApi(apiUrl('/api/user/friends'), {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      const msg = data && data.error === 'not_found' ? '그런 코드를 가진 친구를 찾을 수 없어요'
+        : data && data.error === 'self' ? '내 코드는 추가할 수 없어요' : '친구 추가에 실패했어요';
+      return { ok: false, message: msg };
+    }
+    await loadFriends();
+    return { ok: true };
+  } catch (e) {
+    console.error('[addFriendByCode]', e);
+    return { ok: false, message: '네트워크 오류로 실패했어요' };
   }
 }
 

@@ -152,4 +152,88 @@ router.delete('/withdraw', async (req, res) => {
     }
 });
 
+// GET /api/data/streak과 같은 연속기록일수 계산을 임의 userId에 대해 재사용하기 위한 헬퍼.
+async function computeStreakFor(userId) {
+    const recentRes = await pool.query(
+        'SELECT check_date FROM routine_checks WHERE user_id = $1 ORDER BY check_date DESC LIMIT 90',
+        [userId]
+    );
+    const loggedDates = new Set(recentRes.rows.map(r => r.check_date.toISOString().split('T')[0]));
+    const todayStr = new Date().toISOString().split('T')[0];
+    let streakDays = 0;
+    if (recentRes.rows.length > 0) {
+        const cursor = new Date(todayStr + 'T00:00:00.000Z');
+        if (!loggedDates.has(todayStr)) cursor.setUTCDate(cursor.getUTCDate() - 1);
+        while (loggedDates.has(cursor.toISOString().split('T')[0])) {
+            streakDays++;
+            cursor.setUTCDate(cursor.getUTCDate() - 1);
+        }
+    }
+    return streakDays;
+}
+
+// GET /api/user/friends — 내 친구 목록. 달성률 계산 로직(S.routines 기반)은 프론트에만 있으므로
+// 서버는 각 친구의 "오늘 체크 원본(checks JSON)"만 내려주고, 프론트가 overallPctForChecks로 계산한다.
+router.get('/friends', async (req, res) => {
+    try {
+        const { userId } = req.user;
+        const friendsRes = await pool.query(
+            `SELECT u.id, u.name, u.avatar
+             FROM friendships f JOIN users u ON u.id = f.friend_id
+             WHERE f.user_id = $1 AND u.deleted_at IS NULL
+             ORDER BY f.created_at ASC`,
+            [userId]
+        );
+        const todayStr = new Date().toISOString().split('T')[0];
+        const friends = await Promise.all(friendsRes.rows.map(async (f) => {
+            const checksRes = await pool.query(
+                'SELECT checks FROM routine_checks WHERE user_id = $1 AND check_date = $2',
+                [f.id, todayStr]
+            );
+            const streakDays = await computeStreakFor(f.id);
+            return { id: f.id, name: f.name, avatar: f.avatar || '🦋', todayChecks: checksRes.rows[0]?.checks || null, streakDays };
+        }));
+        res.json({ friends });
+    } catch (error) {
+        console.error('[GET /api/user/friends error]', error);
+        res.status(500).json({ error: 'Failed to load friends' });
+    }
+});
+
+// POST /api/user/friends { code } — 친구 코드로 친구 추가. 나<->상대 양방향으로 한 번에 넣어서
+// 각자 자기 쪽 목록 조회 시 별도 처리 없이 서로 보이게 한다.
+router.post('/friends', async (req, res) => {
+    let client;
+    try {
+        const { userId } = req.user;
+        const code = (req.body.code || '').trim().toUpperCase();
+        if (!code) return res.status(400).json({ error: 'code_required' });
+
+        const targetRes = await pool.query(
+            'SELECT id, name, avatar FROM users WHERE friend_code = $1 AND deleted_at IS NULL',
+            [code]
+        );
+        const target = targetRes.rows[0];
+        if (!target) return res.status(404).json({ error: 'not_found' });
+        if (target.id === userId) return res.status(400).json({ error: 'self' });
+
+        client = await pool.connect();
+        await client.query('BEGIN');
+        await client.query(
+            `INSERT INTO friendships (user_id, friend_id) VALUES ($1,$2), ($2,$1)
+             ON CONFLICT (user_id, friend_id) DO NOTHING`,
+            [userId, target.id]
+        );
+        await client.query('COMMIT');
+        console.log('[USER] POST /friends success:', userId, '<->', target.id);
+        res.json({ success: true, friend: { id: target.id, name: target.name, avatar: target.avatar || '🦋' } });
+    } catch (error) {
+        if (client) await client.query('ROLLBACK').catch(() => {});
+        console.error('[POST /api/user/friends error]', error);
+        res.status(500).json({ error: 'Failed to add friend' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
 module.exports = router;
