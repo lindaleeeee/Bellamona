@@ -929,15 +929,6 @@
               <div style="flex:1">
                 <div style="font-size:13px;font-weight:700;color:var(--text)">이달 저속노화 점수</div>
                 <div style="font-size:11px;color:var(--ok);margin-top:2px;font-weight:700" id="d-score-sub">기록을 시작하면 표시돼요</div>
-                <div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500" id="d-wt-prog">목표 -4kg ·
-                  현재 -0.0kg</div>
-                <div style="margin-top:6px">
-                  <div class="bar-t" style="height:5px">
-                    <div class="bar-f" id="d-goal-bar"
-                      style="width:0%;background:linear-gradient(90deg,var(--sky2),var(--lav2))"></div>
-                  </div>
-                  <div style="font-size:9px;color:var(--muted);margin-top:3px;font-weight:600">목표 달성률 0%</div>
-                </div>
               </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:5px">
@@ -1698,8 +1689,6 @@
       const wtBar = document.getElementById('wt-bar'); if (wtBar) wtBar.style.width = wtPct + '%';
       renderWtMiniChart();
       // Dashboard sync
-      setTxt('d-wt-prog', `목표 -${(S.initWeight - S.goalWeight).toFixed(1)}kg · 현재 -${wtLost.toFixed(1)}kg`);
-      const dgb = document.getElementById('d-goal-bar'); if (dgb) dgb.style.width = wtPct + '%';
       ['ins', 'gro', 'cor', 'oxy'].forEach((k, i) => { const hids = ['insulin', 'growth', 'cortisol', 'oxytocin']; const p = hormonePct(hids[i]); const db = document.getElementById('d-' + k + '-bar'); if (db) db.style.width = p + '%'; setTxt('d-' + k + '-pct', p + '%'); });
       // Profile
       const pmb = document.getElementById('prof-me-bar'); if (pmb) pmb.style.width = op + '%'; setTxt('prof-me-pct', op + '%');
@@ -1939,7 +1928,12 @@
     <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">${label}</div><div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:500">${sub}</div></div>
   </div>`;
     }
+    // 캘린더에서 과거 날짜를 골라 소급 기록 중일 때만 그 날짜 문자열이 들어간다. 오늘 화면(인슐린/성장/
+    // 코르티솔 탭)에서 곧바로 여는 흐름은 전부 doCheck()를 거치므로, 여기서 null로 되돌려 "오늘" 흐름과
+    // 캘린더 편집 흐름이 서로 상태를 오염시키지 않게 한다.
+    let _dayEditDate = null;
     function doCheck(id) {
+      _dayEditDate = null;
       if (id === 'c3') { openDiaryModal(); return; }
       if (id === 'c1') { openMod('mod-sleep'); return; }
       if (id === 'g1') { openWorkoutLogModal('low'); return; }
@@ -1955,9 +1949,27 @@
       document.getElementById('diary-txt').value = existing ? existing.t : '';
       openMod('mod-diary');
     }
+    // 캘린더 일별 상세에서 그 날짜의 일기를 쓰거나 고칠 때 쓴다.
+    function openDiaryModalForDate(dateStr) {
+      _dayEditDate = dateStr;
+      const day = _dayDetailCache && _dayDetailCache.day;
+      document.getElementById('diary-txt').value = (day && day.diary) || '';
+      openMod('mod-diary');
+    }
     function saveDiary() {
       const txt = document.getElementById('diary-txt')?.value?.trim();
       if (!txt) { closeMod('mod-diary'); return; }
+      if (_dayEditDate) {
+        const dateStr = _dayEditDate; closeMod('mod-diary');
+        if (typeof saveDiaryRow === 'function') saveDiaryRow({ t: txt }, dateStr);
+        const day = _dayDetailCache && _dayDetailCache.day;
+        if (day) {
+          day.diary = txt; day.checks = day.checks || {}; day.checks.c3 = true;
+          fetchApi(apiUrl('/api/data/checks'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ check_date: dateStr, checks: day.checks }) }).catch(e => console.error('[saveDiary date]', e));
+        }
+        _dayEditDate = null; renderDayDetail();
+        return;
+      }
       S.checks.c3 = true;
       const existing = todayDiaryEntry();
       let entry;
@@ -2096,6 +2108,11 @@
       updateWorkoutKcalPreview();
       openMod('mod-workout-intensity');
     }
+    // 캘린더 일별 상세에서 그 날짜의 운동을 강도별로 기록할 때 쓴다.
+    function openWorkoutLogModalForDate(dateStr, intensity) {
+      _dayEditDate = dateStr;
+      openWorkoutLogModal(intensity);
+    }
     function searchExercise(q) {
       const dd = document.getElementById('wk-search-dd'); const list = EXERCISE_DB[_workoutModalIntensity] || [];
       _pickedExercise = null;
@@ -2127,10 +2144,18 @@
       const dur = parseInt(document.getElementById('wk-duration')?.value) || 0;
       if (!type) { alert('운동을 검색해서 선택하거나 입력해주세요'); return; }
       if (dur <= 0) { alert('운동 시간을 선택해주세요'); return; }
-      const entry = { id: S.nextWorkoutId++, date: todayISOLocal(), time, intensity: _workoutModalIntensity, durationMin: dur, exerciseType: type, met: _pickedExercise ? _pickedExercise.met : null };
+      const dateStr = _dayEditDate || todayISOLocal();
+      const entry = { id: S.nextWorkoutId++, date: dateStr, time, intensity: _workoutModalIntensity, durationMin: dur, exerciseType: type, met: _pickedExercise ? _pickedExercise.met : null };
       S.workoutLogs.push(entry);
-      closeMod('mod-workout-intensity'); goH('growth'); updateHome();
       if (typeof saveWorkoutRow === 'function') saveWorkoutRow(entry);
+      if (_dayEditDate) {
+        closeMod('mod-workout-intensity');
+        const day = _dayDetailCache && _dayDetailCache.day;
+        if (day) { day.workouts = day.workouts || []; day.workouts.push({ intensity: entry.intensity, duration_min: entry.durationMin, exercise_type: entry.exerciseType, logged_time: entry.time }); }
+        _dayEditDate = null; renderDayDetail();
+        return;
+      }
+      closeMod('mod-workout-intensity'); goH('growth'); updateHome();
     }
     function removeWorkoutEntry(id) {
       const idx = S.workoutLogs.findIndex(w => String(w.id) === String(id)); if (idx < 0) return;
@@ -2207,18 +2232,33 @@
   <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크</div>
   ${S.routines.cortisol.map(r => ckHtml(r.id, r.label, r.sub, 'var(--cor)')).join('')}`;
     }
+    // 캘린더 일별 상세에서 그 날짜의 수면시간을 기록할 때 쓴다.
+    function openSleepModalForDate(dateStr) {
+      _dayEditDate = dateStr;
+      openMod('mod-sleep');
+    }
     function saveSleep() {
       const bed = document.getElementById('sleep-bedtime')?.value; const wake = document.getElementById('sleep-wake')?.value;
       if (!bed || !wake) return;
       const [bh, bm] = bed.split(':').map(Number); const [wh, wm] = wake.split(':').map(Number);
       let hours = (wh + wm / 60) - (bh + bm / 60); if (hours <= 0) hours += 24; // 자정 넘어가는 경우
-      const t = todayISOLocal();
+      const t = _dayEditDate || todayISOLocal();
       const entry = { date: t, bedtime: bed, wake, hours: Math.round(hours * 10) / 10 };
       const idx = S.sleepLogs.findIndex(s => s.date === t);
       if (idx >= 0) S.sleepLogs[idx] = entry; else S.sleepLogs.push(entry);
+      if (typeof saveSleepRow === 'function') saveSleepRow(entry);
+      if (_dayEditDate) {
+        closeMod('mod-sleep');
+        const day = _dayDetailCache && _dayDetailCache.day;
+        if (day) {
+          day.checks = day.checks || {}; day.checks.c1 = true;
+          fetchApi(apiUrl('/api/data/checks'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ check_date: t, checks: day.checks }) }).catch(e => console.error('[saveSleep date]', e));
+        }
+        _dayEditDate = null; renderDayDetail();
+        return;
+      }
       S.checks.c1 = true; closeMod('mod-sleep'); goH('cortisol'); updateHome();
       if (typeof saveChecksRow === 'function') saveChecksRow();
-      if (typeof saveSleepRow === 'function') saveSleepRow(entry);
     }
 
     // ── 옥시토신 → 여성호르몬/남성호르몬 (영양제 체크리스트) ──
@@ -2313,6 +2353,7 @@
       dd.style.display = 'block';
     }
     function openFoodModal(mealId) {
+      _dayEditDate = null;
       S.activeMealId = mealId;
       const m = S.meals.find(x => x.id === mealId);
       setTxt('food-title', `${['🌅', '☀️', '🌙', '🍎'][S.meals.indexOf(m) % 4]} ${m.label} — 음식 추가`);
@@ -2329,12 +2370,43 @@
       openMod('mod-food');
       setTimeout(() => document.getElementById('food-text')?.focus(), 300);
     }
+    // 캘린더 일별 상세에서 그 날짜에 식사를 기록하거나 고칠 때 쓴다. S.meals(오늘 슬롯)는 건드리지 않고
+    // 그 날짜의 day.meals 캐시만 갱신한다.
+    function openFoodModalForDate(dateStr, label) {
+      _dayEditDate = dateStr;
+      const day = _dayDetailCache && _dayDetailCache.day;
+      const existing = day && (day.meals || []).find(m => m.label === label);
+      setTxt('food-title', `${label} — 음식 추가`);
+      const labelSel = document.getElementById('food-label');
+      labelSel.innerHTML = MEAL_LABEL_OPTIONS.map(l => `<option value="${l}" ${l === label ? 'selected' : ''}>${l}</option>`).join('');
+      document.getElementById('food-time').value = (existing && existing.time) ? String(existing.time).slice(0, 5) : '12:00';
+      document.getElementById('food-text').value = (existing && existing.description) || '';
+      document.getElementById('food-kcal').value = (existing && existing.kcal != null) ? existing.kcal : '';
+      document.getElementById('food-recipe-search').value = ''; document.getElementById('food-recipe-dd').style.display = 'none';
+      document.getElementById('food-quick-chips').innerHTML = FOOD_QUICK_CHIPS.map(c => `<span class="chip" onclick="document.getElementById('food-text').value='${c}'">${c}</span>`).join('');
+      renderFoodSuggestions(label);
+      labelSel.onchange = () => renderFoodSuggestions(labelSel.value);
+      openMod('mod-food');
+    }
     function saveFoodEntry() {
       const time = document.getElementById('food-time')?.value; const text = document.getElementById('food-text')?.value?.trim();
       const label = document.getElementById('food-label')?.value;
       const kcalRaw = document.getElementById('food-kcal')?.value;
       const kcal = kcalRaw !== '' && !isNaN(parseInt(kcalRaw)) ? parseInt(kcalRaw) : null;
       if (!text) { alert('무엇을 드셨는지 적어주세요'); return; }
+      if (_dayEditDate) {
+        const dateStr = _dayEditDate; closeMod('mod-food');
+        if (typeof saveMealRow === 'function') saveMealRow({ label, time, text, kcal }, dateStr);
+        const day = _dayDetailCache && _dayDetailCache.day;
+        if (day) {
+          day.meals = day.meals || [];
+          const idx = day.meals.findIndex(m => m.label === label);
+          const row = { label, time, description: text, kcal };
+          if (idx >= 0) day.meals[idx] = { ...day.meals[idx], ...row }; else day.meals.push(row);
+        }
+        _dayEditDate = null; renderDayDetail();
+        return;
+      }
       const m = S.meals.find(x => x.id === S.activeMealId); if (!m) return;
       m.time = time || m.time; m.text = text; m.kcal = kcal;
       if (label && label !== m.label) m.label = label; // 다른 끼니 슬롯으로 옮기면 그 슬롯에 upsert됨(기존 기록 있으면 덮어씀)
@@ -2361,8 +2433,22 @@
     function delMeal(id) { const i = S.meals.findIndex(m => m.id === id); if (i >= 0) { if (typeof deleteMealRow === 'function') deleteMealRow(S.meals[i]); S.meals.splice(i, 1); } goH('insulin'); }
 
     // ═══════════════════════ CALENDAR ═══════════════════════
-    function getPDays(y, m) { const r = []; S.periods.forEach(p => { const s = new Date(p.start); for (let i = 0; i < p.days; i++) { const d = new Date(s); d.setDate(d.getDate() + i); if (d.getFullYear() === y && d.getMonth() === m) r.push(d.getDate()); } }); return r; }
-    function getODays(y, m) { const r = []; S.periods.forEach(p => { const s = new Date(p.start); const os = new Date(s); os.setDate(os.getDate() + S.cycleLen - 18); const oe = new Date(s); oe.setDate(oe.getDate() + S.cycleLen - 10); const c = new Date(os); while (c <= oe) { if (c.getFullYear() === y && c.getMonth() === m) r.push(c.getDate()); c.setDate(c.getDate() + 1); } }); return r; }
+    // 실제 기록(S.periods)에 더해, 마지막 기록 이후 평균 주기(cycleLen)만큼씩 더해가며 미래 예상 생리
+    // 시작일을 만든다. 캘린더에서 다음 달로 넘겨도 배란기/생리기가 예측으로 계속 표시되게 하기 위함.
+    function allPeriodWindows(untilDate) {
+      const real = S.periods || []; if (!real.length) return real;
+      const last = real[real.length - 1];
+      const windows = real.slice();
+      let d = new Date(last.start); d.setDate(d.getDate() + S.cycleLen);
+      while (d <= untilDate) {
+        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        windows.push({ start: ds, days: last.days });
+        d = new Date(d); d.setDate(d.getDate() + S.cycleLen);
+      }
+      return windows;
+    }
+    function getPDays(y, m) { const r = []; allPeriodWindows(new Date(y, m + 1, 0)).forEach(p => { const s = new Date(p.start); for (let i = 0; i < p.days; i++) { const d = new Date(s); d.setDate(d.getDate() + i); if (d.getFullYear() === y && d.getMonth() === m) r.push(d.getDate()); } }); return r; }
+    function getODays(y, m) { const r = []; allPeriodWindows(new Date(y, m + 1, 0)).forEach(p => { const s = new Date(p.start); const os = new Date(s); os.setDate(os.getDate() + S.cycleLen - 18); const oe = new Date(s); oe.setDate(oe.getDate() + S.cycleLen - 10); const c = new Date(os); while (c <= oe) { if (c.getFullYear() === y && c.getMonth() === m) r.push(c.getDate()); c.setDate(c.getDate() + 1); } }); return r; }
 
     if (typeof S !== 'undefined' && S.calMon && S.calMon.y === 2026 && S.calMon.m === 3) {
       const d = new Date();
@@ -2390,13 +2476,14 @@
       });
       const goodDays = monthDays.filter(dh => (dayPctByDate[dh.date] || 0) >= 100).map(dh => parseInt(dh.date.split('-')[2], 10));
 
-      // 이달 저속노화 점수 = 이번 달 기록된 날들의 평균 달성률
+      // 이달 저속노화 점수 = 이번 달 "전체 날짜 수" 대비 평균. 기록 안 한 날은 0점으로 취급한다.
+      // (예전엔 기록된 날만의 평균이라 30일 중 하루만 기록해도 그 하루 점수가 그대로 월간 점수로 떴다.)
       const pctVals = Object.values(dayPctByDate);
-      const monthAvg = pctVals.length ? Math.round(pctVals.reduce((a, b) => a + b, 0) / pctVals.length) : null;
+      const monthAvg = pctVals.length ? Math.round(pctVals.reduce((a, b) => a + b, 0) / total) : null;
       const ring = document.getElementById('d-score-ring');
       if (ring) { const circ = 207; ring.setAttribute('stroke-dasharray', `${monthAvg != null ? Math.round(monthAvg / 100 * circ) : 0} ${circ}`); }
       setTxt('d-score-val', monthAvg != null ? monthAvg : '-');
-      setTxt('d-score-sub', monthAvg != null ? `이번 달 ${pctVals.length}일 기록 · 평균 ${monthAvg}점` : '기록을 시작하면 표시돼요');
+      setTxt('d-score-sub', monthAvg != null ? `이번 달 ${pctVals.length}/${total}일 기록 · ${total}일 기준 ${monthAvg}점` : '기록을 시작하면 표시돼요');
 
       for (let i = 0; i < first; i++) { const e = document.createElement('div'); g.appendChild(e); }
       for (let d = 1; d <= total; d++) {
@@ -2466,18 +2553,35 @@
       <div style="font-size:10px;color:var(--muted);font-weight:700">${label}</div>
     </div>`;
     }
+    // ckHtml과 같은 모양이지만 "오늘"(S.checks)이 아니라 day-detail에 캐시된 그 날짜의 checks를 읽고,
+    // 클릭하면 toggleDayCheck로 그 날짜에 저장한다. 캘린더에서 과거(또는 기록 없는) 날짜를 소급 기록할 때 쓴다.
+    function dayCheckHtml(id, label, sub, color) {
+      const day = _dayDetailCache && _dayDetailCache.day;
+      const done = !!(day && day.checks && day.checks[id]);
+      const c = color || 'var(--sky2)';
+      return `<div class="ck-item${done ? ' done' : ''}" onclick="toggleDayCheck('${id}')" style="${done ? `border-color:${c};background:rgba(91,184,245,.08)` : ''}">
+    <div class="ck-box${done ? ' done' : ''}" style="${done ? `background:${c};border-color:${c}` : ''}">${done ? '✓' : ''}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">${label}</div><div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:500">${sub}</div></div>
+  </div>`;
+    }
+    function toggleDayCheck(id) {
+      if (!_dayDetailCache) return;
+      const { dateStr, day } = _dayDetailCache;
+      if (id === 'c1') { openSleepModalForDate(dateStr); return; }
+      if (id === 'c3') { openDiaryModalForDate(dateStr); return; }
+      if (id === 'g1') { openWorkoutLogModalForDate(dateStr, 'low'); return; }
+      if (id === 'g2') { openWorkoutLogModalForDate(dateStr, 'medium'); return; }
+      if (id === 'g3') { openWorkoutLogModalForDate(dateStr, 'high'); return; }
+      day.checks = day.checks || {};
+      day.checks[id] = !day.checks[id];
+      renderDayDetail();
+      fetchApi(apiUrl('/api/data/checks'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ check_date: dateStr, checks: day.checks }) }).catch(e => console.error('[toggleDayCheck]', e));
+    }
     function renderDayDetail() {
       if (!_dayDetailCache) return;
       const { dateStr, label, day } = _dayDetailCache;
       const body = document.getElementById('day-detail-body');
-
-      if (!day.hasAnyRecord) {
-        body.innerHTML = `
-    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px">📅 ${label}</div>
-    <div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px;font-weight:600">이 날은 기록이 없어요.</div>
-    <button class="btn btn-o" onclick="closeMod('mod-day-detail')">닫기</button>`;
-        return;
-      }
+      day.checks = day.checks || {}; day.meals = day.meals || []; day.workouts = day.workouts || [];
 
       const overall = overallPctForChecks(day.checks);
 
@@ -2502,6 +2606,28 @@
         ? dayWorkouts.map(w => `${INTENSITY_ICON[w.intensity] || ''} ${INTENSITY_LABEL[w.intensity] || ''} · ${w.exercise_type || ''} ${w.duration_min || 0}분`).join(' / ')
         : '운동 기록 없음';
 
+      // 그 날짜에 소급 기록할 수 있는 영역 — 4개 호르몬 루틴 체크 + 끼니별 식사 추가 버튼.
+      const mealAddBtns = MEAL_LABEL_OPTIONS.slice(0, 4).map(l => `<button onclick="openFoodModalForDate('${dateStr}','${l}')" style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--sky2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">+ ${l}</button>`).join('');
+      const editSection = `
+    <div class="card" style="margin-bottom:12px">
+      <div class="cap" style="margin-bottom:6px">🩺 인슐린 체크</div>
+      ${S.routines.insulin.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--sky2)')).join('')}
+      <div class="cap" style="margin:10px 0 6px">식사 추가</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${mealAddBtns}</div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="cap" style="margin-bottom:6px">💪 성장호르몬 체크</div>
+      ${S.routines.growth.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--gro)')).join('')}
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="cap" style="margin-bottom:6px">🌿 코르티솔 체크</div>
+      ${S.routines.cortisol.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--cor)')).join('')}
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="cap" style="margin-bottom:6px">💗 ${hormoneScreenLabel()} 체크</div>
+      ${(S.routines.oxytocin || []).length ? S.routines.oxytocin.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--rose)')).join('') : `<div style="font-size:12px;color:var(--muted);padding:4px 0">마이페이지에서 영양제를 먼저 추가해주세요</div>`}
+    </div>`;
+
       body.innerHTML = `
     <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px">📅 ${label}</div>
     <div class="card" style="margin-bottom:12px">
@@ -2518,6 +2644,8 @@
       <div class="cap" style="margin-bottom:8px">호르몬별 점수</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;justify-items:center">${donuts}</div>
     </div>
+    ${!day.hasAnyRecord ? `<div style="text-align:center;padding:8px 0;color:var(--muted);font-size:12px;font-weight:600">이 날은 아직 기록이 없어요 — 아래에서 소급 기록할 수 있어요.</div>` : ''}
+    ${editSection}
     ${day.diary ? `<div class="card" style="margin-bottom:12px"><div class="cap">일기</div><div style="font-size:12px;color:var(--text);line-height:1.6;font-weight:500">${day.diary}</div></div>` : ''}
     <div class="card" style="margin-bottom:12px">
       <div class="cap">식사</div>

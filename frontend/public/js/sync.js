@@ -254,12 +254,13 @@ function saveChecksRow() {
     .catch(e => console.error('[saveChecksRow]', e));
 }
 
-function saveDiaryRow(entry) {
+// dateOverride를 주면 그 날짜로 저장한다(캘린더에서 과거 날짜 일기를 소급 기록할 때 사용).
+function saveDiaryRow(entry, dateOverride) {
   if (!entry) return;
   fetchApi(apiUrl('/api/data/diaries'), {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ written_date: todayISO(), content: entry.t })
+    body: JSON.stringify({ written_date: dateOverride || todayISO(), content: entry.t })
   }).catch(e => console.error('[saveDiaryRow]', e));
 }
 
@@ -311,13 +312,14 @@ function savePeriodRow() {
   }).catch(e => console.error('[savePeriodRow]', e));
 }
 
-function saveMealRow(meal) {
+// dateOverride를 주면 그 날짜로 저장한다(캘린더에서 과거 날짜 식사를 소급 기록할 때 사용).
+function saveMealRow(meal, dateOverride) {
   if (!meal) return;
   fetchApi(apiUrl('/api/data/meals'), {
     method: 'POST', credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      eaten_date: todayISO(),
+      eaten_date: dateOverride || todayISO(),
       label: meal.label,
       time: meal.time,
       foods: meal.foods,
