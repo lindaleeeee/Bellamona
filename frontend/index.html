@@ -2298,22 +2298,30 @@
     const FOOD_QUICK_CHIPS = ['샐러드 파스타 1인분', '닭가슴살 현미밥', '오트밀 한그릇', '비빔밥 1인분', '두부 스테이크', '그릭요거트+견과류', '나시고랭 1인분', '김밥 1줄'];
     const MEAL_SLOT_KEY = { '아침': 'breakfast', '점심': 'lunch', '저녁': 'dinner', '간식': 'snack', '야식': 'snack' };
     // RCPS_CURATED(칼로리 있는 것)만 대상으로, 그 끼니 목표 kcal의 ±40% 범위에 드는 레시피를 추천한다.
+    // 밥/메인(에피타이저·디저트 제외 전부) · 에피타이저 · 디저트, 이렇게 3개 카테고리에서 목표 kcal에
+    // 가장 가까운 것 하나씩만 추천한다(너무 많이 뜨는 문제 + 다양성 확보).
     function recipeSuggestionsFor(label) {
       const slotKey = MEAL_SLOT_KEY[label]; if (!slotKey) return [];
       const target = mealPlanForBucket(phaseGoalCal())[slotKey].kcal;
-      // RCPS_IMPORTED도 이제 대부분 cal이 있어 전체 레시피 풀(RCPS_CURATED+RCPS_IMPORTED, 약 1100개)에서 찾는다.
-      // 대역에 맞는 게 너무 많을 수 있어 목표 kcal에 가까운 순으로 상위 몇 개만 보여준다.
-      const matches = RCPS.filter(r => r.cal != null && r.cal >= target * 0.6 && r.cal <= target * 1.4);
-      return matches.sort((a, b) => Math.abs(a.cal - target) - Math.abs(b.cal - target)).slice(0, 8);
+      const withCal = RCPS.filter(r => r.cal != null);
+      const buckets = [
+        withCal.filter(r => r.tp !== '디저트' && r.tp !== '에피타이저'),
+        withCal.filter(r => r.tp === '에피타이저'),
+        withCal.filter(r => r.tp === '디저트'),
+      ];
+      return buckets
+        .map(pool => pool.length ? pool.reduce((best, r) => Math.abs(r.cal - target) < Math.abs(best.cal - target) ? r : best, pool[0]) : null)
+        .filter(Boolean);
     }
+    // 추천 카드를 누르면 바로 채우지 않고 레시피 상세(재료·조리법)를 보여준다.
     function renderFoodSuggestions(label) {
       const wrap = document.getElementById('food-suggest-wrap'); const list = document.getElementById('food-suggest-list');
       const suggestions = recipeSuggestionsFor(label);
       if (!suggestions.length) { wrap.style.display = 'none'; return; }
       wrap.style.display = 'block';
-      list.innerHTML = suggestions.map(r => `<div onclick="pickFoodText('${r.n.replace(/'/g, "\\'")}', ${r.cal})" style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:10px;cursor:pointer">
+      list.innerHTML = suggestions.map(r => `<div onclick="showRecipeDetail(${RCPS.indexOf(r)})" style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:10px;cursor:pointer">
         <span style="font-size:20px">${r.img}</span>
-        <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">${r.n}</div></div>
+        <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">${r.n}</div><div style="font-size:10px;color:var(--muted);font-weight:600">${r.tp}</div></div>
         <span style="font-size:11px;font-weight:800;color:var(--sky2)">${r.cal}kcal</span>
       </div>`).join('');
     }
