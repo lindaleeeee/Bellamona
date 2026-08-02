@@ -1224,7 +1224,7 @@
         <div class="mh"></div>
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">🌸 생리기 입력</div>
         <div class="cap" style="margin-bottom:5px">시작일</div><input class="input" type="date" id="per-start"
-          value="2026-04-01" style="margin-bottom:10px" />
+          style="margin-bottom:10px" />
         <div class="cap" style="margin-bottom:5px">지속 일수</div><input class="input" type="number" id="per-days" value="5"
           style="margin-bottom:14px" /><button class="btn btn-p" onclick="savePeriod()">저장</button>
       </div>
@@ -1620,6 +1620,7 @@
       if (id === 'mod-friends') setTxt('my-friend-code', S.friendCode || '발급 중...');
       if (id === 'mod-mealplan') renderMealPlan(phaseGoalCal());
       if (id === 'mod-edit-goal') fillEditGoalForm();
+      if (id === 'mod-period') { const el = document.getElementById('per-start'); if (el) el.value = todayISOLocal(); }
       document.getElementById(id)?.classList.add('open');
     }
     function closeMod(id) { document.getElementById(id).classList.remove('open') }
@@ -2768,6 +2769,17 @@
       g.innerHTML = cardsHtml + moreBtn;
     }
     function loadMoreRecipes() { S.rcpShowCount = (S.rcpShowCount || RCP_PAGE_SIZE) + RCP_PAGE_SIZE; renderRecipes(false); }
+    // "양배추 1/4통", "다진 마늘 1/2큰술" 같은 재료 줄에서 수량/단위를 떼어내 검색어만 남긴다.
+    const ING_UNIT_RE = /\s*(g|kg|ml|cc|L|리터|큰술|작은술|스푼|컵|공기|모|통|개|알|쪽|톨|줄|장|봉|팩|인분|조각|덩이|마리|대|자루|줌|캔|병|약간|조금|정도|이상|이하)\s*$/;
+    function ingredientSearchQuery(line) {
+      let s = line.replace(/\([^)]*\)/g, '').trim();
+      s = s.replace(/\d+\s*\/\s*\d+|\d+(\.\d+)?/g, '').trim();
+      s = s.replace(ING_UNIT_RE, '').trim();
+      return s || line.trim();
+    }
+    function buyIngredientOnCoupang(line) {
+      window.open(`https://www.coupang.com/np/search?q=${encodeURIComponent(ingredientSearchQuery(line))}`, '_blank');
+    }
     function showRecipeDetail(idx) {
       const r = RCPS[idx];
       document.getElementById('recipe-detail-body').innerHTML = `
@@ -2782,8 +2794,11 @@
     </div>
     <div class="card" style="margin-bottom:10px">
       <div class="cap">재료</div>
-      ${r.ingredients.map(ing => `<div style="padding:6px 0;border-bottom:1px solid var(--bdr);font-size:13px;color:var(--text);font-weight:500">• ${ing}</div>`).join('')}
-      <button onclick="window.open('https://www.coupang.com/np/search?q=${encodeURIComponent(r.cpgQ)}','_blank')" style="width:100%;margin-top:12px;background:linear-gradient(135deg,#ff6400,#ff4500);border:none;border-radius:11px;padding:11px;color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">🛒 쿠팡에서 재료 구매하기</button>
+      ${r.ingredients.map(ing => `<div onclick="buyIngredientOnCoupang('${ing.replace(/'/g, "\\'")}')" style="padding:6px 0;border-bottom:1px solid var(--bdr);font-size:13px;color:var(--text);font-weight:500;display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+        <span>• ${ing}</span>
+        <span style="font-size:10px;color:#ff6400;font-weight:700;white-space:nowrap;margin-left:8px">🛒 구매</span>
+      </div>`).join('')}
+      <button onclick="window.open('https://www.coupang.com/np/search?q=${encodeURIComponent(r.cpgQ)}','_blank')" style="width:100%;margin-top:12px;background:linear-gradient(135deg,#ff6400,#ff4500);border:none;border-radius:11px;padding:11px;color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">🛒 재료 전체 쿠팡에서 구매하기</button>
     </div>
     <div class="card" style="margin-bottom:${r.tip ? '10px' : '0'}">
       <div class="cap">만드는 방법</div>
