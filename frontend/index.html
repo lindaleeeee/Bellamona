@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0" />
   <title>Bellamona</title>
   <link
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Nunito:wght@300;400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Nunito:wght@300;400;500;600;700&family=Gaegu:wght@400;700&display=swap"
     rel="stylesheet" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
@@ -327,6 +327,198 @@
       background: var(--bdr);
       border-radius: 99px;
       margin: 0 auto 16px
+    }
+
+    /* 레시피 상세 — 카드뉴스 스타일 (크림 배경 + 손글씨 포인트) */
+    #mod-recipe-detail .msh {
+      background: linear-gradient(180deg, #fbf3e6, #f7ecd9)
+    }
+
+    #mod-recipe-detail .mh {
+      background: #e0cda0
+    }
+
+    .rcpd-tag {
+      display: inline-block;
+      background: #dfe6c6;
+      color: #4a5a2e;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 99px;
+      margin-bottom: 10px
+    }
+
+    .rcpd-title {
+      font-family: 'Gaegu', sans-serif;
+      font-size: 25px;
+      font-weight: 700;
+      color: #3a2c1a;
+      line-height: 1.3;
+      display: inline-block;
+      border-bottom: 4px solid #e8712f;
+      border-radius: 2px;
+      padding: 0 2px 5px
+    }
+
+    .rcpd-badges {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 12px
+    }
+
+    .rcpd-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #fffaf0;
+      border: 1.5px dashed #d8b98a;
+      color: #8a5a2b;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 99px
+    }
+
+    .rcpd-section {
+      background: #fffaf0;
+      border: 1px solid #ecdcc0;
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px
+    }
+
+    .rcpd-sec-label {
+      display: inline-block;
+      background: #dfe6c6;
+      color: #4a5a2e;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 4px 13px;
+      border-radius: 99px;
+      margin-bottom: 12px;
+      font-family: 'Gaegu', sans-serif
+    }
+
+    .rcpd-ing-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px dashed #e6d7ba;
+      font-size: 13.5px;
+      color: #4a3826;
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    .rcpd-ing-row:last-of-type {
+      border-bottom: none
+    }
+
+    .rcpd-buy {
+      font-size: 10px;
+      color: #fff;
+      background: #e8712f;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 99px;
+      white-space: nowrap;
+      margin-left: 8px
+    }
+
+    .rcpd-buyall {
+      width: 100%;
+      margin-top: 12px;
+      background: linear-gradient(135deg, #ff8a3d, #e8622c);
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      box-shadow: 0 4px 14px rgba(232, 98, 44, .3)
+    }
+
+    .rcpd-step {
+      display: flex;
+      gap: 11px;
+      padding: 10px 0;
+      border-bottom: 1px dashed #e6d7ba;
+      align-items: flex-start
+    }
+
+    .rcpd-step:last-child {
+      border-bottom: none
+    }
+
+    .rcpd-step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #e8712f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #e8712f;
+      flex-shrink: 0;
+      background: #fffaf0
+    }
+
+    .rcpd-step-text {
+      font-size: 13.5px;
+      color: #4a3826;
+      font-weight: 600;
+      padding-top: 2px;
+      line-height: 1.5
+    }
+
+    .rcpd-tip {
+      background: #f1f5e4;
+      border: 1.5px dashed #b9c98f;
+      border-radius: 16px;
+      padding: 14px 16px
+    }
+
+    .rcpd-tip-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #dfe6c6;
+      color: #4a5a2e;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 4px 13px;
+      border-radius: 99px;
+      margin-bottom: 10px;
+      font-family: 'Gaegu', sans-serif
+    }
+
+    .rcpd-tip-text {
+      font-size: 13px;
+      color: #4a3826;
+      line-height: 1.7;
+      font-weight: 600
+    }
+
+    .rcpd-close {
+      width: 100%;
+      margin-top: 8px;
+      background: #fffaf0;
+      border: 1.5px dashed #d8b98a;
+      border-radius: 12px;
+      padding: 12px;
+      color: #8a5a2b;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif
     }
 
     .ck-item {
@@ -2894,32 +3086,36 @@
     function showRecipeDetail(idx) {
       const r = RCPS[idx];
       document.getElementById('recipe-detail-body').innerHTML = `
-    <div style="text-align:center;margin-bottom:16px">
-      <div style="font-size:48px;margin-bottom:10px">${r.img}</div>
-      <div class="serif" style="font-size:22px;font-weight:700;color:var(--text)">${r.n}</div>
-      <div style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap">
-        <span style="font-size:11px;background:var(--sky3);color:var(--sky2);padding:3px 10px;border-radius:99px;font-weight:700">⏱ ${r.t}분</span>
-        <span style="font-size:11px;background:rgba(255,167,38,.1);color:var(--warn);padding:3px 10px;border-radius:99px;font-weight:700">💰 ~${r.cost.toLocaleString()}원</span>
-        ${r.cal != null ? `<span style="font-size:11px;background:var(--card2);color:var(--muted);padding:3px 10px;border-radius:99px;font-weight:700">${r.cal}kcal</span>` : ''}
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="width:84px;height:84px;border-radius:50%;background:#fff3df;border:2px dashed #e8b978;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 12px">${r.img}</div>
+      <span class="rcpd-tag">${r.tp}</span>
+      <div class="rcpd-title" style="display:block">${r.n}</div>
+      <div class="rcpd-badges">
+        <span class="rcpd-badge">⏱ ${r.t}분</span>
+        <span class="rcpd-badge">💰 ~${r.cost.toLocaleString()}원</span>
+        ${r.cal != null ? `<span class="rcpd-badge">🔥 ${r.cal}kcal</span>` : ''}
       </div>
     </div>
-    <div class="card" style="margin-bottom:10px">
-      <div class="cap">재료</div>
-      ${r.ingredients.map(ing => `<div onclick="buyIngredientOnCoupang('${ing.replace(/'/g, "\\'")}')" style="padding:6px 0;border-bottom:1px solid var(--bdr);font-size:13px;color:var(--text);font-weight:500;display:flex;justify-content:space-between;align-items:center;cursor:pointer">
-        <span>• ${ing}</span>
-        <span style="font-size:10px;color:#ff6400;font-weight:700;white-space:nowrap;margin-left:8px">🛒 구매</span>
+    <div class="rcpd-section">
+      <span class="rcpd-sec-label">★ 재료</span>
+      ${r.ingredients.map(ing => `<div class="rcpd-ing-row" onclick="buyIngredientOnCoupang('${ing.replace(/'/g, "\\'")}')">
+        <span>${ing}</span>
+        <span class="rcpd-buy">🛒 구매</span>
       </div>`).join('')}
-      <button onclick="window.open('https://www.coupang.com/np/search?q=${encodeURIComponent(r.cpgQ)}','_blank')" style="width:100%;margin-top:12px;background:linear-gradient(135deg,#ff6400,#ff4500);border:none;border-radius:11px;padding:11px;color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">🛒 재료 전체 쿠팡에서 구매하기</button>
+      <button class="rcpd-buyall" onclick="window.open('https://www.coupang.com/np/search?q=${encodeURIComponent(r.cpgQ)}','_blank')">🛒 재료 전체 쿠팡에서 구매하기</button>
     </div>
-    <div class="card" style="margin-bottom:${r.tip ? '10px' : '0'}">
-      <div class="cap">만드는 방법</div>
-      ${r.steps.map((s, i) => `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr);align-items:flex-start">
-        <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--sky2),var(--lav2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex-shrink:0">${i + 1}</div>
-        <div style="font-size:13px;color:var(--text);font-weight:500;padding-top:3px">${s}</div>
+    <div class="rcpd-section">
+      <span class="rcpd-sec-label">★ 만드는 방법</span>
+      ${r.steps.map((s, i) => `<div class="rcpd-step">
+        <div class="rcpd-step-num">${i + 1}</div>
+        <div class="rcpd-step-text">${s}</div>
       </div>`).join('')}
     </div>
-    ${r.tip ? `<div class="card" style="background:var(--sky3);border-color:rgba(91,184,245,.3)"><div class="cap" style="color:var(--sky2)">💡 TIP</div><div style="font-size:13px;color:var(--text);line-height:1.6;font-weight:500">${r.tip}</div></div>` : ''}
-    <button class="btn btn-o" style="margin-top:8px" onclick="closeMod('mod-recipe-detail')">닫기</button>`;
+    ${r.tip ? `<div class="rcpd-tip" style="margin-bottom:12px">
+      <span class="rcpd-tip-label">💡 TIP</span>
+      <div class="rcpd-tip-text">${r.tip}</div>
+    </div>` : ''}
+    <button class="rcpd-close" onclick="closeMod('mod-recipe-detail')">닫기</button>`;
       openMod('mod-recipe-detail');
     }
 
