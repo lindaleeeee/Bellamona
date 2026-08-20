@@ -445,15 +445,29 @@
     }
 
     .rcpd-step {
-      display: flex;
-      gap: 11px;
       padding: 10px 0;
-      border-bottom: 1px dashed #e6d7ba;
-      align-items: flex-start
+      border-bottom: 1px dashed #e6d7ba
     }
 
     .rcpd-step:last-child {
       border-bottom: none
+    }
+
+    .rcpd-step-img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1.5px dashed #e0c48a;
+      margin-bottom: 10px;
+      display: block;
+      background: #f3e6cc
+    }
+
+    .rcpd-step-row {
+      display: flex;
+      gap: 11px;
+      align-items: flex-start
     }
 
     .rcpd-step-num {
@@ -2999,15 +3013,19 @@
     // ═══════════════════════ RECIPES ═══════════════════════
     // 손수 큐레이션한 8개(칼로리 포함 — 마이페이지 칼로리별 예시식단 연동에 씀) + 유튜브 다이어트
     // 레시피 엑셀에서 추려온 실제 레시피들(data-recipes.js, RCPS_IMPORTED — 칼로리 정보는 원본에 없음).
+    // 큐레이션 레시피 8개는 만드는 방법을 사진으로도 보여준다.
+    // frontend/public/images/recipes/<slug>/step-1.jpg ~ step-N.jpg 파일이 있으면 자동으로 뜨고,
+    // 없으면(아직 안 찍은 사진) <img onerror>로 조용히 숨겨져서 텍스트만 보인다.
+    const STEP_IMG = (slug, n) => Array.from({ length: n }, (_, i) => `images/recipes/${slug}/step-${i + 1}.jpg`);
     const RCPS_CURATED = [
-      { n: '아보카도 두부볼', t: 5, tp: '간식', cal: 120, cost: 2500, img: '🥑', ingredients: ['아보카도 ½개', '두부 100g', '레몬즙 1큰술', '소금 약간'], steps: ['아보카도를 반으로 잘라 씨를 제거해요', '두부를 으깨서 아보카도와 섞어요', '레몬즙과 소금으로 간을 맞춰요', '냉장고에 10분 두면 더 맛있어요'], cpgQ: '유기농 아보카도' },
-      { n: '통밀 에그머핀', t: 10, tp: '간식', cal: 180, cost: 3500, img: '🥚', ingredients: ['달걀 3개', '통밀가루 50g', '베이킹파우더 1작은술', '저지방 우유 30ml'], steps: ['오븐을 180도로 예열해요', '달걀, 우유를 잘 섞어요', '통밀가루와 베이킹파우더를 체에 쳐서 넣어요', '머핀 틀에 붓고 15분 구워요'], cpgQ: '무항생제 유정란' },
-      { n: '연어 콜리플라워라이스', t: 15, tp: '일식', cal: 320, cost: 8000, img: '🐟', ingredients: ['연어 150g', '콜리플라워 200g', '간장 1큰술', '참기름 1작은술', '레몬 ½개'], steps: ['콜리플라워를 푸드프로세서로 잘게 갈아요', '팬에 기름 없이 콜리플라워라이스를 볶아요', '연어는 팬에 껍질부터 굽고 반으로 나눠요', '간장, 참기름으로 소스를 만들어 곁들여요'], cpgQ: '노르웨이 생연어' },
-      { n: '두부 스테이크 샐러드', t: 10, tp: '한식', cal: 240, cost: 4500, img: '🍱', ingredients: ['두부 200g', '양상추 100g', '방울토마토 10개', '들기름 1큰술', '된장 ½큰술'], steps: ['두부를 1.5cm 두께로 썰어 키친타올로 물기를 제거해요', '팬에 기름 두르고 두부를 양면 노릇하게 구워요', '된장을 물에 풀어 소스를 만들어요', '채소와 함께 담고 소스를 뿌려요'], cpgQ: '국산콩 두부' },
-      { n: '키토 김밥', t: 15, tp: '한식', cal: 280, cost: 5000, img: '🍙', ingredients: ['달걀 지단', '오이 1개', '당근 ½개', '햄 3장', '참기름', '소금'], steps: ['달걀을 풀어 지단을 얇게 부쳐요', '오이, 당근을 채썰어요', '달걀 지단을 펼쳐 재료를 올려 돌돌 말아요', '먹기 좋게 잘라요 (밥 없이 저탄수)'], cpgQ: '저탄수 김밥 재료' },
-      { n: '그릭요거트볼', t: 5, tp: '간식', cal: 150, cost: 3000, img: '🍶', ingredients: ['그릭요거트 170g', '블루베리 30g', '아몬드 5알', '꿀 ½작은술'], steps: ['그릭요거트를 그릇에 담아요', '블루베리와 아몬드를 올려요', '꿀을 살짝 뿌려요', '바로 먹거나 냉장고에 30분 두어도 좋아요'], cpgQ: '무지방 그릭요거트' },
-      { n: '닭가슴살 레몬허브볼', t: 10, tp: '양식', cal: 260, cost: 7000, img: '🌿', ingredients: ['닭가슴살 150g', '레몬 1개', '로즈마리 약간', '올리브오일 1큰술', '소금·후추'], steps: ['닭가슴살에 소금, 후추, 레몬즙을 발라 10분 재워요', '팬을 달궈 올리브오일을 두르고 구워요', '로즈마리를 올려 향을 입혀요', '얇게 썰어 샐러드 위에 올려요'], cpgQ: '슬라이스 닭가슴살' },
-      { n: '훈제연어 샐러드', t: 5, tp: '일식', cal: 200, cost: 9000, img: '🥗', ingredients: ['훈제연어 100g', '루꼴라 50g', '케이퍼 1큰술', '레몬즙 1큰술', '올리브오일 1큰술'], steps: ['루꼴라를 깨끗이 씻어 물기를 제거해요', '접시에 루꼴라를 깔아요', '훈제연어를 올리고 케이퍼를 뿌려요', '레몬즙과 올리브오일을 드레싱으로 뿌려요'], cpgQ: '훈제연어 슬라이스' },
+      { n: '아보카도 두부볼', t: 5, tp: '간식', cal: 120, cost: 2500, img: '🥑', ingredients: ['아보카도 ½개', '두부 100g', '레몬즙 1큰술', '소금 약간'], steps: ['아보카도를 반으로 잘라 씨를 제거해요', '두부를 으깨서 아보카도와 섞어요', '레몬즙과 소금으로 간을 맞춰요', '냉장고에 10분 두면 더 맛있어요'], stepImg: STEP_IMG('avocado-tofu-ball', 4), cpgQ: '유기농 아보카도' },
+      { n: '통밀 에그머핀', t: 10, tp: '간식', cal: 180, cost: 3500, img: '🥚', ingredients: ['달걀 3개', '통밀가루 50g', '베이킹파우더 1작은술', '저지방 우유 30ml'], steps: ['오븐을 180도로 예열해요', '달걀, 우유를 잘 섞어요', '통밀가루와 베이킹파우더를 체에 쳐서 넣어요', '머핀 틀에 붓고 15분 구워요'], stepImg: STEP_IMG('wheat-egg-muffin', 4), cpgQ: '무항생제 유정란' },
+      { n: '연어 콜리플라워라이스', t: 15, tp: '일식', cal: 320, cost: 8000, img: '🐟', ingredients: ['연어 150g', '콜리플라워 200g', '간장 1큰술', '참기름 1작은술', '레몬 ½개'], steps: ['콜리플라워를 푸드프로세서로 잘게 갈아요', '팬에 기름 없이 콜리플라워라이스를 볶아요', '연어는 팬에 껍질부터 굽고 반으로 나눠요', '간장, 참기름으로 소스를 만들어 곁들여요'], stepImg: STEP_IMG('salmon-cauliflower-rice', 4), cpgQ: '노르웨이 생연어' },
+      { n: '두부 스테이크 샐러드', t: 10, tp: '한식', cal: 240, cost: 4500, img: '🍱', ingredients: ['두부 200g', '양상추 100g', '방울토마토 10개', '들기름 1큰술', '된장 ½큰술'], steps: ['두부를 1.5cm 두께로 썰어 키친타올로 물기를 제거해요', '팬에 기름 두르고 두부를 양면 노릇하게 구워요', '된장을 물에 풀어 소스를 만들어요', '채소와 함께 담고 소스를 뿌려요'], stepImg: STEP_IMG('tofu-steak-salad', 4), cpgQ: '국산콩 두부' },
+      { n: '키토 김밥', t: 15, tp: '한식', cal: 280, cost: 5000, img: '🍙', ingredients: ['달걀 지단', '오이 1개', '당근 ½개', '햄 3장', '참기름', '소금'], steps: ['달걀을 풀어 지단을 얇게 부쳐요', '오이, 당근을 채썰어요', '달걀 지단을 펼쳐 재료를 올려 돌돌 말아요', '먹기 좋게 잘라요 (밥 없이 저탄수)'], stepImg: STEP_IMG('keto-gimbap', 4), cpgQ: '저탄수 김밥 재료' },
+      { n: '그릭요거트볼', t: 5, tp: '간식', cal: 150, cost: 3000, img: '🍶', ingredients: ['그릭요거트 170g', '블루베리 30g', '아몬드 5알', '꿀 ½작은술'], steps: ['그릭요거트를 그릇에 담아요', '블루베리와 아몬드를 올려요', '꿀을 살짝 뿌려요', '바로 먹거나 냉장고에 30분 두어도 좋아요'], stepImg: STEP_IMG('greek-yogurt-bowl', 4), cpgQ: '무지방 그릭요거트' },
+      { n: '닭가슴살 레몬허브볼', t: 10, tp: '양식', cal: 260, cost: 7000, img: '🌿', ingredients: ['닭가슴살 150g', '레몬 1개', '로즈마리 약간', '올리브오일 1큰술', '소금·후추'], steps: ['닭가슴살에 소금, 후추, 레몬즙을 발라 10분 재워요', '팬을 달궈 올리브오일을 두르고 구워요', '로즈마리를 올려 향을 입혀요', '얇게 썰어 샐러드 위에 올려요'], stepImg: STEP_IMG('chicken-lemon-herb-bowl', 4), cpgQ: '슬라이스 닭가슴살' },
+      { n: '훈제연어 샐러드', t: 5, tp: '일식', cal: 200, cost: 9000, img: '🥗', ingredients: ['훈제연어 100g', '루꼴라 50g', '케이퍼 1큰술', '레몬즙 1큰술', '올리브오일 1큰술'], steps: ['루꼴라를 깨끗이 씻어 물기를 제거해요', '접시에 루꼴라를 깔아요', '훈제연어를 올리고 케이퍼를 뿌려요', '레몬즙과 올리브오일을 드레싱으로 뿌려요'], stepImg: STEP_IMG('smoked-salmon-salad', 4), cpgQ: '훈제연어 슬라이스' },
     ];
     const RCPS = [...RCPS_CURATED, ...(typeof RCPS_IMPORTED !== 'undefined' ? RCPS_IMPORTED : [])];
     // 조리시간 칩은 "N분 이내"(양수)와 "15분 이상"(음수로 표시해 방향을 반대로 준다) 두 방향이 섞여 있다.
@@ -3107,8 +3125,11 @@
     <div class="rcpd-section">
       <span class="rcpd-sec-label">★ 만드는 방법</span>
       ${r.steps.map((s, i) => `<div class="rcpd-step">
-        <div class="rcpd-step-num">${i + 1}</div>
-        <div class="rcpd-step-text">${s}</div>
+        ${r.stepImg && r.stepImg[i] ? `<img class="rcpd-step-img" src="${r.stepImg[i]}" alt="" onerror="this.remove()">` : ''}
+        <div class="rcpd-step-row">
+          <div class="rcpd-step-num">${i + 1}</div>
+          <div class="rcpd-step-text">${s}</div>
+        </div>
       </div>`).join('')}
     </div>
     ${r.tip ? `<div class="rcpd-tip" style="margin-bottom:12px">
