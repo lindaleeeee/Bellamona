@@ -135,7 +135,6 @@ async function restoreFromServer() {
       if (d.profile.start_date) S.startDate = new Date(d.profile.start_date).getTime();
       if (d.profile.goal_date) S.goalDate = new Date(d.profile.goal_date).getTime();
       if (d.profile.gender) S.gender = d.profile.gender;
-      if (d.profile.report_time) S.reportTime = (d.profile.report_time + '').slice(0, 5);
       // 세이브(치팅) 칼로리는 서버가 로그인/새로고침마다 전날까지 정산해서 내려주는 값이 항상 정답이라
       // 로컬 값과 병합하지 않고 그대로 덮어쓴다.
       if (d.profile.saved_total_kcal != null) S.savedTotal = Number(d.profile.saved_total_kcal);
@@ -264,7 +263,7 @@ function saveProfileRow() {
       start_date: S.startDate ? new Date(S.startDate).toISOString().split('T')[0] : null,
       goal_date: S.goalDate ? new Date(S.goalDate).toISOString().split('T')[0] : null,
       gender: S.gender || null,
-      report_time: S.reportTime || null,
+      report_time: null, // AI 리포트 자동 생성 기능은 제거됨 — 컬럼 자체는 그대로 두되 더는 값을 안 채운다
       supplements: S.routines.oxytocin || []
     })
   }).catch(e => console.error('[saveProfileRow]', e));

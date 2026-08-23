@@ -1544,14 +1544,7 @@
             </div>
           </div>
           <div class="card" style="margin-bottom:10px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <div class="cap" style="margin-bottom:0">🤖 AI 리포트</div>
-              <div style="display:flex;align-items:center;gap:6px">
-                <span style="font-size:10px;color:var(--muted);font-weight:600">생성 시각</span>
-                <input class="input" type="time" id="report-time-input"
-                  style="width:90px;padding:6px 8px;font-size:12px" onchange="saveReportTime(this.value)" />
-              </div>
-            </div>
+            <div class="cap" style="margin-bottom:8px">🤖 AI 리포트</div>
             <button id="prof-report-btn" class="btn btn-p" onclick="openTodayReport()">리포트 확인하기</button>
           </div>
           <div style="display:flex;flex-direction:column;gap:6px">
@@ -2043,7 +2036,7 @@
       name: '혜림', goalCal: 1090, baseBurned: 380,
       exBurned: { minutesAfterMeal: null },
       sleepLogs: [], workoutLogs: [], nextWorkoutId: 1, customRoutines: {}, _showFastDetail: false,
-      reportTime: '21:00', reportGeneratedDate: null, _todayReport: null,
+      reportGeneratedDate: null, _todayReport: null,
       savedTotal: 0, calMon: { y: 2026, m: 3 },
       gender: 'female',
       periods: [{ start: '2026-04-01', days: 5 }], cycleLen: 28,
@@ -2293,7 +2286,6 @@
       const goalCalTxt = `${phaseGoalCal().toLocaleString()} kcal`;
       setTxt('pi-goal-cal', goalCalTxt);
       setTxt('prof-goalcal-btn-val', goalCalTxt);
-      const rtEl = document.getElementById('report-time-input'); if (rtEl && document.activeElement !== rtEl) rtEl.value = S.reportTime || '21:00';
       const rBtn = document.getElementById('prof-report-btn'); if (rBtn) rBtn.classList.toggle('report-ready', S.reportGeneratedDate === todayISOLocal() && !!S._todayReport);
       saveState();
     }
@@ -2480,8 +2472,6 @@
       setTxt('prof-avatar-mini', S.avatar);
       go('s-home');
       document.getElementById('nav-home').click();
-      checkAutoGenerateReport();
-      setInterval(checkAutoGenerateReport, 15 * 60000); // 앱을 켜둔 채로 지정 시각을 넘기는 경우 대비, 15분마다 재확인
     }
 
     // ═══════════════════════ WEIGHT ═══════════════════════
@@ -3798,25 +3788,10 @@
     </div>`;
     }
 
-    // ═══════════════════════ 하루 한 번, 지정 시각 AI 리포트 자동 생성 ═══════════════════════
-    function saveReportTime(val) { if (!val) return; S.reportTime = val; if (typeof saveProfileRow === 'function') saveProfileRow(); }
     async function openTodayReport() {
       // showDayDetail → renderDayDetail이 오늘 날짜의 저장된 리포트를 자동으로 찾아 보여준다
       // (로컬 캐시 우선, 없으면 서버에 저장된 것 확인 — 둘 다 없을 때만 "생성" 버튼이 남는다).
       await showDayDetail(todayISOLocal());
-    }
-    async function checkAutoGenerateReport() {
-      if (!S.reportTime) return;
-      const today = todayISOLocal(); if (S.reportGeneratedDate === today) return;
-      const now = new Date(); const nowStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      if (nowStr < S.reportTime) return;
-      try {
-        const res = await fetchApi(apiUrl(`/api/data/day?date=${today}`), { credentials: 'include' }); if (!res.ok) return;
-        const day = await res.json(); if (!day.hasAnyRecord) return;
-        const rres = await fetchApi(apiUrl('/api/report'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: buildDayReportPayload(today, day) }) });
-        const json = await rres.json().catch(() => null);
-        if (rres.ok && json && json.success) { S.reportGeneratedDate = today; S._todayReport = { date: today, report: json.report, day }; saveState(); updateProfileHeader(); const rBtn = document.getElementById('prof-report-btn'); if (rBtn) rBtn.classList.add('report-ready'); }
-      } catch (e) { console.error('[checkAutoGenerateReport]', e); }
     }
 
     // ═══════════════════════ RECIPES ═══════════════════════
