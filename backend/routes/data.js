@@ -1,7 +1,8 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
-const { todayKST } = require('../utils/date');
+const { todayKST, addDays } = require('../utils/date');
+const { phaseRatioForDate } = require('../utils/calorie');
 const router = express.Router();
 
 const pool = new Pool({
@@ -151,6 +152,56 @@ router.get('/month-summary', async (req, res) => {
     }
 });
 
+// 하루가 끝나면(KST 자정) "그날 순섭취(식사kcal-운동kcal) < 그날 목표 칼로리"였던 만큼을 치팅데이
+// 세이브 칼로리(profiles.saved_total_kcal)에 적립한다. 정확히 자정에 도는 배치 잡이 따로 없는 대신,
+// 매번 GET /api/data 때마다 "어제까지" 아직 정산 안 된 날짜가 있으면 여기서 한꺼번에 정산한다.
+// saved_total_computed_through로 이미 정산한 마지막 날짜를 기억해서 같은 날을 두 번 더하지 않는다.
+// 식사를 하나도 기록 안 한 날은 순섭취가 항상 0이라 무조건 "목표보다 적게 먹은 걸로" 잘못 적립되므로
+// 그런 날은 건너뛴다(정산 완료 표시만 하고 세이브는 늘리지 않음).
+const toDateStr = (d) => (d == null ? null : (d instanceof Date ? d.toISOString().split('T')[0] : String(d).slice(0, 10)));
+async function rolloverSavedTotal(client, userId, profile, periods) {
+    if (!profile || profile.daily_kcal_target == null) return profile ? (profile.saved_total_kcal || 0) : 0;
+
+    const yesterday = addDays(todayKST(), -1);
+    const computedThrough = toDateStr(profile.saved_total_computed_through);
+    const startDate = toDateStr(profile.start_date);
+    // 이 기능이 처음 배포되는 시점의 기존 계정은 saved_total_computed_through가 없으므로,
+    // 시작일(또는 최대 60일 전)부터 소급 정산한다 — 너무 먼 과거까지 훑지 않도록 60일로 제한.
+    const earliestAllowed = addDays(yesterday, -59);
+    let cursor = computedThrough ? addDays(computedThrough, 1) : (startDate || earliestAllowed);
+    if (cursor < earliestAllowed) cursor = earliestAllowed;
+    if (cursor > yesterday) return profile.saved_total_kcal || 0; // 정산할 새 날짜 없음
+
+    const [mealsRes, workoutsRes] = await Promise.all([
+        client.query('SELECT eaten_date, kcal, description FROM meals WHERE user_id = $1 AND eaten_date BETWEEN $2 AND $3', [userId, cursor, yesterday]),
+        client.query('SELECT performed_date, kcal FROM workouts WHERE user_id = $1 AND performed_date BETWEEN $2 AND $3', [userId, cursor, yesterday]),
+    ]);
+
+    const mealsByDate = {}, workoutsByDate = {};
+    mealsRes.rows.forEach(m => { const k = toDateStr(m.eaten_date); (mealsByDate[k] = mealsByDate[k] || []).push(m); });
+    workoutsRes.rows.forEach(w => { const k = toDateStr(w.performed_date); (workoutsByDate[k] = workoutsByDate[k] || []).push(w); });
+    const normPeriods = (periods || []).map(p => ({ start_date: toDateStr(p.start_date), duration_days: p.duration_days }));
+
+    let delta = 0;
+    for (let d = cursor; d <= yesterday; d = addDays(d, 1)) {
+        const dayMeals = (mealsByDate[d] || []).filter(m => m.description);
+        if (!dayMeals.length) continue; // 그날 식사 기록이 없으면 정산에서 제외
+        const mealsKcal = dayMeals.reduce((a, m) => a + (m.kcal || 0), 0);
+        const workoutsKcal = (workoutsByDate[d] || []).reduce((a, w) => a + (w.kcal || 0), 0);
+        const netKcal = mealsKcal - workoutsKcal;
+        const dayGoal = Math.round(profile.daily_kcal_target * phaseRatioForDate(normPeriods, profile.cycle_len, d));
+        if (netKcal < dayGoal) delta += (dayGoal - netKcal);
+    }
+
+    const newTotal = (profile.saved_total_kcal || 0) + delta;
+    await client.query(
+        'UPDATE profiles SET saved_total_kcal = $1, saved_total_computed_through = $2 WHERE user_id = $3',
+        [newTotal, yesterday, userId]
+    );
+    if (delta) console.log('[DATA] rolloverSavedTotal userId:', userId, { cursor, yesterday, delta, newTotal });
+    return newTotal;
+}
+
 // 데이터 로드 (GET /api/data)
 router.get('/', async (req, res) => {
     const { userId } = req.user;
@@ -179,6 +230,10 @@ router.get('/', async (req, res) => {
         // 생리 주기 전체
         const periodsRes = await client.query('SELECT * FROM periods WHERE user_id = $1 ORDER BY start_date ASC', [userId]);
 
+        // 어제까지 정산 안 된 세이브 칼로리가 있으면 여기서 한꺼번에 적립
+        const profile = profileRes.rows[0] || null;
+        if (profile) profile.saved_total_kcal = await rolloverSavedTotal(client, userId, profile, periodsRes.rows);
+
         // 월별/최근 일기
         const diariesRes = await client.query('SELECT * FROM diaries WHERE user_id = $1 ORDER BY written_date DESC LIMIT 30', [userId]);
 
@@ -200,7 +255,7 @@ router.get('/', async (req, res) => {
 
         res.json({
             user: userRes.rows[0],
-            profile: profileRes.rows[0] || null,
+            profile,
             meals: mealsRes.rows,
             workoutsToday: workoutsRes.rows,
             checks: checksRes.rows[0]?.checks || {},
@@ -215,6 +270,27 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: 'Failed to load data.' });
     } finally {
         client.release();
+    }
+});
+
+// 치팅데이 세이브 칼로리 사용 — 치팅 음식을 고르면 그만큼 saved_total_kcal에서 차감한다.
+router.post('/saved-total/spend', async (req, res) => {
+    const { userId } = req.user;
+    const amount = parseInt(req.body.amount, 10);
+    console.log('[DATA] POST /saved-total/spend for userId:', userId, { amount });
+    if (!Number.isInteger(amount) || amount <= 0) {
+        return res.status(400).json({ error: 'invalid_amount' });
+    }
+    try {
+        const r = await pool.query(
+            'UPDATE profiles SET saved_total_kcal = GREATEST(saved_total_kcal - $1, 0) WHERE user_id = $2 RETURNING saved_total_kcal',
+            [amount, userId]
+        );
+        if (!r.rows.length) return res.status(404).json({ error: 'profile_not_found' });
+        res.json({ success: true, saved_total_kcal: r.rows[0].saved_total_kcal });
+    } catch (err) {
+        console.error('[DATA] POST /saved-total/spend failed for userId:', userId, err);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -301,14 +377,14 @@ router.delete('/meals/:id', async (req, res) => {
 // 하루에 두 번째 운동을 기록하면 첫 번째 기록을 덮어썼다).
 router.post('/workouts', async (req, res) => {
     const { userId } = req.user;
-    const { performed_date, logged_time, intensity, duration_min, exercise_type, body_part, routine_name } = req.body;
-    console.log('[DATA] POST /workouts for userId:', userId, { performed_date, logged_time, intensity, duration_min, exercise_type, body_part, routine_name });
+    const { performed_date, logged_time, intensity, duration_min, exercise_type, body_part, routine_name, kcal } = req.body;
+    console.log('[DATA] POST /workouts for userId:', userId, { performed_date, logged_time, intensity, duration_min, exercise_type, body_part, routine_name, kcal });
     try {
         const today = performed_date || todayKST();
         const r = await pool.query(
-            `INSERT INTO workouts (user_id, performed_date, logged_time, intensity, duration_min, exercise_type, body_part, routine_name)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-            [userId, today, logged_time || null, intensity ?? null, duration_min ?? null, exercise_type ?? null, body_part ?? null, routine_name ?? null]);
+            `INSERT INTO workouts (user_id, performed_date, logged_time, intensity, duration_min, exercise_type, body_part, routine_name, kcal)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            [userId, today, logged_time || null, intensity ?? null, duration_min ?? null, exercise_type ?? null, body_part ?? null, routine_name ?? null, kcal ?? null]);
         console.log('[DATA] POST /workouts success, id:', r.rows[0].id);
         res.json({ success: true, workout: r.rows[0] });
     } catch (err) {

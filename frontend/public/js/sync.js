@@ -136,6 +136,9 @@ async function restoreFromServer() {
       if (d.profile.goal_date) S.goalDate = new Date(d.profile.goal_date).getTime();
       if (d.profile.gender) S.gender = d.profile.gender;
       if (d.profile.report_time) S.reportTime = (d.profile.report_time + '').slice(0, 5);
+      // 세이브(치팅) 칼로리는 서버가 로그인/새로고침마다 전날까지 정산해서 내려주는 값이 항상 정답이라
+      // 로컬 값과 병합하지 않고 그대로 덮어쓴다.
+      if (d.profile.saved_total_kcal != null) S.savedTotal = Number(d.profile.saved_total_kcal);
     }
 
     if (d.weights && d.weights.length) {
@@ -318,12 +321,27 @@ function saveWorkoutRow(entry) {
       duration_min: entry.durationMin,
       exercise_type: entry.exerciseType,
       body_part: entry.bodyPart,
-      routine_name: entry.routineName
+      routine_name: entry.routineName,
+      kcal: entry.kcal
     })
   })
     .then(r => r.ok ? r.json() : null)
     .then(data => { if (data && data.workout) entry.serverId = data.workout.id; })
     .catch(e => console.error('[saveWorkoutRow]', e));
+}
+
+// 치팅 음식을 골라 세이브 칼로리를 쓸 때 서버의 saved_total_kcal도 같이 차감한다.
+// (실패해도 로컬 값은 이미 낙관적으로 줄어든 상태라 다음 로그인 때 서버 값으로 다시 맞춰진다)
+function spendSavedTotal(amount) {
+  if (!amount || amount <= 0) return;
+  fetchApi(apiUrl('/api/data/saved-total/spend'), {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount })
+  })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => { if (data && data.saved_total_kcal != null) { S.savedTotal = data.saved_total_kcal; if (typeof updateHome === 'function') updateHome(); } })
+    .catch(e => console.error('[spendSavedTotal]', e));
 }
 
 function deleteWorkoutRow(entry) {

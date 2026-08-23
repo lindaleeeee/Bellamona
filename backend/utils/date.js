@@ -7,4 +7,11 @@ function todayKST() {
   return new Date(Date.now() + KST_OFFSET_MS).toISOString().split('T')[0];
 }
 
-module.exports = { todayKST };
+// 'YYYY-MM-DD' 문자열에 n일을 더한 문자열을 반환한다(순수 날짜 계산이라 타임존과 무관).
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00.000Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().split('T')[0];
+}
+
+module.exports = { todayKST, addDays };

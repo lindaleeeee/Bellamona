@@ -78,6 +78,13 @@ const initDB = async () => {
     await client.query("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS supplements JSONB DEFAULT '[]';");
     console.log('[DB] profiles.supplements 컬럼 확인 완료');
 
+    // 치팅데이 세이브 칼로리: 하루가 끝날 때(KST 자정) 그날 순섭취(식사-운동)가 목표 칼로리보다 적었으면
+    // 그 차이를 여기 누적한다. saved_total_computed_through는 이미 정산해서 반영한 마지막 날짜라
+    // 서버가 재시작되거나 여러 번 조회해도 같은 날을 중복으로 더하지 않게 막아준다.
+    await client.query('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS saved_total_kcal INTEGER NOT NULL DEFAULT 0;');
+    await client.query('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS saved_total_computed_through DATE;');
+    console.log('[DB] profiles.saved_total_kcal / saved_total_computed_through 컬럼 확인 완료');
+
     // 3. meals
     await client.query(`
       CREATE TABLE IF NOT EXISTS meals (
@@ -133,6 +140,12 @@ const initDB = async () => {
     await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS body_part VARCHAR(20);');
     await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS routine_name VARCHAR(100);');
     console.log('[DB] workouts.body_part / routine_name 컬럼 확인 완료');
+
+    // MET(운동 강도 계수)은 EXERCISE_DB(프론트 전용 데이터 파일)에만 있어 서버가 정확한 소모 칼로리를
+    // 재계산할 수 없었다. 저장 시점에 클라이언트가 이미 계산한 kcal을 그대로 같이 저장해서
+    // (meals.kcal과 같은 패턴) 서버도 MET 테이블 복제 없이 소모 칼로리를 합산할 수 있게 한다.
+    await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS kcal INTEGER;');
+    console.log('[DB] workouts.kcal 컬럼 확인 완료');
 
     // 코르티솔 화면: 수면시간 기록
     await client.query(`

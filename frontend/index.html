@@ -1221,6 +1221,16 @@
             </div>
             <div style="font-size:11px;font-weight:600" id="h-calmsg"></div>
           </div>
+          <!-- Intake budget -->
+          <div class="card" style="border-color:rgba(91,184,245,.3)">
+            <div class="cap">🍽 오늘 먹을 수 있는 칼로리</div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between">
+              <div style="font-size:22px;font-weight:800;color:var(--text)"><span id="h-intake-kcal">0</span><span
+                  style="font-size:12px;color:var(--muted);font-weight:600"> / <span id="h-intake-goal">0</span>kcal</span>
+              </div>
+              <div style="font-size:11px;color:var(--sky2);font-weight:700" id="h-intake-phase"></div>
+            </div>
+          </div>
           <!-- Ring -->
           <div class="card" style="display:flex;gap:14px;align-items:center">
             <div class="rw">
@@ -2230,6 +2240,11 @@
       const baseBurned = S.baseBurned; const workoutBurned = todayWorkoutKcal(); const burned = baseBurned + workoutBurned;
       setTxt('h-base-burned', baseBurned.toLocaleString()); setTxt('h-burned', workoutBurned.toLocaleString());
       const msg = document.getElementById('h-calmsg'); if (msg) msg.innerHTML = `<span style="color:var(--gro);font-weight:700">오늘 총 ${burned.toLocaleString()}kcal 소모</span>`;
+      // 목표한 기간·몸무게로 계산된 하루 섭취 가능 칼로리(phaseGoalCal)와 오늘 기록된 섭취 칼로리를 홈에도 보여준다.
+      const todayIntakeKcal = S.meals.reduce((a, m) => a + (m.kcal || 0), 0);
+      const todayIntakeGoal = phaseGoalCal(); const todayIntakePhase = getCycleInfo();
+      setTxt('h-intake-kcal', todayIntakeKcal.toLocaleString()); setTxt('h-intake-goal', todayIntakeGoal.toLocaleString());
+      setTxt('h-intake-phase', PHASE_CAL_RATIO[todayIntakePhase.id] !== 1 ? `${todayIntakePhase.name} ${PHASE_CAL_RATIO[todayIntakePhase.id] > 1 ? '+' : ''}${Math.round((PHASE_CAL_RATIO[todayIntakePhase.id] - 1) * 100)}%` : '');
       const ring = document.getElementById('h-ring'); const op = overallPct(); if (ring) { const circ = 2 * Math.PI * 29; ring.setAttribute('stroke-dasharray', `${Math.min(op / 100 * circ, circ)} ${circ}`); }
       setTxt('h-ring-pct', op + '%');
       const allRts = Object.values(S.routines).flat(); setTxt('h-done-cnt', allRts.filter(r => S.checks[r.id]).length); setTxt('h-total-cnt', allRts.length);
@@ -2789,7 +2804,8 @@
       if (!type) { alert('운동을 검색해서 선택하거나 입력해주세요'); return; }
       if (dur <= 0) { alert('운동 시간을 선택해주세요'); return; }
       const dateStr = _dayEditDate || todayISOLocal();
-      const entry = { id: S.nextWorkoutId++, date: dateStr, time, intensity: _workoutModalIntensity, durationMin: dur, exerciseType: type, met };
+      const kcalVal = exerciseKcal(_workoutModalIntensity, dur, met);
+      const entry = { id: S.nextWorkoutId++, date: dateStr, time, intensity: _workoutModalIntensity, durationMin: dur, exerciseType: type, met, kcal: kcalVal };
       S.workoutLogs.push(entry);
       if (typeof saveWorkoutRow === 'function') saveWorkoutRow(entry);
       if (_dayEditDate) {
@@ -2869,7 +2885,7 @@
       } else {
         const now = new Date();
         const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        const entry = { id: S.nextWorkoutId++, date: t, time, intensity: 'high', durationMin: routine.estMin, exerciseType: routine.name, met: 6.0, bodyPart: bp, routineName: routine.name };
+        const entry = { id: S.nextWorkoutId++, date: t, time, intensity: 'high', durationMin: routine.estMin, exerciseType: routine.name, met: 6.0, bodyPart: bp, routineName: routine.name, kcal: exerciseKcal('high', routine.estMin, 6.0) };
         S.workoutLogs.push(entry);
         if (typeof saveWorkoutRow === 'function') saveWorkoutRow(entry);
       }
@@ -3373,7 +3389,9 @@
 
       const dayWorkouts = (day.workouts || []).filter(w => w.intensity);
       const mealsKcal = (day.meals || []).reduce((a, m) => a + (m.kcal || 0), 0);
-      const workoutsKcal = dayWorkouts.reduce((a, w) => a + exerciseKcalAt(w.intensity, w.duration_min, metForWorkout(w), day.weight), 0);
+      // 저장된 kcal이 있으면 그대로 쓰고(서버가 세이브 정산에도 이 값을 쓰므로 화면과 항상 일치),
+      // 옛날에 kcal 없이 저장된 행만 강도 평균 MET로 추정한다(하위호환).
+      const workoutsKcal = dayWorkouts.reduce((a, w) => a + (w.kcal != null ? w.kcal : exerciseKcalAt(w.intensity, w.duration_min, metForWorkout(w), day.weight)), 0);
       const netKcal = mealsKcal - workoutsKcal;
       const dayPhase = phaseFromServerPeriod(day.period, dateStr);
       const dayGoalCal = Math.round(S.goalCal * PHASE_CAL_RATIO[dayPhase.id]);
@@ -3777,7 +3795,7 @@
       dd.innerHTML = res.map(f => `<div class="ddi" onclick="pickCheat(${CHEATS_ALL.indexOf(f)})"><span style="font-weight:600">${f.img} ${f.n}</span><span style="font-size:11px;color:var(--muted);font-weight:600">${f.cal}kcal ${f.cal <= S.savedTotal ? '✓' : '세이브 부족'}</span></div>`).join('');
       dd.style.display = 'block';
     }
-    function pickCheat(i) { const f = CHEATS_ALL[i]; S.savedTotal = Math.max(0, S.savedTotal - f.cal); updateHome(); closeMod('mod-cheat'); document.getElementById('notify-msg').value = `🍕 치팅! ${f.n}(${f.cal}kcal) 먹었어요! 같이 내일 열심히 해요 💪`; openMod('mod-notify'); }
+    function pickCheat(i) { const f = CHEATS_ALL[i]; S.savedTotal = Math.max(0, S.savedTotal - f.cal); updateHome(); if (typeof spendSavedTotal === 'function') spendSavedTotal(f.cal); closeMod('mod-cheat'); document.getElementById('notify-msg').value = `🍕 치팅! ${f.n}(${f.cal}kcal) 먹었어요! 같이 내일 열심히 해요 💪`; openMod('mod-notify'); }
     function sendNotify() { const msg = document.getElementById('notify-msg')?.value; const who = []; if (document.getElementById('nf1')?.checked) who.push('도파민헌터'); if (document.getElementById('nf2')?.checked) who.push('바이오PM'); closeMod('mod-notify'); if (who.length) alert(`✅ ${who.join(', ')}에게 전송!\n"${msg}"`); }
 
     // ═══════════════════════ 친구 코드 복사 ═══════════════════════
