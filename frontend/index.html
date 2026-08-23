@@ -1619,6 +1619,19 @@
       </div>
     </div>
 
+    <div class="mov" id="mod-cal-miss-reason">
+      <div class="msh">
+        <div class="mh"></div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">😥 목표한 칼로리를 채우지 못하셨네요</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:500">이유가 뭐였나요? 고르면 AI 리포트에 반영돼요</div>
+        <div class="wko-chip-row" id="cal-miss-reason-chips"></div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn btn-o" style="flex:1" onclick="skipCalMissReason()">건너뛰기</button>
+          <button class="btn btn-p" style="flex:1" onclick="confirmCalMissReason()">선택 완료</button>
+        </div>
+      </div>
+    </div>
+
     <div class="mov" id="mod-period">
       <div class="msh">
         <div class="mh"></div>
@@ -3430,15 +3443,42 @@
       renderDayDetail();
       fetchApi(apiUrl('/api/data/checks'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ check_date: dateStr, checks: day.checks }) }).catch(e => console.error('[toggleDayCheck]', e));
     }
-    function renderDayDetail() {
-      if (!_dayDetailCache) return;
-      const { dateStr, label, day } = _dayDetailCache;
-      const body = document.getElementById('day-detail-body');
-      day.checks = day.checks || {}; day.meals = day.meals || []; day.workouts = day.workouts || [];
 
-      const overall = overallPctForChecks(day.checks);
-
+    // ── 목표 칼로리를 못 채운 날, AI 리포트 생성 전에 이유를 물어본다 ──
+    // day.checks.calMissReason에 저장한다(다른 호르몬 체크와 같은 routine_checks.checks JSONB를
+    // 재사용 — 새 테이블 없이 /api/data/checks로 바로 저장/조회된다).
+    const CAL_MISS_REASONS = { busy: '😪 귀찮음', appointment: '📅 약속', sick: '🤒 아픔', pms: '🌙 PMS' };
+    let _calMissPicked = null; let _pendingReportForce = false;
+    function openCalMissReasonModal(force) {
+      _calMissPicked = null; _pendingReportForce = force;
+      const box = document.getElementById('cal-miss-reason-chips');
+      if (box) box.innerHTML = Object.entries(CAL_MISS_REASONS).map(([k, l]) => `<div class="wko-chip ${k === _calMissPicked ? 'on' : ''}" onclick="pickCalMissReason('${k}')">${l}</div>`).join('');
+      openMod('mod-cal-miss-reason');
+    }
+    function pickCalMissReason(k) {
+      _calMissPicked = k;
+      const box = document.getElementById('cal-miss-reason-chips'); if (!box) return;
+      box.innerHTML = Object.entries(CAL_MISS_REASONS).map(([kk, l]) => `<div class="wko-chip ${kk === _calMissPicked ? 'on' : ''}" onclick="pickCalMissReason('${kk}')">${l}</div>`).join('');
+    }
+    function confirmCalMissReason() {
+      if (_calMissPicked && _dayDetailCache) {
+        const { dateStr, day } = _dayDetailCache;
+        day.checks = day.checks || {};
+        day.checks.calMissReason = _calMissPicked;
+        fetchApi(apiUrl('/api/data/checks'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ check_date: dateStr, checks: day.checks }) }).catch(e => console.error('[calMissReason]', e));
+      }
+      closeMod('mod-cal-miss-reason');
+      _doGenerateDayReport(_pendingReportForce);
+    }
+    function skipCalMissReason() {
+      closeMod('mod-cal-miss-reason');
+      _doGenerateDayReport(_pendingReportForce);
+    }
+    // 그 날짜의 순섭취/목표 칼로리 정보. renderDayDetail의 칼로리 카드와 generateDayReport의
+    // "목표 못 채운 날 이유 묻기" 판단이 서로 다른 계산을 쓰면 어긋나므로 하나로 합쳤다.
+    function dayNetKcalInfo(dateStr, day) {
       const dayWorkouts = (day.workouts || []).filter(w => w.intensity);
+      const loggedMeals = (day.meals || []).filter(m => m.description);
       const mealsKcal = (day.meals || []).reduce((a, m) => a + (m.kcal || 0), 0);
       // 저장된 kcal이 있으면 그대로 쓰고(서버가 세이브 정산에도 이 값을 쓰므로 화면과 항상 일치),
       // 옛날에 kcal 없이 저장된 행만 강도 평균 MET로 추정한다(하위호환).
@@ -3446,6 +3486,16 @@
       const netKcal = mealsKcal - workoutsKcal;
       const dayPhase = phaseFromServerPeriod(day.period, dateStr);
       const dayGoalCal = Math.round(S.goalCal * PHASE_CAL_RATIO[dayPhase.id]);
+      return { dayWorkouts, loggedMeals, mealsKcal, workoutsKcal, netKcal, dayPhase, dayGoalCal };
+    }
+    function renderDayDetail() {
+      if (!_dayDetailCache) return;
+      const { dateStr, label, day } = _dayDetailCache;
+      const body = document.getElementById('day-detail-body');
+      day.checks = day.checks || {}; day.meals = day.meals || []; day.workouts = day.workouts || [];
+
+      const overall = overallPctForChecks(day.checks);
+      const { dayWorkouts, mealsKcal, workoutsKcal, netKcal, dayPhase, dayGoalCal } = dayNetKcalInfo(dateStr, day);
 
       const donuts = [['식사', 'insulin', 'var(--sky2)'], ['운동', 'growth', 'var(--gro)'], ['마음', 'cortisol', 'var(--cor)'], [hormoneScreenLabel(), 'oxytocin', 'var(--rose)']]
         .map(([l, h, c]) => donutSvg(hormonePctForChecks(h, day.checks), c, l)).join('');
@@ -3528,6 +3578,7 @@
       if (dateStr === todayISOLocal() && S._todayReport && S._todayReport.date === dateStr) {
         const slot = document.getElementById('day-report-slot');
         if (slot) slot.innerHTML = renderReportSections(S._todayReport.report, day);
+        if (typeof fetchCalMissSummary === 'function') fetchCalMissSummary().then(ms => { if (slot && _dayDetailCache && _dayDetailCache.dateStr === dateStr) slot.innerHTML = renderReportSections(S._todayReport.report, day, ms); });
         return;
       }
       try {
@@ -3538,6 +3589,7 @@
           const slot = document.getElementById('day-report-slot');
           if (slot) slot.innerHTML = renderReportSections(json.report, day);
           if (dateStr === todayISOLocal()) { S.reportGeneratedDate = dateStr; S._todayReport = { date: dateStr, report: json.report, day }; saveState(); }
+          if (typeof fetchCalMissSummary === 'function') fetchCalMissSummary().then(ms => { if (slot && _dayDetailCache && _dayDetailCache.dateStr === dateStr) slot.innerHTML = renderReportSections(json.report, day, ms); });
         }
       } catch (e) { console.error('[loadCachedReportIfAny]', e); }
     }
@@ -3583,7 +3635,20 @@
       const projected = currentW + kgPerDay * daysRemain;
       return { daysRemain, currentW, projected: Math.round(projected * 10) / 10, kgPerDay: Math.round(kgPerDay * 100) / 100 };
     }
+    // 그 날짜에 식사는 기록했는데 순섭취가 목표보다 적었고(=목표를 못 채웠고) 아직 이유를 안 골랐으면
+    // 실제 생성 전에 먼저 물어본다("다시 생성"=force일 때는 다시 묻지 않는다).
     async function generateDayReport(force = false) {
+      if (!_dayDetailCache) return;
+      const { dateStr, day } = _dayDetailCache;
+      const info = dayNetKcalInfo(dateStr, day);
+      const alreadyTagged = day.checks && day.checks.calMissReason;
+      if (!force && info.loggedMeals.length && info.netKcal < info.dayGoalCal && !alreadyTagged) {
+        openCalMissReasonModal(force);
+        return;
+      }
+      await _doGenerateDayReport(force);
+    }
+    async function _doGenerateDayReport(force = false) {
       if (!_dayDetailCache) return;
       const { dateStr, day } = _dayDetailCache;
       const slot = document.getElementById('day-report-slot');
@@ -3591,25 +3656,28 @@
       try {
         // force=false면 서버가 그 날짜에 이미 저장된 리포트를 찾아 그대로 돌려주고 Gemini를 다시 부르지
         // 않는다 — "다시 생성" 버튼(force=true)을 누른 경우만 실제로 새로 만든다.
-        const res = await fetchApi(apiUrl('/api/report'), {
-          method: 'POST', credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: buildDayReportPayload(dateStr, day), force })
-        });
+        const [res, missStats] = await Promise.all([
+          fetchApi(apiUrl('/api/report'), {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: buildDayReportPayload(dateStr, day), force })
+          }),
+          typeof fetchCalMissSummary === 'function' ? fetchCalMissSummary() : null,
+        ]);
         const json = await res.json().catch(() => null);
         if (!res.ok || !json || !json.success) {
-          slot.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--danger);font-size:12px;font-weight:700">리포트 생성에 실패했어요.</div><button class="btn btn-p" style="margin-top:8px" onclick="generateDayReport()">다시 시도</button>`;
+          slot.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--danger);font-size:12px;font-weight:700">리포트 생성에 실패했어요.</div><button class="btn btn-p" style="margin-top:8px" onclick="_doGenerateDayReport(${force})">다시 시도</button>`;
           return;
         }
         if (dateStr === todayISOLocal()) { S.reportGeneratedDate = dateStr; S._todayReport = { date: dateStr, report: json.report, day }; saveState(); }
-        slot.innerHTML = renderReportSections(json.report, day);
+        slot.innerHTML = renderReportSections(json.report, day, missStats);
       } catch (e) {
         console.error('[generateDayReport]', e);
-        slot.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--danger);font-size:12px;font-weight:700">네트워크 오류가 발생했어요.</div><button class="btn btn-p" style="margin-top:8px" onclick="generateDayReport()">다시 시도</button>`;
+        slot.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--danger);font-size:12px;font-weight:700">네트워크 오류가 발생했어요.</div><button class="btn btn-p" style="margin-top:8px" onclick="_doGenerateDayReport(${force})">다시 시도</button>`;
       }
     }
     // AI 리포트 5개 섹션 렌더링 (①목표체중 예측 ②식사 ③운동 ④마음(수면) ⑤일기)
-    function renderReportSections(r, day) {
+    function renderReportSections(r, day, missStats) {
       const scores = r.scores || {};
       const proj = computeWeightProjection();
       const dayMeals = (day.meals || []).filter(m => m.description || m.text);
@@ -3650,7 +3718,84 @@
       ${insights.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">인사이트</div>${insights.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:4px 0;border-bottom:1px solid var(--bdr)">${t}</div>`).join('')}</div>` : ''}
       ${actions.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">추천 행동</div>${actions.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:3px 0">・ ${t}</div>`).join('')}</div>` : ''}
       ${r.pcos_insight ? `<div class="card" style="margin-bottom:12px;border-color:rgba(244,143,177,.3);background:rgba(244,143,177,.05)"><div class="cap" style="color:var(--rose2)">PCOS 인사이트</div><div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.pcos_insight}</div></div>` : ''}
+      ${renderCalMissSection(missStats)}
+      ${renderGoalAdjustSection()}
       <button class="btn btn-o" onclick="generateDayReport(true)">🔄 다시 생성</button>`;
+    }
+    // 원형 안에 색이 다른 여러 구간(segments: [{value,color}])을 그리는 도넛. segments[0]부터 시계
+    // 방향으로 누적해서 채운다. donutSvg(단일 값용)와 별개로, "이유별 비율"처럼 여러 값을 한 도넛에
+    // 나눠 보여줘야 할 때 쓴다.
+    function multiSegmentDonut(segments) {
+      const r = 40, circ = 2 * Math.PI * r;
+      const total = segments.reduce((a, s) => a + s.value, 0) || 1;
+      let offset = 0;
+      const arcs = segments.map(s => {
+        const len = (s.value / total) * circ;
+        const arc = `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${s.color}" stroke-width="14" stroke-dasharray="${len} ${circ - len}" stroke-dashoffset="${-offset}" />`;
+        offset += len;
+        return arc;
+      }).join('');
+      return `<svg width="100" height="100" viewBox="0 0 100 100" style="transform:rotate(-90deg)">
+      <circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--sub)" stroke-width="14" />
+      ${arcs}
+    </svg>`;
+    }
+    const CAL_MISS_REASON_META = {
+      busy: { label: '😪 귀찮음', color: 'var(--warn)' },
+      appointment: { label: '📅 약속', color: 'var(--sky2)' },
+      sick: { label: '🤒 아픔', color: 'var(--danger)' },
+      pms: { label: '🌙 PMS', color: 'var(--rose)' },
+      unspecified: { label: '❔ 미입력', color: 'var(--muted)' },
+    };
+    // "그간의 기록"을 바탕으로 목표 칼로리를 못 채운 날 수 + 이유별 도넛. missStats는
+    // /api/data/calorie-miss-summary 응답({totalDaysTracked, missedDays, reasons})이다.
+    function renderCalMissSection(missStats) {
+      if (!missStats || !missStats.missedDays) return '';
+      const segments = Object.entries(missStats.reasons || {})
+        .filter(([, v]) => v > 0)
+        .map(([k, v]) => ({ value: v, ...(CAL_MISS_REASON_META[k] || { label: k, color: 'var(--muted)' }) }));
+      const legend = segments.map(s => `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text);font-weight:600"><span style="width:9px;height:9px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0"></span>${s.label} ${s.value}일</div>`).join('');
+      return `<div class="card" style="margin-bottom:12px">
+      <div class="cap">목표 칼로리 미달성 기록 (최근 ${missStats.totalDaysTracked}일 중)</div>
+      <div style="font-size:12px;color:var(--text);font-weight:600;margin:6px 0 10px">목표를 못 채운 날 <span style="color:var(--warn);font-weight:800">${missStats.missedDays}일</span></div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div>${multiSegmentDonut(segments)}</div>
+        <div style="display:flex;flex-direction:column;gap:6px">${legend}</div>
+      </div>
+    </div>`;
+    }
+    // 목표 조정 제안 — AI 호출 없이 computeWeightProjection()의 결정론적 추세 계산을 그대로 재사용해서,
+    // 지금 추세로 목표일에 도달할 예상 체중과 실제 목표 체중의 차이만큼 "기간을 며칠 늘리면/줄이면
+    // 맞는지"를 역산한다. 체중 기록이 2건 미만이거나 차이가 미미하면(0.5kg 미만) 제안하지 않는다.
+    function computeGoalAdjustmentSuggestion() {
+      if (!(S.weights.filter(w => w.t).length >= 2)) return null;
+      const proj = computeWeightProjection();
+      const gapToGoal = Math.round(Math.abs(proj.projected - S.goalWeight) * 10) / 10;
+      if (gapToGoal < 0.5) return null;
+      const needed = S.goalWeight - proj.currentW; // 지금부터 목표까지 필요한 변화량(부호 있음)
+      let extraDaysNeeded = null;
+      if (proj.kgPerDay !== 0 && Math.sign(proj.kgPerDay) === Math.sign(needed)) {
+        extraDaysNeeded = Math.ceil(needed / proj.kgPerDay) - proj.daysRemain;
+      }
+      return { proj, gapToGoal, extraDaysNeeded };
+    }
+    function renderGoalAdjustSection() {
+      const s = computeGoalAdjustmentSuggestion();
+      if (!s) return '';
+      const { proj, extraDaysNeeded } = s;
+      const msg = extraDaysNeeded == null
+        ? `최근 체중 변화 추세가 목표 방향과 달라요. 기간이나 목표 체중을 다시 점검해보는 걸 추천해요.`
+        : extraDaysNeeded > 0
+          ? `지금 추세라면 목표일까지 ${proj.projected}kg가 예상돼요. 목표(${S.goalWeight}kg)까지 가려면 기간을 약 ${extraDaysNeeded}일 늘리거나, 목표 체중을 ${proj.projected}kg로 조정하는 걸 고려해보세요.`
+          : `지금 추세라면 목표보다 빠르게 ${proj.projected}kg에 도달할 것 같아요. 기간을 약 ${Math.abs(extraDaysNeeded)}일 줄이거나, 목표를 ${proj.projected}kg로 더 도전적으로 조정할 수 있어요.`;
+      return `<div class="card" style="margin-bottom:12px;border-color:rgba(255,167,38,.3)">
+      <div class="cap">🎯 목표 조정 제안</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;margin-bottom:10px">${msg}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-o" style="flex:1" onclick="openMod('mod-edit-goal')">📅 목표 기간 변경</button>
+        <button class="btn btn-o" style="flex:1" onclick="openMod('mod-edit-goal')">⚖️ 목표 체중 변경</button>
+      </div>
+    </div>`;
     }
 
     // ═══════════════════════ 하루 한 번, 지정 시각 AI 리포트 자동 생성 ═══════════════════════

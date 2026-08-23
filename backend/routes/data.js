@@ -152,13 +152,83 @@ router.get('/month-summary', async (req, res) => {
     }
 });
 
+// 목표 칼로리를 못 채운 날 집계 (GET /api/data/calorie-miss-summary) - AI 리포트의 도넛 그래프용.
+// 그날 식사 기록이 있는데 순섭취가 그날 목표보다 적었던 날을 "미달성"으로 세고, 각 날짜에 사용자가
+// 고른 이유(routine_checks.checks.calMissReason)별로 묶는다. 이유를 안 고른 날은 'unspecified'.
+router.get('/calorie-miss-summary', async (req, res) => {
+    const { userId } = req.user;
+    try {
+        const profileRes = await pool.query('SELECT daily_kcal_target, cycle_len, start_date FROM profiles WHERE user_id = $1', [userId]);
+        const profile = profileRes.rows[0];
+        if (!profile || profile.daily_kcal_target == null) {
+            return res.json({ totalDaysTracked: 0, missedDays: 0, reasons: {} });
+        }
+
+        const yesterday = addDays(todayKST(), -1);
+        const startDate = toDateStr(profile.start_date);
+        const earliestAllowed = addDays(yesterday, -59); // 최대 60일까지만 집계
+        let from = startDate && startDate > earliestAllowed ? startDate : earliestAllowed;
+        if (from > yesterday) return res.json({ totalDaysTracked: 0, missedDays: 0, reasons: {} });
+
+        const [periodsRes, checksRes, { mealsByDate, workoutsByDate }] = await Promise.all([
+            pool.query('SELECT start_date, duration_days FROM periods WHERE user_id = $1', [userId]),
+            pool.query('SELECT check_date, checks FROM routine_checks WHERE user_id = $1 AND check_date BETWEEN $2 AND $3', [userId, from, yesterday]),
+            fetchDailyMealsWorkouts(pool, userId, from, yesterday),
+        ]);
+        const normPeriods = periodsRes.rows.map(p => ({ start_date: toDateStr(p.start_date), duration_days: p.duration_days }));
+        const reasonByDate = {};
+        checksRes.rows.forEach(r => { if (r.checks && r.checks.calMissReason) reasonByDate[toDateStr(r.check_date)] = r.checks.calMissReason; });
+
+        let totalDaysTracked = 0, missedDays = 0;
+        const reasons = {};
+        for (let d = from; d <= yesterday; d = addDays(d, 1)) {
+            const info = dayNetVsGoal(mealsByDate, workoutsByDate, profile, normPeriods, d);
+            if (!info) continue;
+            totalDaysTracked++;
+            if (!info.met) {
+                missedDays++;
+                const reason = reasonByDate[d] || 'unspecified';
+                reasons[reason] = (reasons[reason] || 0) + 1;
+            }
+        }
+        res.json({ totalDaysTracked, missedDays, reasons });
+    } catch (err) {
+        console.error('[DATA] GET /calorie-miss-summary failed for userId:', userId, err);
+        res.status(500).json({ error: 'Failed to load calorie miss summary' });
+    }
+});
+
+const toDateStr = (d) => (d == null ? null : (d instanceof Date ? d.toISOString().split('T')[0] : String(d).slice(0, 10)));
+
+// [from, to] 구간의 식사/운동을 날짜별로 묶어서 돌려준다. rolloverSavedTotal과 /calorie-miss-summary가
+// 둘 다 "그날 식사 기록이 있었는지 + 그날 순섭취(mealsKcal-workoutsKcal)"를 같은 기준으로 판단해야 해서
+// 공용으로 뺐다. queryable은 pool 또는 트랜잭션 client 둘 다 받을 수 있다.
+async function fetchDailyMealsWorkouts(queryable, userId, from, to) {
+    const [mealsRes, workoutsRes] = await Promise.all([
+        queryable.query('SELECT eaten_date, kcal, description FROM meals WHERE user_id = $1 AND eaten_date BETWEEN $2 AND $3', [userId, from, to]),
+        queryable.query('SELECT performed_date, kcal FROM workouts WHERE user_id = $1 AND performed_date BETWEEN $2 AND $3', [userId, from, to]),
+    ]);
+    const mealsByDate = {}, workoutsByDate = {};
+    mealsRes.rows.forEach(m => { const k = toDateStr(m.eaten_date); (mealsByDate[k] = mealsByDate[k] || []).push(m); });
+    workoutsRes.rows.forEach(w => { const k = toDateStr(w.performed_date); (workoutsByDate[k] = workoutsByDate[k] || []).push(w); });
+    return { mealsByDate, workoutsByDate };
+}
+// 그 날짜의 순섭취/목표를 계산한다. 식사 기록이 하나도 없는 날은 null(정산·집계 대상에서 제외) —
+// 안 그러면 순섭취가 항상 0이라 "목표보다 적게 먹은 날"로 잘못 잡힌다.
+function dayNetVsGoal(mealsByDate, workoutsByDate, profile, normPeriods, date) {
+    const dayMeals = (mealsByDate[date] || []).filter(m => m.description);
+    if (!dayMeals.length) return null;
+    const mealsKcal = dayMeals.reduce((a, m) => a + (m.kcal || 0), 0);
+    const workoutsKcal = (workoutsByDate[date] || []).reduce((a, w) => a + (w.kcal || 0), 0);
+    const netKcal = mealsKcal - workoutsKcal;
+    const dayGoal = Math.round(profile.daily_kcal_target * phaseRatioForDate(normPeriods, profile.cycle_len, date));
+    return { netKcal, dayGoal, met: netKcal >= dayGoal };
+}
+
 // 하루가 끝나면(KST 자정) "그날 순섭취(식사kcal-운동kcal) < 그날 목표 칼로리"였던 만큼을 치팅데이
 // 세이브 칼로리(profiles.saved_total_kcal)에 적립한다. 정확히 자정에 도는 배치 잡이 따로 없는 대신,
 // 매번 GET /api/data 때마다 "어제까지" 아직 정산 안 된 날짜가 있으면 여기서 한꺼번에 정산한다.
 // saved_total_computed_through로 이미 정산한 마지막 날짜를 기억해서 같은 날을 두 번 더하지 않는다.
-// 식사를 하나도 기록 안 한 날은 순섭취가 항상 0이라 무조건 "목표보다 적게 먹은 걸로" 잘못 적립되므로
-// 그런 날은 건너뛴다(정산 완료 표시만 하고 세이브는 늘리지 않음).
-const toDateStr = (d) => (d == null ? null : (d instanceof Date ? d.toISOString().split('T')[0] : String(d).slice(0, 10)));
 async function rolloverSavedTotal(client, userId, profile, periods) {
     if (!profile || profile.daily_kcal_target == null) return profile ? (profile.saved_total_kcal || 0) : 0;
 
@@ -172,25 +242,14 @@ async function rolloverSavedTotal(client, userId, profile, periods) {
     if (cursor < earliestAllowed) cursor = earliestAllowed;
     if (cursor > yesterday) return profile.saved_total_kcal || 0; // 정산할 새 날짜 없음
 
-    const [mealsRes, workoutsRes] = await Promise.all([
-        client.query('SELECT eaten_date, kcal, description FROM meals WHERE user_id = $1 AND eaten_date BETWEEN $2 AND $3', [userId, cursor, yesterday]),
-        client.query('SELECT performed_date, kcal FROM workouts WHERE user_id = $1 AND performed_date BETWEEN $2 AND $3', [userId, cursor, yesterday]),
-    ]);
-
-    const mealsByDate = {}, workoutsByDate = {};
-    mealsRes.rows.forEach(m => { const k = toDateStr(m.eaten_date); (mealsByDate[k] = mealsByDate[k] || []).push(m); });
-    workoutsRes.rows.forEach(w => { const k = toDateStr(w.performed_date); (workoutsByDate[k] = workoutsByDate[k] || []).push(w); });
+    const { mealsByDate, workoutsByDate } = await fetchDailyMealsWorkouts(client, userId, cursor, yesterday);
     const normPeriods = (periods || []).map(p => ({ start_date: toDateStr(p.start_date), duration_days: p.duration_days }));
 
     let delta = 0;
     for (let d = cursor; d <= yesterday; d = addDays(d, 1)) {
-        const dayMeals = (mealsByDate[d] || []).filter(m => m.description);
-        if (!dayMeals.length) continue; // 그날 식사 기록이 없으면 정산에서 제외
-        const mealsKcal = dayMeals.reduce((a, m) => a + (m.kcal || 0), 0);
-        const workoutsKcal = (workoutsByDate[d] || []).reduce((a, w) => a + (w.kcal || 0), 0);
-        const netKcal = mealsKcal - workoutsKcal;
-        const dayGoal = Math.round(profile.daily_kcal_target * phaseRatioForDate(normPeriods, profile.cycle_len, d));
-        if (netKcal < dayGoal) delta += (dayGoal - netKcal);
+        const info = dayNetVsGoal(mealsByDate, workoutsByDate, profile, normPeriods, d);
+        if (!info) continue; // 그날 식사 기록이 없으면 정산에서 제외
+        if (!info.met) delta += (info.dayGoal - info.netKcal);
     }
 
     const newTotal = (profile.saved_total_kcal || 0) + delta;

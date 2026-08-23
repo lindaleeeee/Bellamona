@@ -297,6 +297,19 @@ function saveChecksRow() {
     .catch(e => console.error('[saveChecksRow]', e));
 }
 
+// AI 리포트의 "목표 칼로리 미달성" 도넛 그래프용 집계. 실패하면 그 카드만 조용히 안 보인다(리포트
+// 전체를 막지 않음).
+async function fetchCalMissSummary() {
+  try {
+    const res = await fetchApi(apiUrl('/api/data/calorie-miss-summary'), { credentials: 'include' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    console.error('[fetchCalMissSummary]', e);
+    return null;
+  }
+}
+
 // dateOverride를 주면 그 날짜로 저장한다(캘린더에서 과거 날짜 일기를 소급 기록할 때 사용).
 function saveDiaryRow(entry, dateOverride) {
   if (!entry) return;
