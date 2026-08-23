@@ -17,7 +17,10 @@ function fmtDateShort(isoDateStr) {
   const d = new Date(isoDateStr);
   return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
 }
-function todayISO() { return new Date().toISOString().split('T')[0]; }
+// UTC가 아니라 브라우저 로컬 날짜를 써야 한다 — 한국은 UTC+9라 자정~오전9시 사이에
+// toISOString() 기준으로 날짜를 뽑으면 아직 "어제" UTC 날짜가 나와, 그 시간대에 기록한 게
+// 전날 날짜로 저장되는 버그가 있었다(index.html의 todayISOLocal()과 반드시 같은 방식이어야 함).
+function todayISO() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
 // ── 구글 로그인 ──────────────────────────────────────────────
 let _tokenClient = null;
@@ -143,6 +146,7 @@ async function restoreFromServer() {
       S.periods = d.periods.map(p => ({ start: (p.start_date + '').slice(0, 10), days: p.duration_days }));
     }
 
+    if (typeof ensureFreshDay === 'function') ensureFreshDay(); // 날짜가 바뀌었으면 옛 날짜의 체크를 먼저 비우고 서버 값을 채운다
     if (d.checks) S.checks = Object.assign({}, S.checks, d.checks);
 
     if (d.diaries && d.diaries.length) {
@@ -300,7 +304,8 @@ function saveDiaryRow(entry, dateOverride) {
   }).catch(e => console.error('[saveDiaryRow]', e));
 }
 
-// entry: {date, time, intensity, durationMin, exerciseType} — 하루에 여러 번 호출될 수 있다(식사 기록과 동일)
+// entry: {date, time, intensity, durationMin, exerciseType, bodyPart?, routineName?} — 하루에 여러 번
+// 호출될 수 있다(식사 기록과 동일). bodyPart/routineName은 무산소(근력) 루틴 기록일 때만 채워진다.
 function saveWorkoutRow(entry) {
   if (!entry) return;
   fetchApi(apiUrl('/api/data/workouts'), {
@@ -311,7 +316,9 @@ function saveWorkoutRow(entry) {
       logged_time: entry.time,
       intensity: entry.intensity,
       duration_min: entry.durationMin,
-      exercise_type: entry.exerciseType
+      exercise_type: entry.exerciseType,
+      body_part: entry.bodyPart,
+      routine_name: entry.routineName
     })
   })
     .then(r => r.ok ? r.json() : null)

@@ -1,5 +1,6 @@
 const express = require('express');
 const { Pool } = require('pg');
+const { todayKST } = require('../utils/date');
 const router = express.Router();
 
 const pool = new Pool({
@@ -159,7 +160,7 @@ async function computeStreakFor(userId) {
         [userId]
     );
     const loggedDates = new Set(recentRes.rows.map(r => r.check_date.toISOString().split('T')[0]));
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = todayKST();
     let streakDays = 0;
     if (recentRes.rows.length > 0) {
         const cursor = new Date(todayStr + 'T00:00:00.000Z');
@@ -184,7 +185,7 @@ router.get('/friends', async (req, res) => {
              ORDER BY f.created_at ASC`,
             [userId]
         );
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = todayKST();
         const friends = await Promise.all(friendsRes.rows.map(async (f) => {
             const checksRes = await pool.query(
                 'SELECT checks FROM routine_checks WHERE user_id = $1 AND check_date = $2',

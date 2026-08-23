@@ -128,6 +128,12 @@ const initDB = async () => {
     await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS logged_time TIME;');
     console.log('[DB] workouts.intensity / duration_min / exercise_type / minutes_after_meal / logged_time 컬럼 확인 완료');
 
+    // 성장호르몬 화면: 무산소(근력) 운동을 부위별 저장 루틴으로 기록하는 기능 추가.
+    // 유산소 기록은 그대로 null로 남는다(하위호환).
+    await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS body_part VARCHAR(20);');
+    await client.query('ALTER TABLE workouts ADD COLUMN IF NOT EXISTS routine_name VARCHAR(100);');
+    console.log('[DB] workouts.body_part / routine_name 컬럼 확인 완료');
+
     // 코르티솔 화면: 수면시간 기록
     await client.query(`
       CREATE TABLE IF NOT EXISTS sleep_logs (

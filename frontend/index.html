@@ -535,6 +535,194 @@
       font-family: 'Nunito', sans-serif
     }
 
+    /* 성장호르몬 — 유산소/무산소 운동 기록 (rcpd-*와 같은 시각 언어를 green 테마로) */
+    .wko-mode-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px
+    }
+
+    .wko-mode-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: var(--surf);
+      border: 1.5px solid var(--bdr);
+      border-radius: 16px;
+      padding: 14px 8px;
+      cursor: pointer;
+      transition: all .15s
+    }
+
+    .wko-mode-btn .em {
+      font-size: 24px
+    }
+
+    .wko-mode-btn .lb {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text)
+    }
+
+    .wko-mode-btn.cardio:hover {
+      border-color: var(--sky2);
+      background: var(--sky3)
+    }
+
+    .wko-mode-btn.strength:hover {
+      border-color: var(--gro);
+      background: var(--gro-bg)
+    }
+
+    .wko-chip-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 12px
+    }
+
+    .wko-chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 13px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1.5px solid var(--bdr);
+      background: var(--surf);
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap
+    }
+
+    .wko-chip.on {
+      border-color: var(--gro);
+      color: var(--gro);
+      background: var(--gro-bg)
+    }
+
+    .wko-routine-row {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 11px;
+      background: var(--card2);
+      border-radius: 13px;
+      margin-bottom: 7px;
+      border: 1.5px solid var(--bdr)
+    }
+
+    .wko-routine-info {
+      flex: 1;
+      cursor: pointer
+    }
+
+    .wko-routine-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text)
+    }
+
+    .wko-routine-sub {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 600;
+      margin-top: 2px
+    }
+
+    .wko-check {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid var(--bdr);
+      background: var(--surf);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all .15s
+    }
+
+    .wko-check.done {
+      border-color: var(--gro);
+      background: var(--gro);
+      color: #fff
+    }
+
+    .wko-pill-row {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 10px 0 16px
+    }
+
+    .wko-pill {
+      background: var(--gro-bg);
+      border: 1.5px dashed rgba(129, 199, 132, .5);
+      color: var(--gro);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 13px;
+      border-radius: 99px
+    }
+
+    .wko-tip {
+      background: var(--gro-bg);
+      border: 1.5px dashed rgba(129, 199, 132, .5);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 14px
+    }
+
+    .wko-tip-label {
+      display: inline-block;
+      background: var(--gro);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 99px;
+      margin-bottom: 10px
+    }
+
+    .wko-tip-item {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.7;
+      font-weight: 600
+    }
+
+    .wko-input-tab-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px
+    }
+
+    .wko-input-tab {
+      flex: 1;
+      text-align: center;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1.5px solid var(--bdr);
+      background: var(--surf);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer
+    }
+
+    .wko-input-tab.on {
+      border-color: var(--gro);
+      color: var(--gro);
+      background: var(--gro-bg)
+    }
+
     .ck-item {
       display: flex;
       align-items: center;
@@ -829,14 +1017,20 @@
 
     /* 하루 한 번 자동 생성된 AI 리포트가 준비됐을 때 버튼을 강조 */
     @keyframes reportPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(91, 184, 245, .5) }
-      50% { box-shadow: 0 0 0 8px rgba(91, 184, 245, 0) }
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(91, 184, 245, .5)
+      }
+
+      50% {
+        box-shadow: 0 0 0 8px rgba(91, 184, 245, 0)
+      }
     }
 
     .report-ready {
       animation: reportPulse 1.8s ease-in-out infinite
     }
-
   </style>
 </head>
 
@@ -926,7 +1120,8 @@
                 <input class="input" placeholder="키 (cm)" type="number" id="ob-h" oninput="calcBmi()" />
                 <input class="input" placeholder="현재 체중 (kg)" type="number" id="ob-cw" oninput="calcBmi()" />
               </div>
-              <div class="card" style="margin:0;background:var(--sky3);border-color:rgba(91,184,245,.3)" id="ob-bmi-card">
+              <div class="card" style="margin:0;background:var(--sky3);border-color:rgba(91,184,245,.3)"
+                id="ob-bmi-card">
                 <div class="cap">BMI (체질량지수)</div>
                 <div style="display:flex;align-items:baseline;gap:8px">
                   <div style="font-size:28px;font-weight:800;color:var(--sky2)" id="ob-bmi-val">-</div>
@@ -1140,7 +1335,8 @@
               </div>
               <div style="flex:1">
                 <div style="font-size:13px;font-weight:700;color:var(--text)">이달 저속노화 점수</div>
-                <div style="font-size:11px;color:var(--ok);margin-top:2px;font-weight:700" id="d-score-sub">기록을 시작하면 표시돼요</div>
+                <div style="font-size:11px;color:var(--ok);margin-top:2px;font-weight:700" id="d-score-sub">기록을 시작하면
+                  표시돼요</div>
               </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:5px">
@@ -1227,7 +1423,8 @@
             <div class="cap" style="margin-bottom:5px">조리 시간</div>
             <div style="display:flex;gap:5px;flex-wrap:wrap">
               <span class="chip" onclick="rfil(this,'time',5)">5분</span><span class="chip"
-                onclick="rfil(this,'time',10)">10분</span><span class="chip" onclick="rfil(this,'time',-15)">15분 이상</span>
+                onclick="rfil(this,'time',10)">10분</span><span class="chip" onclick="rfil(this,'time',-15)">15분
+                이상</span>
             </div>
             <div class="cap" style="margin-bottom:5px;margin-top:10px">칼로리</div>
             <div style="display:flex;gap:5px;flex-wrap:wrap" id="rcp-cal-chips"></div>
@@ -1261,8 +1458,10 @@
                 onclick="openMod('mod-avatar')">✏️</div>
             </div>
             <div style="font-size:17px;font-weight:800;color:var(--text)" id="prof-name">혜림님</div>
-            <div style="font-size:11px;color:var(--sky2);margin-top:3px;font-weight:700" id="prof-today-pct">오늘 달성률 -</div>
-            <div style="font-size:11px;color:var(--lav2);margin-top:2px;font-weight:700" id="prof-level-streak">Slow Aging Lv.- · -</div>
+            <div style="font-size:11px;color:var(--sky2);margin-top:3px;font-weight:700" id="prof-today-pct">오늘 달성률 -
+            </div>
+            <div style="font-size:11px;color:var(--lav2);margin-top:2px;font-weight:700" id="prof-level-streak">Slow
+              Aging Lv.- · -</div>
           </div>
 
           <div class="card" style="margin-bottom:10px" id="prof-my-info">
@@ -1339,7 +1538,8 @@
               <div class="cap" style="margin-bottom:0">🤖 AI 리포트</div>
               <div style="display:flex;align-items:center;gap:6px">
                 <span style="font-size:10px;color:var(--muted);font-weight:600">생성 시각</span>
-                <input class="input" type="time" id="report-time-input" style="width:90px;padding:6px 8px;font-size:12px" onchange="saveReportTime(this.value)" />
+                <input class="input" type="time" id="report-time-input"
+                  style="width:90px;padding:6px 8px;font-size:12px" onchange="saveReportTime(this.value)" />
               </div>
             </div>
             <button id="prof-report-btn" class="btn btn-p" onclick="openTodayReport()">리포트 확인하기</button>
@@ -1362,9 +1562,11 @@
                 width="15" height="15" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24">
                 <polyline points="9 18 15 12 9 6" />
               </svg></div>
-            <div class="card2" style="display:flex;justify-content:space-between;align-items:center;border-color:var(--danger);cursor:pointer"
-              onclick="doWithdraw()"><span style="font-size:13px;color:var(--danger);font-weight:700">⚠️ 회원 탈퇴</span><svg
-                width="15" height="15" fill="none" stroke="var(--danger)" stroke-width="2" viewBox="0 0 24 24">
+            <div class="card2"
+              style="display:flex;justify-content:space-between;align-items:center;border-color:var(--danger);cursor:pointer"
+              onclick="doWithdraw()"><span style="font-size:13px;color:var(--danger);font-weight:700">⚠️ 회원
+                탈퇴</span><svg width="15" height="15" fill="none" stroke="var(--danger)" stroke-width="2"
+                viewBox="0 0 24 24">
                 <polyline points="9 18 15 12 9 6" />
               </svg></div>
           </div>
@@ -1421,23 +1623,84 @@
     <div class="mov" id="mod-workout-intensity">
       <div class="msh">
         <div class="mh"></div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px" id="wk-log-title">운동 기록</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">🏃 유산소 운동 기록</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500">하루에 여러 번 추가할 수 있어요</div>
+        <div class="cap" style="margin-bottom:5px">강도</div>
+        <div class="wko-chip-row" id="wk-intensity-chips"></div>
         <div class="cap" style="margin-bottom:5px">언제 했나요?</div>
         <input class="input" type="time" id="wk-time" style="margin-bottom:14px" />
         <div class="cap" style="margin-bottom:5px">무엇을 했나요? (검색)</div>
         <div style="position:relative;margin-bottom:12px">
-          <input class="input" id="wk-search" placeholder="운동 종류 검색 또는 직접 입력" oninput="searchExercise(this.value)" autocomplete="off" />
+          <input class="input" id="wk-search" placeholder="운동 종류 검색 또는 직접 입력" oninput="searchExercise(this.value)"
+            autocomplete="off" />
           <div class="dd" id="wk-search-dd" style="display:none"></div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-          <span class="cap" style="margin-bottom:0">운동 시간</span>
-          <span id="wk-duration-label" style="font-size:13px;font-weight:800;color:var(--gro)">20분</span>
+        <div class="wko-input-tab-row">
+          <div class="wko-input-tab on" id="wk-tab-time" onclick="setWorkoutInputMode('time')">⏱ 시간으로 입력</div>
+          <div class="wko-input-tab" id="wk-tab-kcal" onclick="setWorkoutInputMode('kcal')">🔥 칼로리로 입력</div>
         </div>
-        <input type="range" id="wk-duration" min="0" max="60" step="5" value="20" oninput="onWorkoutDurationInput(this.value)" style="width:100%;margin-bottom:6px;accent-color:var(--gro)" />
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-bottom:10px"><span>0분</span><span>30분</span><span>60분</span></div>
-        <div style="background:var(--gro-bg);border:1.5px solid rgba(129,199,132,.3);border-radius:11px;padding:9px 12px;margin-bottom:14px;font-size:13px;font-weight:700;color:var(--gro)" id="wk-kcal-preview">약 0kcal 소모</div>
+        <div id="wk-time-mode">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <span class="cap" style="margin-bottom:0">운동 시간</span>
+            <span id="wk-duration-label" style="font-size:13px;font-weight:800;color:var(--gro)">20분</span>
+          </div>
+          <input type="range" id="wk-duration" min="0" max="60" step="5" value="20"
+            oninput="onWorkoutDurationInput(this.value)" style="width:100%;margin-bottom:6px;accent-color:var(--gro)" />
+          <div
+            style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-bottom:10px">
+            <span>0분</span><span>30분</span><span>60분</span>
+          </div>
+        </div>
+        <div id="wk-kcal-mode" style="display:none;margin-bottom:10px">
+          <div class="cap" style="margin-bottom:5px">목표 소모 칼로리</div>
+          <input class="input" type="number" id="wk-kcal-input" placeholder="예: 150" min="0"
+            oninput="onWorkoutKcalInput(this.value)" />
+        </div>
+        <div
+          style="background:var(--gro-bg);border:1.5px solid rgba(129,199,132,.3);border-radius:11px;padding:9px 12px;margin-bottom:14px;font-size:13px;font-weight:700;color:var(--gro)"
+          id="wk-kcal-preview">약 0kcal 소모</div>
         <button class="btn btn-p" onclick="saveWorkoutEntry()">저장</button>
+      </div>
+    </div>
+
+    <div class="mov" id="mod-strength">
+      <div class="msh">
+        <div class="mh"></div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">🏋️ 근력 운동 기록</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500">부위를 고르고 오늘 한 루틴을 체크하세요</div>
+        <div class="wko-chip-row" id="wko-bodypart-chips"></div>
+        <div id="wko-routine-list"></div>
+        <button class="btn btn-o" style="margin-top:6px" onclick="openCustomRoutineForm()">+ 내 루틴 추가</button>
+        <div id="wko-custom-form"
+          style="display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--bdr)">
+          <div class="cap" style="margin-bottom:5px">루틴 이름</div>
+          <input class="input" id="wko-cr-name" placeholder="예: 케이블 크로스오버" style="margin-bottom:10px" />
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <div style="flex:1">
+              <div class="cap" style="margin-bottom:5px">세트</div><input class="input" type="number" id="wko-cr-sets"
+                placeholder="3" min="1" />
+            </div>
+            <div style="flex:1">
+              <div class="cap" style="margin-bottom:5px">횟수</div><input class="input" id="wko-cr-reps"
+                placeholder="12회" />
+            </div>
+            <div style="flex:1">
+              <div class="cap" style="margin-bottom:5px">소요(분)</div><input class="input" type="number" id="wko-cr-min"
+                placeholder="8" min="1" />
+            </div>
+          </div>
+          <div class="cap" style="margin-bottom:5px">TIP (선택, 줄바꿈으로 여러 개)</div>
+          <textarea class="input" id="wko-cr-tips" rows="3" style="margin-bottom:12px"
+            placeholder="예: 무릎이 발끝을 넘지 않게"></textarea>
+          <button class="btn btn-p" onclick="saveCustomRoutine()">루틴 저장</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mov" id="mod-routine-detail">
+      <div class="msh">
+        <div class="mh"></div>
+        <div id="wko-detail-body"></div>
       </div>
     </div>
 
@@ -1472,14 +1735,17 @@
           style="display:flex;align-items:center;gap:8px;background:var(--sky3);border:1px solid var(--sky2);border-radius:10px;padding:10px 12px;margin-bottom:14px">
           <div style="flex:1">
             <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">내 친구 코드</div>
-            <div style="font-size:15px;font-weight:800;color:var(--sky2);letter-spacing:.5px" id="my-friend-code">-</div>
+            <div style="font-size:15px;font-weight:800;color:var(--sky2);letter-spacing:.5px" id="my-friend-code">-
+            </div>
           </div>
           <button class="btn" style="padding:6px 12px;font-size:12px" onclick="copyFriendCode()">복사</button>
         </div>
         <div id="friends-modal-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
-        <div id="friend-add-error" style="font-size:11px;color:var(--danger);font-weight:600;margin-bottom:6px;display:none"></div>
-        <input class="input" id="friend-code-input" placeholder="친구 코드 입력 (BELLA-XXXX)" style="margin-bottom:10px" /><button
-          class="btn btn-p" id="friend-add-btn" onclick="submitFriendCode()">친구 추가</button>
+        <div id="friend-add-error"
+          style="font-size:11px;color:var(--danger);font-weight:600;margin-bottom:6px;display:none"></div>
+        <input class="input" id="friend-code-input" placeholder="친구 코드 입력 (BELLA-XXXX)"
+          style="margin-bottom:10px" /><button class="btn btn-p" id="friend-add-btn" onclick="submitFriendCode()">친구
+          추가</button>
       </div>
     </div>
 
@@ -1542,13 +1808,15 @@
         </div>
         <div class="cap" style="margin-bottom:5px">레시피 검색</div>
         <div style="position:relative;margin-bottom:12px">
-          <input class="input" id="food-recipe-search" placeholder="레시피 이름으로 검색" oninput="searchFoodRecipe(this.value)" autocomplete="off" />
+          <input class="input" id="food-recipe-search" placeholder="레시피 이름으로 검색" oninput="searchFoodRecipe(this.value)"
+            autocomplete="off" />
           <div class="dd" id="food-recipe-dd" style="display:none"></div>
         </div>
         <div class="cap" style="margin-bottom:6px">자주 먹는 메뉴</div>
         <div id="food-quick-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
         <div class="cap" style="margin-bottom:5px">무엇을 드셨나요?</div>
-        <textarea class="input" id="food-text" rows="3" placeholder="예: 샐러드 파스타 1/2인분, 나시고랭 1인분..." style="margin-bottom:12px"></textarea>
+        <textarea class="input" id="food-text" rows="3" placeholder="예: 샐러드 파스타 1/2인분, 나시고랭 1인분..."
+          style="margin-bottom:12px"></textarea>
         <div class="cap" style="margin-bottom:5px">섭취 칼로리 (kcal, 직접 수정 가능)</div>
         <input class="input" type="number" id="food-kcal" placeholder="예: 350" style="margin-bottom:14px" />
         <button class="btn btn-p" onclick="saveFoodEntry()" style="margin-bottom:8px">저장</button>
@@ -1577,18 +1845,54 @@
         <div class="mh"></div>
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px">🦋 아이콘 선택</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
-          <div onclick="setAvatar('🦋')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🦋</div>
-          <div onclick="setAvatar('🌸')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🌸</div>
-          <div onclick="setAvatar('🌺')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🌺</div>
-          <div onclick="setAvatar('🌻')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🌻</div>
-          <div onclick="setAvatar('🐝')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🐝</div>
-          <div onclick="setAvatar('🦄')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🦄</div>
-          <div onclick="setAvatar('🐬')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🐬</div>
-          <div onclick="setAvatar('🦢')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🦢</div>
-          <div onclick="setAvatar('🌙')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🌙</div>
-          <div onclick="setAvatar('⭐')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">⭐</div>
-          <div onclick="setAvatar('💎')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">💎</div>
-          <div onclick="setAvatar('🌿')" style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🌿</div>
+          <div onclick="setAvatar('🦋')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🦋
+          </div>
+          <div onclick="setAvatar('🌸')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🌸
+          </div>
+          <div onclick="setAvatar('🌺')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🌺
+          </div>
+          <div onclick="setAvatar('🌻')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🌻
+          </div>
+          <div onclick="setAvatar('🐝')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🐝
+          </div>
+          <div onclick="setAvatar('🦄')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🦄
+          </div>
+          <div onclick="setAvatar('🐬')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🐬
+          </div>
+          <div onclick="setAvatar('🦢')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🦢
+          </div>
+          <div onclick="setAvatar('🌙')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🌙
+          </div>
+          <div onclick="setAvatar('⭐')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">⭐
+          </div>
+          <div onclick="setAvatar('💎')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">💎
+          </div>
+          <div onclick="setAvatar('🌿')"
+            style="width:52px;height:52px;border-radius:14px;background:var(--card2);border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .15s"
+            onmouseenter="this.style.borderColor='var(--sky2)'" onmouseleave="this.style.borderColor='var(--bdr)'">🌿
+          </div>
         </div>
       </div>
     </div>
@@ -1633,6 +1937,7 @@
   <script src="/js/data-cheat-foods.js"></script>
   <script src="/js/data-meal-plans.js"></script>
   <script src="/js/data-exercises.js"></script>
+  <script src="/js/data-workout-routines.js"></script>
   <script src="/js/data-recipes.js"></script>
   <script>
     // js/sync.js가 쓰는 백엔드 연결 설정. Vite가 빌드/개발 시 frontend/.env 값으로 치환한다.
@@ -1707,12 +2012,13 @@
       loggedIn: false, prev: 's-home', curH: 'insulin', obStep: 1,
       name: '혜림', goalCal: 1090, baseBurned: 380,
       exBurned: { minutesAfterMeal: null },
-      sleepLogs: [], workoutLogs: [], nextWorkoutId: 1, _showFastDetail: false,
+      sleepLogs: [], workoutLogs: [], nextWorkoutId: 1, customRoutines: {}, _showFastDetail: false,
       reportTime: '21:00', reportGeneratedDate: null, _todayReport: null,
       savedTotal: 0, calMon: { y: 2026, m: 3 },
       gender: 'female',
       periods: [{ start: '2026-04-01', days: 5 }], cycleLen: 28,
       checks: { i1: false, i2: false, i3: false, i4: false, g1: false, g2: false, g3: false, c1: false, c2: false, c3: false, c4: false },
+      checksDate: null, // 마지막으로 S.checks가 채워진 "오늘" 날짜(로컬). 날짜가 바뀌면 ensureFreshDay()가 리셋한다.
       meals: [
         { id: 0, label: '아침', time: '07:30', text: '', kcal: null },
         { id: 1, label: '점심', time: '12:30', text: '', kcal: null },
@@ -1778,19 +2084,73 @@
       S.rFilters = { time: null, type: null, cost: null, cal: null };
       S._schemaVersion = SCHEMA_VERSION;
     } catch (e) { }
+    ensureFreshDay();
 
     function saveState() {
       localStorage.setItem('bellamona_data', JSON.stringify(S));
     }
 
+    // localStorage/서버 응답이 예전 날짜의 S.checks를 그대로 들고 있다가 새 날로 "이어붙는" 걸 막는다.
+    // (예: 금요일에 다 체크한 상태가 로컬에 저장돼 있으면, 토요일 아침 서버가 "오늘 체크"로 빈 값을
+    //  내려줘도 merge라서 금요일 값이 안 지워지고 그대로 남아 토요일도 다 한 걸로 보였던 버그의 원인)
+    // 날짜가 바뀌면 S.checks를 비우고 나서 그날의 서버 값을 새로 채운다.
+    function ensureFreshDay() {
+      const t = todayISOLocal();
+      if (S.checksDate !== t) {
+        S.checks = {};
+        S.checksDate = t;
+      }
+    }
+
     // ═══════════════════════ HELPERS ═══════════════════════
+    // ── Browser History API: 뒤로가기 버튼으로 앱 내 이전 화면으로 이동 ──
+    let _skipPush = false; // popstate 핸들러가 go/goH/closeMod을 호출할 때 이중 push 방지
+    function _pushNav(type, data) {
+      if (_skipPush) return;
+      history.pushState({ type, ...data }, '');
+    }
+    // 열려 있는 모달 중 가장 위에 있는 것을 닫는다.
+    function _closeTopModal() {
+      const openModals = document.querySelectorAll('.mov.open');
+      if (!openModals.length) return false;
+      openModals[openModals.length - 1].classList.remove('open');
+      return true;
+    }
+    window.addEventListener('popstate', function (e) {
+      _skipPush = true;
+      try {
+        // 모달이 열려 있으면 먼저 닫는다
+        if (_closeTopModal()) { _skipPush = false; return; }
+        // 모달이 없으면 이전 화면으로
+        const st = e.state;
+        if (st && st.type === 'hormone') {
+          goH(st.hid);
+        } else if (st && st.type === 'screen') {
+          go(st.id);
+        } else {
+          // state 없음 = 앱 첫 진입 지점이므로 홈으로
+          const curScr = document.querySelector('.scr.on')?.id;
+          if (curScr && curScr !== 's-home' && curScr !== 's-login' && curScr !== 's-onboard') {
+            go('s-home');
+          }
+        }
+      } finally { _skipPush = false; }
+    });
+    // 앱 최초 로드 시 현재 상태를 replaceState로 기록 (뒤로 갈 곳이 없을 때 대비)
+    history.replaceState({ type: 'screen', id: 's-home' }, '');
+
     function go(id) {
       document.querySelectorAll('.scr').forEach(s => s.classList.remove('on')); const el = document.getElementById(id); if (el) el.classList.add('on');
       const navMap = { 's-home': 'nav-home', 's-dash': 'nav-dash', 's-diet': 'nav-diet', 's-profile': 'nav-profile' };
       if (navMap[id]) { document.querySelectorAll('.ni').forEach(n => n.classList.remove('on')); document.getElementById(navMap[id])?.classList.add('on'); }
       if (id === 's-dash') renderDash(); if (id === 's-diet') renderRecipes(); updateHome(); updateProfileHeader();
     }
-    function navTo(el, id) { document.querySelectorAll('.ni').forEach(n => n.classList.remove('on')); el.classList.add('on'); if (id !== 's-hormone') S.prev = id; go(id); }
+    function navTo(el, id) {
+      document.querySelectorAll('.ni').forEach(n => n.classList.remove('on')); el.classList.add('on');
+      if (id !== 's-hormone') S.prev = id;
+      _pushNav('screen', { id });
+      go(id);
+    }
     function openMod(id) {
       if (id === 'mod-cheat') { renderCheat(); document.getElementById('ch-avail').textContent = S.savedTotal; }
       if (id === 'mod-edit-routine') renderEditRoutine();
@@ -1798,9 +2158,12 @@
       if (id === 'mod-mealplan') renderMealPlan(phaseGoalCal());
       if (id === 'mod-edit-goal') fillEditGoalForm();
       if (id === 'mod-period') { const el = document.getElementById('per-start'); if (el) el.value = todayISOLocal(); }
+      _pushNav('modal', { mid: id });
       document.getElementById(id)?.classList.add('open');
     }
-    function closeMod(id) { document.getElementById(id).classList.remove('open') }
+    function closeMod(id) {
+      document.getElementById(id).classList.remove('open');
+    }
     function setTxt(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
 
     // ═══════════════════════ CALORIE CALCS ═══════════════════════
@@ -1816,6 +2179,13 @@
       return Math.round(m * 3.5 * bw / 200 * (durationMin || 0));
     }
     function exerciseKcal(intensity, durationMin, met) { return exerciseKcalAt(intensity, durationMin, met, null); }
+    // 칼로리→시간 역산 (유산소 모달의 "칼로리로 입력" 모드용). exerciseKcalAt의 공식을 그대로 뒤집는다.
+    function durationForKcal(intensity, kcal, met) {
+      const m = met || INTENSITY_MET[intensity] || 0;
+      const bw = (S.weights && S.weights.length ? S.weights[S.weights.length - 1].w : S.initWeight) || 55;
+      if (!m || !kcal) return 0;
+      return Math.round(kcal / (m * 3.5 * bw / 200));
+    }
     // 운동 이름으로 EXERCISE_DB에서 정확한 MET을 찾고, 없으면(직접 입력한 이름 등) 강도 평균 MET로 대체한다.
     function metForWorkout(w) {
       const list = (typeof EXERCISE_DB !== 'undefined' && EXERCISE_DB[w.intensity]) || [];
@@ -1856,6 +2226,7 @@
     }
 
     function updateHome() {
+      ensureFreshDay();
       const baseBurned = S.baseBurned; const workoutBurned = todayWorkoutKcal(); const burned = baseBurned + workoutBurned;
       setTxt('h-base-burned', baseBurned.toLocaleString()); setTxt('h-burned', workoutBurned.toLocaleString());
       const msg = document.getElementById('h-calmsg'); if (msg) msg.innerHTML = `<span style="color:var(--gro);font-weight:700">오늘 총 ${burned.toLocaleString()}kcal 소모</span>`;
@@ -2090,12 +2461,15 @@
       oxytocin: { em: '💗', label: '옥시토신', color: 'var(--rose)', bg: 'var(--oxy-bg)' },
     };
     function goH(id) {
+      ensureFreshDay();
       // goH는 같은 화면 안에서 체크/저장할 때마다 다시 호출되는데, 그때 .scr.on은 이미 s-hormone이라
       // S.prev가 's-hormone'으로 덮어써지면 뒤로가기 화살표가 제자리로만 이동해 안 움직이는 것처럼
       // 보였다. s-hormone이 아닐 때(처음 진입할 때)만 이전 화면을 기록한다.
       const curScr = document.querySelector('.scr.on')?.id;
-      if (curScr && curScr !== 's-hormone') S.prev = curScr;
+      const isFirstEntry = curScr && curScr !== 's-hormone';
+      if (isFirstEntry) S.prev = curScr;
       else if (!S.prev) S.prev = 's-home';
+      if (isFirstEntry) _pushNav('hormone', { hid: id });
       S.curH = id;
       const h = HCFG[id];
       const label = id === 'oxytocin' ? hormoneScreenLabel() : h.label;
@@ -2253,52 +2627,109 @@
       const burned = totalBurned(); const today = todayWorkoutEntries();
       // 루틴 체크는 오늘 그 강도로 1건이라도 기록했으면 자동 체크(수동 토글 아님)
       S.routines.growth.forEach((r, i) => { S.checks[r.id] = today.some(w => w.intensity === ['low', 'medium', 'high'][i]); });
-      const entryRows = today.map(w => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr)">
+
+      // 오늘의 유산소 기록 (부위별이 아닌 것)
+      const cardioEntries = today.filter(w => !w.bodyPart);
+      // 오늘의 무산소 기록 — 부위별로 그룹핑
+      const strengthEntries = today.filter(w => w.bodyPart);
+      const strengthByPart = {};
+      strengthEntries.forEach(w => {
+        if (!strengthByPart[w.bodyPart]) strengthByPart[w.bodyPart] = [];
+        strengthByPart[w.bodyPart].push(w);
+      });
+
+      const cardioRows = cardioEntries.map(w => {
+        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr)">
       <span style="font-size:20px">${INTENSITY_ICON[w.intensity]}</span>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:700;color:var(--text)">${INTENSITY_LABEL[w.intensity]} · ${w.exerciseType || '운동'}</div>
         <div style="font-size:10px;color:var(--muted);font-weight:600">${w.time} · ${w.durationMin}분 · 약 ${exerciseKcal(w.intensity, w.durationMin, w.met)}kcal</div>
       </div>
       <button onclick="removeWorkoutEntry('${w.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
-    </div>`).join('') || `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">아래 루틴 체크에서 강도를 눌러 기록하세요</div>`;
+    </div>`;
+      }).join('');
+
+      const strengthRows = Object.entries(strengthByPart).map(([bp, ws]) => {
+        const bpInfo = STRENGTH_ROUTINES[bp];
+        return `<div style="margin-bottom:6px">
+        <div style="font-size:11px;font-weight:700;color:var(--gro);margin-bottom:4px">${bpInfo ? bpInfo.icon + ' ' + bpInfo.label : bp}</div>
+        ${ws.map(w => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bdr)">
+          <span style="font-size:16px">🏋️</span>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:var(--text)">${w.routineName || w.exerciseType || '운동'}</div>
+            <div style="font-size:10px;color:var(--muted);font-weight:600">${w.time} · ${w.durationMin}분 · 약 ${exerciseKcal(w.intensity, w.durationMin, w.met)}kcal</div>
+          </div>
+          <button onclick="removeWorkoutEntry('${w.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+        </div>`).join('')}
+      </div>`;
+      }).join('');
+
+      const allEntryHtml = (cardioRows || strengthRows)
+        ? `${cardioRows ? `<div class="cap" style="margin-bottom:4px;font-size:9px">🏃 유산소</div>${cardioRows}` : ''}${strengthRows ? `<div class="cap" style="margin:${cardioRows ? '8px' : '0'} 0 4px;font-size:9px">🏋️ 근력</div>${strengthRows}` : ''}`
+        : `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">아래에서 운동을 기록해보세요</div>`;
+
       return `
-  <div class="card" style="border-color:rgba(129,199,132,.3)">
-    <div class="cap">칼로리 소모 현황</div>
-    <div style="text-align:center;background:var(--gro-bg);border-radius:12px;padding:10px;border:1px solid rgba(129,199,132,.2);margin-bottom:8px">
-      <div style="font-size:10px;color:var(--muted);font-weight:600">오늘 총 소모 (기초대사 + 운동)</div>
-      <div style="font-size:24px;font-weight:800;color:var(--gro)">${burned}kcal</div>
-      <div style="font-size:9px;color:var(--muted);font-weight:600">기초 ${S.baseBurned} + 운동 ${todayWorkoutKcal()}</div>
+  <div class="cap" style="padding:0 2px;margin-bottom:6px">운동 기록하기</div>
+  <div class="wko-mode-row">
+    <div class="wko-mode-btn cardio" onclick="openCardioModal()">
+      <span class="em">🏃</span>
+      <span class="lb">유산소</span>
+      <span style="font-size:9px;color:var(--muted);font-weight:500">저/중/고강도</span>
     </div>
-  </div>
-  <div class="card">
-    <div class="cap" style="margin-bottom:8px">오늘 운동 기록</div>
-    ${entryRows}
+    <div class="wko-mode-btn strength" onclick="openStrengthModal()">
+      <span class="em">🏋️</span>
+      <span class="lb">무산소 (근력)</span>
+      <span style="font-size:9px;color:var(--muted);font-weight:500">부위별 루틴</span>
+    </div>
   </div>
   <div class="card">
     <div class="cap" style="margin-bottom:8px">이번 주 운동 기록 (7일)</div>
     ${weekWorkoutGrid()}
   </div>
-  <div class="cap" style="padding:0 2px;margin-bottom:6px">루틴 체크 · 눌러서 기록</div>
-  ${S.routines.growth.map(r => ckHtml(r.id, r.label, r.sub, 'var(--gro)')).join('')}`;
+  <div class="card">
+    <div class="cap" style="margin-bottom:8px">오늘 운동 기록</div>
+    ${allEntryHtml}
+  </div>
+  <div class="card" style="border-color:rgba(129,199,132,.3)">
+    <div class="cap">칼로리 소모 현황</div>
+    <div style="text-align:center;background:var(--gro-bg);border-radius:12px;padding:10px;border:1px solid rgba(129,199,132,.2)">
+      <div style="font-size:10px;color:var(--muted);font-weight:600">오늘 총 소모 (기초대사 + 운동)</div>
+      <div style="font-size:24px;font-weight:800;color:var(--gro)">${burned}kcal</div>
+      <div style="font-size:9px;color:var(--muted);font-weight:600">기초 ${S.baseBurned} + 운동 ${todayWorkoutKcal()}</div>
+    </div>
+  </div>`;
     }
-    // 강도별 체크박스를 누르면 그 강도의 운동을 검색+시간(슬라이더)으로 기록하는 모달이 열린다.
-    // 하루에 저/중/고강도를 모두 기록할 수 있고, 같은 강도도 여러 번 추가할 수 있다(식사 기록과 동일한
-    // 리스트 구조). 예전엔 하나의 슬롯에 upsert돼서 이전 값이 남은 채 겹쳐 쓰였다(496kcal 버그의 원인).
-    let _workoutModalIntensity = null; let _pickedExercise = null;
+    // 유산소 모달: 강도를 모달 안 칩에서 고른 뒤, 종류를 검색하고 시간 또는 칼로리 중 하나만
+    // 입력하면 나머지는 자동 계산된다(durationForKcal/exerciseKcal). 하루에 저/중/고강도를 모두
+    // 기록할 수 있고, 같은 강도도 여러 번 추가할 수 있다(식사 기록과 동일한 리스트 구조. 예전엔
+    // 하나의 슬롯에 upsert돼서 이전 값이 남은 채 겹쳐 쓰였다 — 496kcal 버그의 원인).
+    let _workoutModalIntensity = null; let _pickedExercise = null; let _workoutInputMode = 'time';
+    function openCardioModal() { openWorkoutLogModal(_workoutModalIntensity || 'low'); }
     function openWorkoutLogModal(intensity) {
       _workoutModalIntensity = intensity; _pickedExercise = null;
-      setTxt('wk-log-title', `${INTENSITY_ICON[intensity]} ${INTENSITY_LABEL[intensity]} 운동 기록`);
+      renderIntensityChips();
       document.getElementById('wk-search').value = ''; document.getElementById('wk-search-dd').style.display = 'none';
       const now = new Date(); document.getElementById('wk-time').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       document.getElementById('wk-duration').value = 20;
       setTxt('wk-duration-label', '20분');
-      updateWorkoutKcalPreview();
+      document.getElementById('wk-kcal-input').value = '';
+      setWorkoutInputMode('time');
       openMod('mod-workout-intensity');
     }
     // 캘린더 일별 상세에서 그 날짜의 운동을 강도별로 기록할 때 쓴다.
     function openWorkoutLogModalForDate(dateStr, intensity) {
       _dayEditDate = dateStr;
       openWorkoutLogModal(intensity);
+    }
+    function renderIntensityChips() {
+      const box = document.getElementById('wk-intensity-chips'); if (!box) return;
+      box.innerHTML = ['low', 'medium', 'high'].map(k => `<div class="wko-chip ${k === _workoutModalIntensity ? 'on' : ''}" onclick="pickWorkoutIntensity('${k}')">${INTENSITY_ICON[k]} ${INTENSITY_LABEL[k]}</div>`).join('');
+    }
+    function pickWorkoutIntensity(k) {
+      _workoutModalIntensity = k; _pickedExercise = null;
+      document.getElementById('wk-search').value = ''; document.getElementById('wk-search-dd').style.display = 'none';
+      renderIntensityChips();
+      updateWorkoutKcalPreview();
     }
     function searchExercise(q) {
       const dd = document.getElementById('wk-search-dd'); const list = EXERCISE_DB[_workoutModalIntensity] || [];
@@ -2319,26 +2750,52 @@
       updateWorkoutKcalPreview();
     }
     function onWorkoutDurationInput(val) { setTxt('wk-duration-label', `${val}분`); updateWorkoutKcalPreview(); }
+    function onWorkoutKcalInput() { updateWorkoutKcalPreview(); }
+    // 시간 모드: 시간 → 칼로리 자동 계산(기존과 동일). 칼로리 모드: 칼로리 → 시간 역산(durationForKcal),
+    // 저장 시엔 항상 시간(분) 기준으로 남겨서 다른 화면의 칼로리 합산 로직과 호환되게 한다.
     function updateWorkoutKcalPreview() {
-      const dur = parseInt(document.getElementById('wk-duration')?.value) || 0;
       const met = _pickedExercise ? _pickedExercise.met : INTENSITY_MET[_workoutModalIntensity];
-      const kcal = exerciseKcal(_workoutModalIntensity, dur, _pickedExercise ? _pickedExercise.met : null);
-      const el = document.getElementById('wk-kcal-preview'); if (el) el.textContent = `약 ${kcal}kcal 소모 (MET ${met})`;
+      const el = document.getElementById('wk-kcal-preview'); if (!el) return;
+      if (_workoutInputMode === 'kcal') {
+        const kcal = parseInt(document.getElementById('wk-kcal-input')?.value) || 0;
+        const dur = durationForKcal(_workoutModalIntensity, kcal, _pickedExercise ? _pickedExercise.met : null);
+        el.textContent = kcal > 0 ? `약 ${dur}분 예상 (MET ${met})` : '목표 칼로리를 입력해주세요';
+      } else {
+        const dur = parseInt(document.getElementById('wk-duration')?.value) || 0;
+        const kcal = exerciseKcal(_workoutModalIntensity, dur, _pickedExercise ? _pickedExercise.met : null);
+        el.textContent = `약 ${kcal}kcal 소모 (MET ${met})`;
+      }
+    }
+    function setWorkoutInputMode(mode) {
+      _workoutInputMode = mode;
+      document.getElementById('wk-tab-time').classList.toggle('on', mode === 'time');
+      document.getElementById('wk-tab-kcal').classList.toggle('on', mode === 'kcal');
+      document.getElementById('wk-time-mode').style.display = mode === 'time' ? '' : 'none';
+      document.getElementById('wk-kcal-mode').style.display = mode === 'kcal' ? '' : 'none';
+      updateWorkoutKcalPreview();
     }
     function saveWorkoutEntry() {
       const type = document.getElementById('wk-search')?.value?.trim() || '';
       const time = document.getElementById('wk-time')?.value || '';
-      const dur = parseInt(document.getElementById('wk-duration')?.value) || 0;
+      const met = _pickedExercise ? _pickedExercise.met : null;
+      let dur;
+      if (_workoutInputMode === 'kcal') {
+        const kcal = parseInt(document.getElementById('wk-kcal-input')?.value) || 0;
+        if (kcal <= 0) { alert('목표 칼로리를 입력해주세요'); return; }
+        dur = durationForKcal(_workoutModalIntensity, kcal, met);
+      } else {
+        dur = parseInt(document.getElementById('wk-duration')?.value) || 0;
+      }
       if (!type) { alert('운동을 검색해서 선택하거나 입력해주세요'); return; }
       if (dur <= 0) { alert('운동 시간을 선택해주세요'); return; }
       const dateStr = _dayEditDate || todayISOLocal();
-      const entry = { id: S.nextWorkoutId++, date: dateStr, time, intensity: _workoutModalIntensity, durationMin: dur, exerciseType: type, met: _pickedExercise ? _pickedExercise.met : null };
+      const entry = { id: S.nextWorkoutId++, date: dateStr, time, intensity: _workoutModalIntensity, durationMin: dur, exerciseType: type, met };
       S.workoutLogs.push(entry);
       if (typeof saveWorkoutRow === 'function') saveWorkoutRow(entry);
       if (_dayEditDate) {
         closeMod('mod-workout-intensity');
         const day = _dayDetailCache && _dayDetailCache.day;
-        if (day) { day.workouts = day.workouts || []; day.workouts.push({ intensity: entry.intensity, duration_min: entry.durationMin, exercise_type: entry.exerciseType, logged_time: entry.time }); }
+        if (day) { day.workouts = day.workouts || []; day.workouts.push({ intensity: entry.intensity, duration_min: entry.durationMin, exercise_type: entry.exerciseType, logged_time: entry.time, body_part: entry.bodyPart, routine_name: entry.routineName }); }
         _dayEditDate = null; renderDayDetail();
         return;
       }
@@ -2349,6 +2806,124 @@
       const [entry] = S.workoutLogs.splice(idx, 1);
       goH('growth'); updateHome();
       if (typeof deleteWorkoutRow === 'function') deleteWorkoutRow(entry);
+    }
+
+    // ── 무산소(근력) 부위별 루틴 ──
+    // 기본 루틴(STRENGTH_ROUTINES, data-workout-routines.js)에 사용자가 "+ 내 루틴 추가"로 만든
+    // 루틴(S.customRoutines[부위])을 합쳐서 보여준다. 완료 체크는 workoutLogs에 intensity:'high'로
+    // 기록되므로 성장호르몬 점수(growthScorePoints)와 주간 그리드(weekWorkoutGrid)에 별도 코드 변경 없이
+    // 자동으로 반영된다.
+    let _strengthBodyPart = null;
+    function mergedRoutines(bp) {
+      const base = (typeof STRENGTH_ROUTINES !== 'undefined' && STRENGTH_ROUTINES[bp]?.routines) || [];
+      const custom = (S.customRoutines && S.customRoutines[bp]) || [];
+      return [...base, ...custom];
+    }
+    function openStrengthModal() {
+      _strengthBodyPart = _strengthBodyPart || BODY_PART_ORDER[0];
+      renderBodyPartChips();
+      renderStrengthRoutineList();
+      const f = document.getElementById('wko-custom-form'); if (f) f.style.display = 'none';
+      openMod('mod-strength');
+    }
+    function renderBodyPartChips() {
+      const box = document.getElementById('wko-bodypart-chips'); if (!box) return;
+      box.innerHTML = BODY_PART_ORDER.map(k => `<div class="wko-chip ${k === _strengthBodyPart ? 'on' : ''}" onclick="selectBodyPart('${k}')">${STRENGTH_ROUTINES[k].icon} ${STRENGTH_ROUTINES[k].label}</div>`).join('');
+    }
+    function selectBodyPart(k) {
+      _strengthBodyPart = k;
+      renderBodyPartChips();
+      renderStrengthRoutineList();
+    }
+    function todayDoneRoutineNames(bp) {
+      const t = todayISOLocal();
+      return new Set((S.workoutLogs || []).filter(w => w.date === t && w.bodyPart === bp).map(w => w.routineName));
+    }
+    function renderStrengthRoutineList() {
+      const box = document.getElementById('wko-routine-list'); if (!box) return;
+      const bp = _strengthBodyPart;
+      const routines = mergedRoutines(bp);
+      const done = todayDoneRoutineNames(bp);
+      box.innerHTML = routines.map(r => {
+        const isDone = done.has(r.name);
+        const isCustom = String(r.id).startsWith('custom-');
+        return `<div class="wko-routine-row">
+      <div class="wko-check ${isDone ? 'done' : ''}" onclick="toggleRoutineDone('${bp}','${r.id}')">${isDone ? '✓' : ''}</div>
+      <div class="wko-routine-info" onclick="openRoutineDetail('${bp}','${r.id}')">
+        <div class="wko-routine-name">${r.name}${isCustom ? ' <span style="color:var(--muted);font-weight:600;font-size:10px">· 내 루틴</span>' : ''}</div>
+        <div class="wko-routine-sub">${r.sets}세트 × ${r.reps} · 약 ${r.estMin}분</div>
+      </div>
+      ${isCustom ? `<button onclick="event.stopPropagation(); deleteCustomRoutine('${bp}','${r.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>` : ''}
+    </div>`;
+      }).join('') || `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">이 부위에 저장된 루틴이 없어요</div>`;
+    }
+    // 체크를 누르면 오늘 날짜로 workoutLogs에 추가/제거한다(유산소 기록과 같은 배열, 같은 저장 방식).
+    function toggleRoutineDone(bp, routineId) {
+      const routine = mergedRoutines(bp).find(r => String(r.id) === String(routineId));
+      if (!routine) return;
+      const t = todayISOLocal();
+      const idx = (S.workoutLogs || []).findIndex(w => w.date === t && w.bodyPart === bp && w.routineName === routine.name);
+      if (idx >= 0) {
+        const [entry] = S.workoutLogs.splice(idx, 1);
+        if (typeof deleteWorkoutRow === 'function') deleteWorkoutRow(entry);
+      } else {
+        const now = new Date();
+        const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const entry = { id: S.nextWorkoutId++, date: t, time, intensity: 'high', durationMin: routine.estMin, exerciseType: routine.name, met: 6.0, bodyPart: bp, routineName: routine.name };
+        S.workoutLogs.push(entry);
+        if (typeof saveWorkoutRow === 'function') saveWorkoutRow(entry);
+      }
+      renderStrengthRoutineList();
+      goH('growth'); updateHome();
+    }
+    function openRoutineDetail(bp, routineId) {
+      const routine = mergedRoutines(bp).find(r => String(r.id) === String(routineId));
+      if (!routine) return;
+      const isDone = todayDoneRoutineNames(bp).has(routine.name);
+      document.getElementById('wko-detail-body').innerHTML = `
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-size:40px;margin-bottom:8px">${STRENGTH_ROUTINES[bp].icon}</div>
+      <div class="serif" style="font-size:20px;font-weight:700;color:var(--text)">${routine.name}</div>
+    </div>
+    <div class="wko-pill-row">
+      <span class="wko-pill">${routine.sets}세트 × ${routine.reps}</span>
+      <span class="wko-pill">⏱ 약 ${routine.estMin}분</span>
+    </div>
+    ${routine.tips && routine.tips.length ? `<div class="wko-tip">
+      <span class="wko-tip-label">💡 TIP</span>
+      ${routine.tips.map(tp => `<div class="wko-tip-item">⭐ ${tp}</div>`).join('')}
+    </div>` : ''}
+    <button class="btn ${isDone ? 'btn-o' : 'btn-p'}" onclick="toggleRoutineDone('${bp}','${routine.id}'); closeMod('mod-routine-detail')">${isDone ? '✓ 완료 취소' : '✅ 완료 체크'}</button>
+    <button class="btn btn-o" style="margin-top:8px" onclick="closeMod('mod-routine-detail')">닫기</button>`;
+      openMod('mod-routine-detail');
+    }
+    function openCustomRoutineForm() {
+      const f = document.getElementById('wko-custom-form'); if (!f) return;
+      f.style.display = f.style.display === 'none' ? '' : 'none';
+      document.getElementById('wko-cr-name').value = '';
+      document.getElementById('wko-cr-sets').value = '';
+      document.getElementById('wko-cr-reps').value = '';
+      document.getElementById('wko-cr-min').value = '';
+      document.getElementById('wko-cr-tips').value = '';
+    }
+    function saveCustomRoutine() {
+      const name = document.getElementById('wko-cr-name')?.value?.trim();
+      if (!name) { alert('루틴 이름을 입력해주세요'); return; }
+      const sets = parseInt(document.getElementById('wko-cr-sets')?.value) || 1;
+      const reps = document.getElementById('wko-cr-reps')?.value?.trim() || '';
+      const estMin = parseInt(document.getElementById('wko-cr-min')?.value) || 5;
+      const tips = (document.getElementById('wko-cr-tips')?.value || '').split('\n').map(s => s.trim()).filter(Boolean);
+      const bp = _strengthBodyPart;
+      S.customRoutines[bp] = S.customRoutines[bp] || [];
+      S.customRoutines[bp].push({ id: `custom-${Date.now()}`, name, sets, reps, estMin, tips });
+      saveState();
+      document.getElementById('wko-custom-form').style.display = 'none';
+      renderStrengthRoutineList();
+    }
+    function deleteCustomRoutine(bp, routineId) {
+      S.customRoutines[bp] = (S.customRoutines[bp] || []).filter(r => String(r.id) !== String(routineId));
+      saveState();
+      renderStrengthRoutineList();
     }
 
     // ── CORTISOL ──
@@ -2685,9 +3260,25 @@
         const e = document.createElement('div'); e.className = 'cday'; const isP = perDays.includes(d); const isO = ovDays.includes(d);
         if (isCur && d === todayDate) e.classList.add('today'); else if (isP) e.classList.add('per'); else if (isO) e.classList.add('ovul'); else if (goodDays.includes(d)) e.classList.add('full');
         let inner = `<span>${d}</span>`;
-        if ((d >= todayDate - 3 && d <= todayDate && isCur) && !isP && !isO && d !== todayDate) inner += `<div class="dtr"><div class="d4" style="background:var(--sky2)"></div><div class="d4" style="background:var(--cor)"></div><div class="d4" style="background:var(--gro)"></div><div class="d4" style="background:var(--rose)"></div></div>`;
-        e.innerHTML = inner;
+        // 실제 서버 데이터를 기반으로 dot을 표시한다 (하드코딩 4dot 버그 수정)
         const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayData = monthDays.find(dh => dh.date === dateStr);
+        if (dayData && dayData.checks && !isP && !isO && !(isCur && d === todayDate)) {
+          const c = dayData.checks;
+          const insOk = ['i1', 'i2', 'i3', 'i4'].some(id => c[id]);
+          const groOk = ['g1', 'g2', 'g3'].some(id => c[id]);
+          const corOk = ['c1', 'c2', 'c3', 'c4'].some(id => c[id]);
+          const oxyOk = (S.routines.oxytocin || []).some(r => c[r.id]);
+          if (insOk || groOk || corOk || oxyOk) {
+            inner += `<div class="dtr">`;
+            if (insOk) inner += `<div class="d4" style="background:var(--sky2)"></div>`;
+            if (groOk) inner += `<div class="d4" style="background:var(--gro)"></div>`;
+            if (corOk) inner += `<div class="d4" style="background:var(--cor)"></div>`;
+            if (oxyOk) inner += `<div class="d4" style="background:var(--rose)"></div>`;
+            inner += `</div>`;
+          }
+        }
+        e.innerHTML = inner;
         e.style.cursor = 'pointer';
         e.onclick = () => showDayDetail(dateStr);
         g.appendChild(e);
@@ -2798,7 +3389,11 @@
       }).join('') || `<div style="font-size:12px;color:var(--muted);padding:6px 0">식사 기록 없음</div>`;
 
       const workoutTxt = dayWorkouts.length
-        ? dayWorkouts.map(w => `${INTENSITY_ICON[w.intensity] || ''} ${INTENSITY_LABEL[w.intensity] || ''} · ${w.exercise_type || ''} ${w.duration_min || 0}분`).join(' / ')
+        ? dayWorkouts.map(w => {
+          const bp = w.body_part && typeof STRENGTH_ROUTINES !== 'undefined' && STRENGTH_ROUTINES[w.body_part];
+          const what = bp ? `${bp.label} · ${w.routine_name || w.exercise_type || ''}` : (w.exercise_type || '');
+          return `${INTENSITY_ICON[w.intensity] || ''} ${INTENSITY_LABEL[w.intensity] || ''} · ${what} ${w.duration_min || 0}분`;
+        }).join(' / ')
         : '운동 기록 없음';
 
       // 그 날짜에 소급 기록할 수 있는 영역 — 4개 호르몬 루틴 체크 + 끼니별 식사 추가 버튼.
@@ -2882,7 +3477,7 @@
       return {
         date: dateStr,
         meals: (day.meals || []).filter(m => m.description).map(m => ({ label: m.label, time: m.time, description: m.description })),
-        workouts: (day.workouts || []).filter(w => w.intensity).map(w => ({ time: w.logged_time, intensity: w.intensity, duration_min: w.duration_min, exercise_type: w.exercise_type })),
+        workouts: (day.workouts || []).filter(w => w.intensity).map(w => ({ time: w.logged_time, intensity: w.intensity, duration_min: w.duration_min, exercise_type: w.exercise_type, body_part: w.body_part, routine_name: w.routine_name })),
         recentWorkouts: S.workoutLogs.slice(-7),
         sleepThisWeek: S.sleepLogs.slice(-7),
         routineChecksThatDay: day.checks,

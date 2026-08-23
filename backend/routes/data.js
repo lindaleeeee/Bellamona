@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const { todayKST } = require('../utils/date');
 const router = express.Router();
 
 const pool = new Pool({
@@ -50,7 +51,7 @@ router.get('/streak', async (req, res) => {
         );
 
         const loggedDates = new Set(recentRes.rows.map(r => r.check_date.toISOString().split('T')[0]));
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = todayKST();
 
         let streakDays = 0;
         let gapDays = 0;
@@ -157,7 +158,7 @@ router.get('/', async (req, res) => {
     const client = await pool.connect();
 
     try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = todayKST();
 
         // 프로필 병합
         const profileRes = await client.query('SELECT * FROM profiles WHERE user_id = $1', [userId]);
@@ -255,7 +256,7 @@ router.post('/meals', async (req, res) => {
     const { eaten_date, label, time, foods, bg_pre, bg_1h, bg_2h, description, ai_estimate, kcal } = req.body;
     console.log('[DATA] POST /meals for userId:', userId, { eaten_date, label, time, bg_pre, bg_1h, bg_2h, description, kcal });
     try {
-        const today = eaten_date || new Date().toISOString().split('T')[0];
+        const today = eaten_date || todayKST();
         const exist = await pool.query('SELECT id FROM meals WHERE user_id=$1 AND eaten_date=$2 AND label=$3', [userId, today, label]);
         let row;
         if (exist.rows.length > 0) {
@@ -300,14 +301,14 @@ router.delete('/meals/:id', async (req, res) => {
 // 하루에 두 번째 운동을 기록하면 첫 번째 기록을 덮어썼다).
 router.post('/workouts', async (req, res) => {
     const { userId } = req.user;
-    const { performed_date, logged_time, intensity, duration_min, exercise_type } = req.body;
-    console.log('[DATA] POST /workouts for userId:', userId, { performed_date, logged_time, intensity, duration_min, exercise_type });
+    const { performed_date, logged_time, intensity, duration_min, exercise_type, body_part, routine_name } = req.body;
+    console.log('[DATA] POST /workouts for userId:', userId, { performed_date, logged_time, intensity, duration_min, exercise_type, body_part, routine_name });
     try {
-        const today = performed_date || new Date().toISOString().split('T')[0];
+        const today = performed_date || todayKST();
         const r = await pool.query(
-            `INSERT INTO workouts (user_id, performed_date, logged_time, intensity, duration_min, exercise_type)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-            [userId, today, logged_time || null, intensity ?? null, duration_min ?? null, exercise_type ?? null]);
+            `INSERT INTO workouts (user_id, performed_date, logged_time, intensity, duration_min, exercise_type, body_part, routine_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+            [userId, today, logged_time || null, intensity ?? null, duration_min ?? null, exercise_type ?? null, body_part ?? null, routine_name ?? null]);
         console.log('[DATA] POST /workouts success, id:', r.rows[0].id);
         res.json({ success: true, workout: r.rows[0] });
     } catch (err) {
@@ -336,7 +337,7 @@ router.post('/sleep', async (req, res) => {
     const { log_date, bedtime, wake_time, hours } = req.body;
     console.log('[DATA] POST /sleep for userId:', userId, { log_date, bedtime, wake_time, hours });
     try {
-        const today = log_date || new Date().toISOString().split('T')[0];
+        const today = log_date || todayKST();
         await pool.query(`
       INSERT INTO sleep_logs (user_id, log_date, bedtime, wake_time, hours)
       VALUES ($1, $2, $3, $4, $5)
@@ -357,7 +358,7 @@ router.post('/checks', async (req, res) => {
     const { check_date, checks } = req.body;
     console.log('[DATA] POST /checks for userId:', userId, { check_date, checks });
     try {
-        const today = check_date || new Date().toISOString().split('T')[0];
+        const today = check_date || todayKST();
         await pool.query(`
       INSERT INTO routine_checks (user_id, check_date, checks)
       VALUES ($1, $2, $3)
@@ -378,7 +379,7 @@ router.post('/weights', async (req, res) => {
     const { logged_date, weight_kg } = req.body;
     console.log('[DATA] POST /weights for userId:', userId, { logged_date, weight_kg });
     try {
-        const today = logged_date || new Date().toISOString().split('T')[0];
+        const today = logged_date || todayKST();
         await pool.query('INSERT INTO weights (user_id, logged_date, weight_kg) VALUES ($1, $2, $3)', [userId, today, weight_kg]);
         console.log('[DATA] POST /weights success for userId:', userId);
         res.json({ success: true });
@@ -410,7 +411,7 @@ router.post('/diaries', async (req, res) => {
     const { written_date, content } = req.body;
     console.log('[DATA] POST /diaries for userId:', userId, { written_date, contentLength: content?.length });
     try {
-        const today = written_date || new Date().toISOString().split('T')[0];
+        const today = written_date || todayKST();
         await pool.query(`
       INSERT INTO diaries (user_id, written_date, content)
       VALUES ($1, $2, $3)

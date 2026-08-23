@@ -2,8 +2,8 @@
 // met = 대사당량(METs). 소모 칼로리 = met * 3.5 * 체중(kg) / 200 * 시간(분) (표준 MET 공식).
 // 검색은 index.html의 searchExercise()에서 이름 부분일치로 사용한다.
 // met 값 출처: Compendium of Physical Activities (Ainsworth et al., 2011/2024 update, pacompendium.com).
-// 부위별 근력운동(어깨/팔/허리/엉덩이/허벅지/종아리)은 Compendium에 부위별 항목이 없어
-// "resistance training, vigorous effort"(6.0 MET) 값을 공통 적용했다.
+// 부위별 근력운동(어깨/팔/허리/엉덩이/허벅지/종아리)은 이제 STRENGTH_ROUTINES(부위별 세트·횟수·TIP
+// 루틴, data-workout-routines.js)로 대체됐다. 여기 검색 목록에는 유산소/전신 운동만 남긴다.
 const EXERCISE_DB = {
   low: [
     { n: '걷기 (천천히)', met: 2.8 },
@@ -32,7 +32,6 @@ const EXERCISE_DB = {
     { n: '계단 오르기', met: 6.0 },
     { n: '테니스 (복식)', met: 5.0 },
     { n: '실내 자전거', met: 5.5 },
-    { n: '근력운동 (보통 강도)', met: 5.0 },
     { n: '로잉', met: 7.0 },
   ],
   high: [
@@ -46,19 +45,9 @@ const EXERCISE_DB = {
     { n: '복싱', met: 9.0 },
     { n: '산악자전거', met: 8.5 },
     { n: '버피 · 인터벌', met: 8.0 },
-    { n: '근력운동 (고강도)', met: 6.0 },
     { n: '등산', met: 6.0 },
     { n: '스피닝', met: 8.5 },
     { n: '인터벌훈련', met: 8.0 },
-    { n: '스쿼트', met: 6.0 },
-    { n: '런지', met: 6.0 },
     { n: '케틀벨', met: 8.0 },
-    { n: '복근운동', met: 8.0 },
-    { n: '어깨 근력운동', met: 6.0 },
-    { n: '팔 근력운동', met: 6.0 },
-    { n: '허리 근력운동', met: 6.0 },
-    { n: '엉덩이 근력운동', met: 6.0 },
-    { n: '허벅지 근력운동', met: 6.0 },
-    { n: '종아리 근력운동', met: 6.0 },
   ],
 };
