@@ -1256,10 +1256,10 @@
               <div style="display:flex;gap:5px;flex-wrap:wrap">
                 <span
                   style="font-size:10px;background:var(--ins-bg);color:var(--ins);padding:2px 8px;border-radius:99px;font-weight:700"
-                  id="h-ins-badge">인슐린 0%</span>
+                  id="h-ins-badge">식사 0%</span>
                 <span
                   style="font-size:10px;background:var(--gro-bg);color:var(--gro);padding:2px 8px;border-radius:99px;font-weight:700"
-                  id="h-gro-badge">성장 0%</span>
+                  id="h-gro-badge">운동 0%</span>
               </div>
             </div>
           </div>
@@ -1267,10 +1267,10 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
             <div class="card2" onclick="goH('insulin')" style="cursor:pointer;border-color:rgba(91,184,245,.3)">
               <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span
-                  style="font-size:15px">🩺</span><span style="font-size:12px;font-weight:800;color:var(--sky2)"
+                  style="font-size:15px">🍽</span><span style="font-size:12px;font-weight:800;color:var(--sky2)"
                   id="hc-ins">0%</span></div>
-              <div style="font-size:12px;font-weight:700;color:var(--text)">인슐린</div>
-              <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">혈당·식단</div>
+              <div style="font-size:12px;font-weight:700;color:var(--text)">식사</div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">식사 기록</div>
               <div class="bar-t" style="height:3px">
                 <div class="bar-f" id="bar-ins" style="width:0%;background:var(--sky2)"></div>
               </div>
@@ -1279,7 +1279,7 @@
               <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span
                   style="font-size:15px">💪</span><span style="font-size:12px;font-weight:800;color:var(--gro)"
                   id="hc-gro">0%</span></div>
-              <div style="font-size:12px;font-weight:700;color:var(--text)">성장호르몬</div>
+              <div style="font-size:12px;font-weight:700;color:var(--text)">운동</div>
               <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">운동·소모</div>
               <div class="bar-t" style="height:3px">
                 <div class="bar-f" id="bar-gro" style="width:0%;background:var(--gro)"></div>
@@ -1287,19 +1287,19 @@
             </div>
             <div class="card2" onclick="goH('cortisol')" style="cursor:pointer;border-color:rgba(206,147,216,.3)">
               <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span
-                  style="font-size:15px">🌿</span><span style="font-size:12px;font-weight:800;color:var(--cor)"
+                  style="font-size:15px">🧘</span><span style="font-size:12px;font-weight:800;color:var(--cor)"
                   id="hc-cor">0%</span></div>
-              <div style="font-size:12px;font-weight:700;color:var(--text)">코르티솔</div>
-              <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">스트레스·수면</div>
+              <div style="font-size:12px;font-weight:700;color:var(--text)">마음</div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">명상·일기·수면</div>
               <div class="bar-t" style="height:3px">
                 <div class="bar-f" id="bar-cor" style="width:0%;background:var(--cor)"></div>
               </div>
             </div>
             <div class="card2" onclick="goH('oxytocin')" style="cursor:pointer;border-color:rgba(244,143,177,.3)">
               <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span
-                  style="font-size:15px">💗</span><span style="font-size:12px;font-weight:800;color:var(--rose)"
+                  style="font-size:15px">💊</span><span style="font-size:12px;font-weight:800;color:var(--rose)"
                   id="hc-oxy">0%</span></div>
-              <div style="font-size:12px;font-weight:700;color:var(--text)" id="hc-oxy-label">옥시토신</div>
+              <div style="font-size:12px;font-weight:700;color:var(--text)" id="hc-oxy-label">영양</div>
               <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500">영양제</div>
               <div class="bar-t" style="height:3px">
                 <div class="bar-f" id="bar-oxy" style="width:0%;background:var(--rose)"></div>
@@ -1351,28 +1351,28 @@
             </div>
             <div style="display:flex;flex-direction:column;gap:5px">
               <div style="display:flex;align-items:center;gap:6px"><span
-                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">🩺 인슐린</span>
+                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">🍽 식사</span>
                 <div class="bar-t" style="flex:1;height:5px">
                   <div class="bar-f" id="d-ins-bar" style="width:0%;background:var(--sky2)"></div>
                 </div><span style="font-size:11px;color:var(--sky2);width:28px;text-align:right;font-weight:700"
                   id="d-ins-pct">0%</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px"><span
-                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">💪 성장</span>
+                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">💪 운동</span>
                 <div class="bar-t" style="flex:1;height:5px">
                   <div class="bar-f" id="d-gro-bar" style="width:0%;background:var(--gro)"></div>
                 </div><span style="font-size:11px;color:var(--gro);width:28px;text-align:right;font-weight:700"
                   id="d-gro-pct">0%</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px"><span
-                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">🌿 코르티솔</span>
+                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">🧘 마음</span>
                 <div class="bar-t" style="flex:1;height:5px">
                   <div class="bar-f" id="d-cor-bar" style="width:0%;background:var(--cor)"></div>
                 </div><span style="font-size:11px;color:var(--cor);width:28px;text-align:right;font-weight:700"
                   id="d-cor-pct">0%</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px"><span
-                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">💗 옥시토신</span>
+                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">💊 영양</span>
                 <div class="bar-t" style="flex:1;height:5px">
                   <div class="bar-f" id="d-oxy-bar" style="width:0%;background:var(--rose)"></div>
                 </div><span style="font-size:11px;color:var(--rose);width:28px;text-align:right;font-weight:700"
@@ -2256,7 +2256,7 @@
       setTxt('h-ring-pct', op + '%');
       const allRts = Object.values(S.routines).flat(); setTxt('h-done-cnt', allRts.filter(r => S.checks[r.id]).length); setTxt('h-total-cnt', allRts.length);
       setTxt('hc-oxy-label', hormoneScreenLabel());
-      ['ins', 'gro', 'cor', 'oxy'].forEach((k, i) => { const hids = ['insulin', 'growth', 'cortisol', 'oxytocin']; const p = hormonePct(hids[i]); setTxt('hc-' + k, p + '%'); const bar = document.getElementById('bar-' + k); if (bar) bar.style.width = p + '%'; const b = document.getElementById('h-' + k + '-badge'); if (b) b.textContent = { ins: '인슐린', gro: '성장', cor: '코르티솔', oxy: hormoneScreenLabel() }[k] + ' ' + p + '%'; });
+      ['ins', 'gro', 'cor', 'oxy'].forEach((k, i) => { const hids = ['insulin', 'growth', 'cortisol', 'oxytocin']; const p = hormonePct(hids[i]); setTxt('hc-' + k, p + '%'); const bar = document.getElementById('bar-' + k); if (bar) bar.style.width = p + '%'; const b = document.getElementById('h-' + k + '-badge'); if (b) b.textContent = { ins: '식사', gro: '운동', cor: '마음', oxy: hormoneScreenLabel() }[k] + ' ' + p + '%'; });
       setTxt('prof-save-val', S.savedTotal + ' kcal');
       // Weight display
       const lastWt = S.weights.length ? S.weights[S.weights.length - 1].w : S.initWeight;
@@ -2477,10 +2477,10 @@
 
     // ═══════════════════════ HORMONE SCREENS ═══════════════════════
     const HCFG = {
-      insulin: { em: '🩺', label: '인슐린', color: 'var(--sky2)', bg: 'var(--ins-bg)' },
-      growth: { em: '💪', label: '성장호르몬', color: 'var(--gro)', bg: 'var(--gro-bg)' },
-      cortisol: { em: '🌿', label: '코르티솔', color: 'var(--cor)', bg: 'var(--cor-bg)' },
-      oxytocin: { em: '💗', label: '옥시토신', color: 'var(--rose)', bg: 'var(--oxy-bg)' },
+      insulin: { em: '🍽', label: '식사', color: 'var(--sky2)', bg: 'var(--ins-bg)' },
+      growth: { em: '💪', label: '운동', color: 'var(--gro)', bg: 'var(--gro-bg)' },
+      cortisol: { em: '🧘', label: '마음', color: 'var(--cor)', bg: 'var(--cor-bg)' },
+      oxytocin: { em: '💊', label: '영양', color: 'var(--rose)', bg: 'var(--oxy-bg)' },
     };
     function goH(id) {
       ensureFreshDay();
@@ -3088,8 +3088,10 @@
       if (typeof saveChecksRow === 'function') saveChecksRow();
     }
 
-    // ── 옥시토신 → 여성호르몬/남성호르몬 (영양제 체크리스트) ──
-    function hormoneScreenLabel() { return S.gender === 'male' ? '남성호르몬' : '여성호르몬'; }
+    // ── 옥시토신 → 영양 (영양제 체크리스트). 예전엔 성별에 따라 "여성호르몬"/"남성호르몬"으로
+    // 표시했지만, 호르몬 이름을 화면명으로 쓰면 웰니스와 의료기기의 경계가 불분명해질 수 있어
+    // 성중립적인 "영양"으로 통일했다(내부 데이터 키 oxytocin은 그대로 유지 — DB/점수 로직 영향 없음).
+    function hormoneScreenLabel() { return '영양'; }
     function addSupplement() {
       const name = document.getElementById('supp-name-input')?.value?.trim();
       if (!name) return;
@@ -3445,7 +3447,7 @@
       const dayPhase = phaseFromServerPeriod(day.period, dateStr);
       const dayGoalCal = Math.round(S.goalCal * PHASE_CAL_RATIO[dayPhase.id]);
 
-      const donuts = [['인슐린', 'insulin', 'var(--sky2)'], ['성장', 'growth', 'var(--gro)'], ['코르티솔', 'cortisol', 'var(--cor)'], [hormoneScreenLabel(), 'oxytocin', 'var(--rose)']]
+      const donuts = [['식사', 'insulin', 'var(--sky2)'], ['운동', 'growth', 'var(--gro)'], ['마음', 'cortisol', 'var(--cor)'], [hormoneScreenLabel(), 'oxytocin', 'var(--rose)']]
         .map(([l, h, c]) => donutSvg(hormonePctForChecks(h, day.checks), c, l)).join('');
 
       const mealsHtml = day.meals.filter(m => m.description).map(m => {
@@ -3467,21 +3469,21 @@
       const mealAddBtns = MEAL_LABEL_OPTIONS.slice(0, 4).map(l => `<button onclick="openFoodModalForDate('${dateStr}','${l}')" style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--sky2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">+ ${l}</button>`).join('');
       const editSection = `
     <div class="card" style="margin-bottom:12px">
-      <div class="cap" style="margin-bottom:6px">🩺 인슐린 체크</div>
+      <div class="cap" style="margin-bottom:6px">🍽 식사 체크</div>
       ${S.routines.insulin.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--sky2)')).join('')}
       <div class="cap" style="margin:10px 0 6px">식사 추가</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">${mealAddBtns}</div>
     </div>
     <div class="card" style="margin-bottom:12px">
-      <div class="cap" style="margin-bottom:6px">💪 성장호르몬 체크</div>
+      <div class="cap" style="margin-bottom:6px">💪 운동 체크</div>
       ${S.routines.growth.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--gro)')).join('')}
     </div>
     <div class="card" style="margin-bottom:12px">
-      <div class="cap" style="margin-bottom:6px">🌿 코르티솔 체크</div>
+      <div class="cap" style="margin-bottom:6px">🧘 마음 체크</div>
       ${S.routines.cortisol.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--cor)')).join('')}
     </div>
     <div class="card" style="margin-bottom:12px">
-      <div class="cap" style="margin-bottom:6px">💗 ${hormoneScreenLabel()} 체크</div>
+      <div class="cap" style="margin-bottom:6px">💊 ${hormoneScreenLabel()} 체크</div>
       ${(S.routines.oxytocin || []).length ? S.routines.oxytocin.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--rose)')).join('') : `<div style="font-size:12px;color:var(--muted);padding:4px 0">마이페이지에서 영양제를 먼저 추가해주세요</div>`}
     </div>`;
 
@@ -3606,7 +3608,7 @@
         slot.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--danger);font-size:12px;font-weight:700">네트워크 오류가 발생했어요.</div><button class="btn btn-p" style="margin-top:8px" onclick="generateDayReport()">다시 시도</button>`;
       }
     }
-    // AI 리포트 5개 섹션 렌더링 (①목표체중 예측 ②인슐린 ③성장호르몬 ④코르티솔 ⑤호르몬/일기)
+    // AI 리포트 5개 섹션 렌더링 (①목표체중 예측 ②식사 ③운동 ④마음(수면) ⑤일기)
     function renderReportSections(r, day) {
       const scores = r.scores || {};
       const proj = computeWeightProjection();
@@ -3630,18 +3632,18 @@
         <div style="font-size:10px;color:var(--muted);font-weight:500">현재 ${proj.currentW}kg → 목표일자 예상치 (하루 ${proj.kgPerDay > 0 ? '+' : ''}${proj.kgPerDay}kg 추세 기준)</div>
       </div>
       <div class="card" style="margin-bottom:12px">
-        <div class="cap">② 인슐린 · 식사 기록</div>
+        <div class="cap">② 식사 기록</div>
         ${dayMeals.length ? dayMeals.map(m => `<div style="font-size:12px;color:var(--text);font-weight:600;padding:4px 0;border-bottom:1px solid var(--bdr)">${m.label}${m.time ? ' · ' + String(m.time).slice(0, 5) : ''} — ${m.description || m.text}</div>`).join('') : `<div style="font-size:11px;color:var(--muted)">이 날은 식사 기록이 없어요</div>`}
         ${r.meal_pattern_insight ? `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;margin-top:8px">${r.meal_pattern_insight}</div>` : ''}
       </div>
-      ${r.tomorrow_workout ? `<div class="card" style="margin-bottom:12px"><div class="cap">③ 성장호르몬 · 내일 운동 추천</div><div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.tomorrow_workout}</div></div>` : ''}
+      ${r.tomorrow_workout ? `<div class="card" style="margin-bottom:12px"><div class="cap">③ 내일 운동 추천</div><div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.tomorrow_workout}</div></div>` : ''}
       <div class="card" style="margin-bottom:12px">
-        <div class="cap">④ 코르티솔 · 이번 주 수면</div>
+        <div class="cap">④ 마음 · 이번 주 수면</div>
         ${weekSleepChart()}
         ${r.sleep_suggestion ? `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;margin-top:8px">${r.sleep_suggestion}</div>` : ''}
       </div>
       <div class="card" style="margin-bottom:12px">
-        <div class="cap">⑤ ${hormoneScreenLabel()} · 일기</div>
+        <div class="cap">⑤ 일기 · 감정 분석</div>
         ${wc ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${wc}</div>` : ''}
         ${r.diary_word_health ? `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.diary_word_health}</div>` : '<div style="font-size:11px;color:var(--muted)">일기를 쓰면 단어 기반 분석을 볼 수 있어요</div>'}
       </div>
@@ -3930,7 +3932,7 @@
       const BOM = '\uFEFF';
       const mealInfo = S.meals.filter(m => m.text).map(m => `${m.label}:${m.text}`).join(' / ');
       const rows = [
-        ['날짜', '저속노화점수', '인슐린%', '성장호르몬%', '코르티솔%', '옥시토신%', '소모kcal', '식사종류', '식사내용'],
+        ['날짜', '저속노화점수', '식사%', '운동%', '마음%', '영양%', '소모kcal', '식사종류', '식사내용'],
         ['2026-04-19', 68, 75, 50, 80, 75, 420, '아침/점심/저녁', '삶은달걀+샐러드/두부찌개/연어구이'],
         ['2026-04-20', 71, 75, 75, 80, 100, 520, '아침/점심/저녁', '그릭요거트/현미밥+된장찌개/닭가슴살'],
         ['2026-04-21', 74, 100, 75, 60, 50, 580, '아침/점심/저녁', '오트밀/두부샐러드/고등어구이'],
