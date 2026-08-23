@@ -1669,7 +1669,10 @@
         <div
           style="background:var(--gro-bg);border:1.5px solid rgba(129,199,132,.3);border-radius:11px;padding:9px 12px;margin-bottom:14px;font-size:13px;font-weight:700;color:var(--gro)"
           id="wk-kcal-preview">약 0kcal 소모</div>
-        <button class="btn btn-p" onclick="saveWorkoutEntry()">저장</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-o" style="flex:1" onclick="closeWorkoutModal()">닫기</button>
+          <button class="btn btn-p" style="flex:1" onclick="saveWorkoutEntry()">저장</button>
+        </div>
       </div>
     </div>
 
@@ -1702,8 +1705,12 @@
           <div class="cap" style="margin-bottom:5px">TIP (선택, 줄바꿈으로 여러 개)</div>
           <textarea class="input" id="wko-cr-tips" rows="3" style="margin-bottom:12px"
             placeholder="예: 무릎이 발끝을 넘지 않게"></textarea>
-          <button class="btn btn-p" onclick="saveCustomRoutine()">루틴 저장</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-o" style="flex:1" onclick="closeCustomRoutineForm()">닫기</button>
+            <button class="btn btn-p" style="flex:1" onclick="saveCustomRoutine()">루틴 저장</button>
+          </div>
         </div>
+        <button class="btn btn-o" style="margin-top:12px" onclick="closeMod('mod-strength')">닫기</button>
       </div>
     </div>
 
@@ -2654,13 +2661,13 @@
       });
 
       const cardioRows = cardioEntries.map(w => {
-        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr)">
+        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr);cursor:pointer" onclick="editWorkoutEntry('${w.id}')">
       <span style="font-size:20px">${INTENSITY_ICON[w.intensity]}</span>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:700;color:var(--text)">${INTENSITY_LABEL[w.intensity]} · ${w.exerciseType || '운동'}</div>
         <div style="font-size:10px;color:var(--muted);font-weight:600">${w.time} · ${w.durationMin}분 · 약 ${exerciseKcal(w.intensity, w.durationMin, w.met)}kcal</div>
       </div>
-      <button onclick="removeWorkoutEntry('${w.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+      <button onclick="event.stopPropagation(); removeWorkoutEntry('${w.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
     </div>`;
       }).join('');
 
@@ -2668,13 +2675,13 @@
         const bpInfo = STRENGTH_ROUTINES[bp];
         return `<div style="margin-bottom:6px">
         <div style="font-size:11px;font-weight:700;color:var(--gro);margin-bottom:4px">${bpInfo ? bpInfo.icon + ' ' + bpInfo.label : bp}</div>
-        ${ws.map(w => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bdr)">
+        ${ws.map(w => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bdr);cursor:pointer" onclick="editWorkoutEntry('${w.id}')">
           <span style="font-size:16px">🏋️</span>
           <div style="flex:1">
             <div style="font-size:12px;font-weight:700;color:var(--text)">${w.routineName || w.exerciseType || '운동'}</div>
             <div style="font-size:10px;color:var(--muted);font-weight:600">${w.time} · ${w.durationMin}분 · 약 ${exerciseKcal(w.intensity, w.durationMin, w.met)}kcal</div>
           </div>
-          <button onclick="removeWorkoutEntry('${w.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+          <button onclick="event.stopPropagation(); removeWorkoutEntry('${w.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
         </div>`).join('')}
       </div>`;
       }).join('');
@@ -2684,6 +2691,18 @@
         : `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">아래에서 운동을 기록해보세요</div>`;
 
       return `
+  <div class="card" style="border-color:rgba(129,199,132,.3)">
+    <div class="cap">칼로리 소모 현황</div>
+    <div style="text-align:center;background:var(--gro-bg);border-radius:12px;padding:10px;border:1px solid rgba(129,199,132,.2)">
+      <div style="font-size:10px;color:var(--muted);font-weight:600">오늘 총 소모 (기초대사 + 운동)</div>
+      <div style="font-size:24px;font-weight:800;color:var(--gro)">${burned}kcal</div>
+      <div style="font-size:9px;color:var(--muted);font-weight:600">기초 ${S.baseBurned} + 운동 ${todayWorkoutKcal()}</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="cap" style="margin-bottom:8px">이번 주 운동 기록 (7일)</div>
+    ${weekWorkoutGrid()}
+  </div>
   <div class="cap" style="padding:0 2px;margin-bottom:6px">운동 기록하기</div>
   <div class="wko-mode-row">
     <div class="wko-mode-btn cardio" onclick="openCardioModal()">
@@ -2698,20 +2717,8 @@
     </div>
   </div>
   <div class="card">
-    <div class="cap" style="margin-bottom:8px">이번 주 운동 기록 (7일)</div>
-    ${weekWorkoutGrid()}
-  </div>
-  <div class="card">
     <div class="cap" style="margin-bottom:8px">오늘 운동 기록</div>
     ${allEntryHtml}
-  </div>
-  <div class="card" style="border-color:rgba(129,199,132,.3)">
-    <div class="cap">칼로리 소모 현황</div>
-    <div style="text-align:center;background:var(--gro-bg);border-radius:12px;padding:10px;border:1px solid rgba(129,199,132,.2)">
-      <div style="font-size:10px;color:var(--muted);font-weight:600">오늘 총 소모 (기초대사 + 운동)</div>
-      <div style="font-size:24px;font-weight:800;color:var(--gro)">${burned}kcal</div>
-      <div style="font-size:9px;color:var(--muted);font-weight:600">기초 ${S.baseBurned} + 운동 ${todayWorkoutKcal()}</div>
-    </div>
   </div>`;
     }
     // 유산소 모달: 강도를 모달 안 칩에서 고른 뒤, 종류를 검색하고 시간 또는 칼로리 중 하나만
@@ -2719,14 +2726,19 @@
     // 기록할 수 있고, 같은 강도도 여러 번 추가할 수 있다(식사 기록과 동일한 리스트 구조. 예전엔
     // 하나의 슬롯에 upsert돼서 이전 값이 남은 채 겹쳐 쓰였다 — 496kcal 버그의 원인).
     let _workoutModalIntensity = null; let _pickedExercise = null; let _workoutInputMode = 'time';
+    let _editingWorkoutId = null; // "오늘 운동 기록"에서 기존 유산소 기록을 눌러 고칠 때만 채워진다
     function openCardioModal() { openWorkoutLogModal(_workoutModalIntensity || 'low'); }
-    function openWorkoutLogModal(intensity) {
-      _workoutModalIntensity = intensity; _pickedExercise = null;
+    // prefill을 주면(수정 진입) 기본값 대신 기존 기록값으로 채운다.
+    function openWorkoutLogModal(intensity, prefill) {
+      _editingWorkoutId = null;
+      _workoutModalIntensity = intensity; _pickedExercise = prefill && prefill.met != null ? { n: prefill.exerciseType, met: prefill.met } : null;
       renderIntensityChips();
-      document.getElementById('wk-search').value = ''; document.getElementById('wk-search-dd').style.display = 'none';
-      const now = new Date(); document.getElementById('wk-time').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      document.getElementById('wk-duration').value = 20;
-      setTxt('wk-duration-label', '20분');
+      document.getElementById('wk-search').value = prefill ? (prefill.exerciseType || '') : '';
+      document.getElementById('wk-search-dd').style.display = 'none';
+      const now = new Date();
+      document.getElementById('wk-time').value = prefill ? prefill.time : `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      document.getElementById('wk-duration').value = prefill ? prefill.durationMin : 20;
+      setTxt('wk-duration-label', `${prefill ? prefill.durationMin : 20}분`);
       document.getElementById('wk-kcal-input').value = '';
       setWorkoutInputMode('time');
       openMod('mod-workout-intensity');
@@ -2735,6 +2747,24 @@
     function openWorkoutLogModalForDate(dateStr, intensity) {
       _dayEditDate = dateStr;
       openWorkoutLogModal(intensity);
+    }
+    // "오늘 운동 기록"의 기존 기록을 눌러 고친다. 유산소는 모달을 기존 값으로 채워서 다시 열고,
+    // 근력 루틴은 세트/횟수/TIP과 완료취소 버튼이 있는 루틴 상세를 그대로 재사용한다.
+    function editWorkoutEntry(id) {
+      const w = (S.workoutLogs || []).find(x => String(x.id) === String(id));
+      if (!w) return;
+      if (w.bodyPart) {
+        const routine = mergedRoutines(w.bodyPart).find(r => r.name === w.routineName);
+        if (routine) openRoutineDetail(w.bodyPart, routine.id);
+        return;
+      }
+      openWorkoutLogModal(w.intensity, { time: w.time, durationMin: w.durationMin, exerciseType: w.exerciseType, met: w.met });
+      _editingWorkoutId = w.id;
+    }
+    // 저장 없이 닫을 때: day-edit/수정 상태를 남겨두면 다음에 새로 열 때도 그 상태가 남아있으니 초기화한다.
+    function closeWorkoutModal() {
+      _dayEditDate = null; _editingWorkoutId = null;
+      closeMod('mod-workout-intensity');
     }
     function renderIntensityChips() {
       const box = document.getElementById('wk-intensity-chips'); if (!box) return;
@@ -2805,6 +2835,22 @@
       if (dur <= 0) { alert('운동 시간을 선택해주세요'); return; }
       const dateStr = _dayEditDate || todayISOLocal();
       const kcalVal = exerciseKcal(_workoutModalIntensity, dur, met);
+      // 기존 기록을 수정하는 중이면(editWorkoutEntry로 진입) 새로 만들지 않고 그 자리에서 갱신한다.
+      // 전용 수정 API가 없어 서버에도 옛 행을 지우고 새 행으로 다시 저장한다.
+      if (_editingWorkoutId != null) {
+        const idx = S.workoutLogs.findIndex(w => String(w.id) === String(_editingWorkoutId));
+        if (idx >= 0) {
+          const old = S.workoutLogs[idx];
+          if (typeof deleteWorkoutRow === 'function') deleteWorkoutRow(old);
+          const updated = { ...old, date: dateStr, time, intensity: _workoutModalIntensity, durationMin: dur, exerciseType: type, met, kcal: kcalVal };
+          delete updated.serverId;
+          S.workoutLogs[idx] = updated;
+          if (typeof saveWorkoutRow === 'function') saveWorkoutRow(updated);
+        }
+        _editingWorkoutId = null;
+        closeMod('mod-workout-intensity'); goH('growth'); updateHome();
+        return;
+      }
       const entry = { id: S.nextWorkoutId++, date: dateStr, time, intensity: _workoutModalIntensity, durationMin: dur, exerciseType: type, met, kcal: kcalVal };
       S.workoutLogs.push(entry);
       if (typeof saveWorkoutRow === 'function') saveWorkoutRow(entry);
@@ -2921,6 +2967,9 @@
       document.getElementById('wko-cr-reps').value = '';
       document.getElementById('wko-cr-min').value = '';
       document.getElementById('wko-cr-tips').value = '';
+    }
+    function closeCustomRoutineForm() {
+      const f = document.getElementById('wko-custom-form'); if (f) f.style.display = 'none';
     }
     function saveCustomRoutine() {
       const name = document.getElementById('wko-cr-name')?.value?.trim();
