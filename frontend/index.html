@@ -1226,7 +1226,8 @@
             <div class="cap">🍽 오늘 먹을 수 있는 칼로리</div>
             <div style="display:flex;align-items:baseline;justify-content:space-between">
               <div style="font-size:22px;font-weight:800;color:var(--text)"><span id="h-intake-kcal">0</span><span
-                  style="font-size:12px;color:var(--muted);font-weight:600"> / <span id="h-intake-goal">0</span>kcal</span>
+                  style="font-size:12px;color:var(--muted);font-weight:600"> / <span
+                    id="h-intake-goal">0</span>kcal</span>
               </div>
               <div style="font-size:11px;color:var(--sky2);font-weight:700" id="h-intake-phase"></div>
             </div>
@@ -1448,6 +1449,8 @@
                 onclick="rfil(this,'cost',99999)">4천원+</span>
             </div>
           </div>
+          <div style="font-size:10px;color:#999;padding:4px 2px 8px;line-height:1.4;font-weight:500">*이 게시물은 쿠팡 파트너스 활동의
+            일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
           <div id="rcp-grid"></div>
         </div>
       </div>
@@ -1616,7 +1619,8 @@
       <div class="msh">
         <div class="mh"></div>
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">😥 목표한 칼로리를 채우지 못하셨네요</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:500">이유가 뭐였나요? 고르면 AI 리포트에 반영돼요</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:500">이유가 뭐였나요? 고르면 AI 리포트에 반영돼요
+        </div>
         <div class="wko-chip-row" id="cal-miss-reason-chips"></div>
         <div style="display:flex;gap:8px;margin-top:16px">
           <button class="btn btn-o" style="flex:1" onclick="skipCalMissReason()">건너뛰기</button>
@@ -1825,6 +1829,32 @@
             <input class="input" type="time" id="food-time" />
           </div>
         </div>
+        <div class="cap" style="margin-bottom:5px">🥗 음식 검색해서 담기 (칼로리·영양성분 자동 계산)</div>
+        <div style="position:relative;margin-bottom:8px">
+          <input class="input" id="food-item-search" placeholder="예: 현미밥, 닭가슴살, 사과..."
+            oninput="searchFoodItem(this.value)" autocomplete="off" />
+          <div class="dd" id="food-item-dd" style="display:none"></div>
+        </div>
+        <div id="food-item-picker" style="display:none;margin-bottom:12px;padding:10px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:10px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span id="food-item-picker-emoji" style="font-size:20px"></span>
+            <div style="flex:1">
+              <div id="food-item-picker-name" style="font-size:13px;font-weight:700;color:var(--text)"></div>
+              <div id="food-item-picker-per100" style="font-size:10px;color:var(--muted);font-weight:600"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="food-item-qty-chips"></div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+            <input class="input" type="number" id="food-item-grams" value="100" min="1"
+              style="flex:1" oninput="updateFoodItemPickerPreview()" />
+            <span style="font-size:12px;color:var(--muted);font-weight:700">g</span>
+          </div>
+          <div id="food-item-picker-preview" style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:8px;line-height:1.6"></div>
+          <button class="btn btn-p" style="padding:8px" onclick="addFoodItemToMeal()">+ 이 끼니에 추가</button>
+        </div>
+        <div id="food-item-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+        <div id="food-item-summary" style="display:none;margin-bottom:14px;padding:10px;background:var(--sky3);border-radius:10px"></div>
+
         <div id="food-suggest-wrap" style="margin-bottom:12px">
           <div class="cap" style="margin-bottom:6px">이 끼니 목표 칼로리에 맞는 추천 레시피</div>
           <div id="food-suggest-list" style="display:flex;flex-direction:column;gap:6px"></div>
@@ -1840,7 +1870,7 @@
         <div class="cap" style="margin-bottom:5px">무엇을 드셨나요?</div>
         <textarea class="input" id="food-text" rows="3" placeholder="예: 샐러드 파스타 1/2인분, 나시고랭 1인분..."
           style="margin-bottom:12px"></textarea>
-        <div class="cap" style="margin-bottom:5px">섭취 칼로리 (kcal, 직접 수정 가능)</div>
+        <div class="cap" style="margin-bottom:5px">섭취 칼로리 (kcal, 음식 검색으로 담으면 자동 계산되고 직접 수정도 가능해요)</div>
         <input class="input" type="number" id="food-kcal" placeholder="예: 350" style="margin-bottom:14px" />
         <button class="btn btn-p" onclick="saveFoodEntry()" style="margin-bottom:8px">저장</button>
         <button class="btn btn-o" onclick="closeMod('mod-food')">취소</button>
@@ -1962,6 +1992,8 @@
   <script src="/js/data-exercises.js"></script>
   <script src="/js/data-workout-routines.js"></script>
   <script src="/js/data-recipes.js"></script>
+  <script src="/js/data-foods.js"></script>
+  <script src="/js/google-sheet-loader.js"></script>
   <script>
     // js/sync.js가 쓰는 백엔드 연결 설정. Vite가 빌드/개발 시 frontend/.env 값으로 치환한다.
     const API_BASE = "%VITE_API_URL%";
@@ -3142,11 +3174,133 @@
       closeMod('mod-edit-routine'); goH(hid);
     }
 
+    // ═══════════════════════ 음식 검색 → 칼로리/영양성분 자동 계산 ═══════════════════════
+    // FOODS_DB는 js/data-foods.js에서 로드된다 (식약처 통합식품영양성분정보 DB, 100g/100ml 기준
+    // 영양성분 + 카테고리·키워드로 추정한 GI). 여기서 고른 음식들은 meals.foods(JSONB)에
+    // {n,g,kcal,c,p,f,sugar,fiber,na,gi} 형태로 그대로 저장되어, 나중에 혈당 예측 모델(예:
+    // 혈당수식/Glucose model.js의 GMODEL.buildFeatures가 기대하는 food:{c,p,f,gi}+g 꼴)이
+    // 바로 가져다 쓸 수 있다.
+    let _foodModalItems = []; // 이번 끼니에 담은 음식 목록
+    let _pickedFoodDb = null; // 검색에서 고른, 아직 그램수 확정 전인 후보
+    function searchFoodItem(q) {
+      const dd = document.getElementById('food-item-dd');
+      if (!q.trim()) { dd.style.display = 'none'; return; }
+      const qq = q.trim();
+      const db = typeof FOODS_DB !== 'undefined' ? FOODS_DB : [];
+      const res = db.filter(f => f.n.includes(qq)).slice(0, 10);
+      if (!res.length) { dd.innerHTML = `<div class="ddi" style="color:var(--muted)">검색 결과가 없어요</div>`; dd.style.display = 'block'; return; }
+      dd.innerHTML = res.map(f => `<div class="ddi" onclick='pickFoodItem(${JSON.stringify(f.n)})'>
+        <span style="font-weight:600">${f.e} ${f.n}</span>
+        <span style="font-size:10px;color:var(--muted);font-weight:600">100g당 ${Math.round(f.kcal)}kcal · GI ${f.gi}</span>
+      </div>`).join('');
+      dd.style.display = 'block';
+    }
+    function pickFoodItem(name) {
+      const db = typeof FOODS_DB !== 'undefined' ? FOODS_DB : [];
+      const f = db.find(x => x.n === name);
+      if (!f) return;
+      _pickedFoodDb = f;
+      document.getElementById('food-item-search').value = '';
+      document.getElementById('food-item-dd').style.display = 'none';
+      document.getElementById('food-item-picker').style.display = 'block';
+      document.getElementById('food-item-picker-emoji').textContent = f.e;
+      document.getElementById('food-item-picker-name').textContent = f.n;
+      document.getElementById('food-item-picker-per100').textContent = `100g 기준 ${Math.round(f.kcal)}kcal · 탄수 ${f.c}g · 단백 ${f.p}g · 지방 ${f.f}g · GI ${f.gi}(추정)`;
+      document.getElementById('food-item-grams').value = 100;
+      document.getElementById('food-item-qty-chips').innerHTML = [50, 100, 150, 200, 300].map(g =>
+        `<span class="chip" onclick="document.getElementById('food-item-grams').value=${g};updateFoodItemPickerPreview()">${g}g</span>`).join('');
+      updateFoodItemPickerPreview();
+    }
+    function updateFoodItemPickerPreview() {
+      if (!_pickedFoodDb) return;
+      const g = parseFloat(document.getElementById('food-item-grams').value) || 0;
+      const ratio = g / 100;
+      const kcal = Math.round(_pickedFoodDb.kcal * ratio);
+      const c = +(_pickedFoodDb.c * ratio).toFixed(1);
+      const p = +(_pickedFoodDb.p * ratio).toFixed(1);
+      const fat = +(_pickedFoodDb.f * ratio).toFixed(1);
+      document.getElementById('food-item-picker-preview').innerHTML = `${g}g → <b>${kcal}kcal</b> · 탄수 ${c}g · 단백 ${p}g · 지방 ${fat}g`;
+    }
+    function foodItemAt(g, f) {
+      const ratio = g / 100;
+      return {
+        n: f.n, e: f.e, cat: f.cat, g,
+        kcal: Math.round(f.kcal * ratio),
+        c: +(f.c * ratio).toFixed(1), p: +(f.p * ratio).toFixed(1), f: +(f.f * ratio).toFixed(1),
+        sugar: +(f.sugar * ratio).toFixed(1), fiber: +(f.fiber * ratio).toFixed(1),
+        na: Math.round(f.na * ratio), gi: f.gi,
+      };
+    }
+    function addFoodItemToMeal() {
+      if (!_pickedFoodDb) return;
+      const g = parseFloat(document.getElementById('food-item-grams').value) || 0;
+      if (g <= 0) { alert('그램 수를 입력해주세요'); return; }
+      _foodModalItems.push(foodItemAt(g, _pickedFoodDb));
+      _pickedFoodDb = null;
+      document.getElementById('food-item-picker').style.display = 'none';
+      renderFoodItemList();
+    }
+    function removeFoodItemFromMeal(idx) { _foodModalItems.splice(idx, 1); renderFoodItemList(); }
+    function glLevel(gl) {
+      if (gl >= 20) return { label: '높음', color: 'var(--danger)' };
+      if (gl >= 10) return { label: '중간', color: 'var(--warn)' };
+      return { label: '낮음', color: 'var(--ok)' };
+    }
+    // 탄수화물량 가중평균으로 이번 끼니 전체 GI를 구하고(탄수가 많은 음식이 혈당에 더 영향을 주므로),
+    // GL(혈당부하) = 총탄수화물 × 평균GI / 100 도 함께 계산한다.
+    function foodItemsTotals() {
+      const t = { kcal: 0, c: 0, p: 0, f: 0, sugar: 0, fiber: 0, na: 0 };
+      _foodModalItems.forEach(it => { t.kcal += it.kcal; t.c += it.c; t.p += it.p; t.f += it.f; t.sugar += it.sugar; t.fiber += it.fiber; t.na += it.na; });
+      const giWeighted = t.c > 0 ? _foodModalItems.reduce((a, it) => a + it.gi * it.c, 0) / t.c : null;
+      const gl = giWeighted != null ? Math.round(t.c * giWeighted / 100 * 10) / 10 : null;
+      return { ...t, gi: giWeighted != null ? Math.round(giWeighted) : null, gl };
+    }
+    function renderFoodItemList() {
+      const list = document.getElementById('food-item-list');
+      list.innerHTML = _foodModalItems.map((it, i) => `<div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:10px">
+        <span style="font-size:18px">${it.e}</span>
+        <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">${it.n} · ${it.g}g</div><div style="font-size:10px;color:var(--muted);font-weight:600">${it.kcal}kcal · 탄수 ${it.c}g · GI ${it.gi}</div></div>
+        <span onclick="removeFoodItemFromMeal(${i})" style="cursor:pointer;color:var(--danger);font-size:16px;font-weight:800;padding:0 4px">×</span>
+      </div>`).join('');
+      const summary = document.getElementById('food-item-summary');
+      if (!_foodModalItems.length) { summary.style.display = 'none'; return; }
+      summary.style.display = 'block';
+      const t = foodItemsTotals();
+      const gl = t.gl != null ? glLevel(t.gl) : null;
+      summary.innerHTML = `<div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:6px">담은 음식 합계</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--sky2);margin-bottom:4px"><span>총 칼로리</span><span>${Math.round(t.kcal)}kcal</span></div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600;line-height:1.7">
+          탄수화물 ${t.c.toFixed(1)}g · 단백질 ${t.p.toFixed(1)}g · 지방 ${t.f.toFixed(1)}g<br/>
+          당류 ${t.sugar.toFixed(1)}g · 식이섬유 ${t.fiber.toFixed(1)}g · 나트륨 ${Math.round(t.na)}mg
+        </div>
+        ${t.gi != null ? `<div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+          <span style="font-size:11px;font-weight:700;color:var(--text)">평균 GI(혈당지수) ${t.gi}</span>
+          <span style="font-size:10px;font-weight:800;color:${gl.color};background:${gl.color}22;padding:2px 8px;border-radius:20px">GL ${t.gl} · ${gl.label}</span>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:4px">GI·GL은 실측치가 아닌 추정값으로, 나중에 혈당 예측에 참고용으로만 쓰여요</div>` : ''}`;
+      syncFoodKcalFromItems();
+    }
+    // 담은 음식이 있으면 kcal 입력칸에 합계를 자동으로 채워준다(그래도 직접 수정 가능).
+    // 무엇을 드셨나요 텍스트칸이 비어있을 때만 음식 목록으로 자동 채워서, 사용자가 직접 쓴 메모는 안 건드린다.
+    function syncFoodKcalFromItems() {
+      const kcalInput = document.getElementById('food-kcal');
+      if (kcalInput) kcalInput.value = Math.round(foodItemsTotals().kcal);
+      const textEl = document.getElementById('food-text');
+      if (textEl && !textEl.value.trim()) textEl.value = _foodModalItems.map(it => `${it.n} ${it.g}g`).join(', ');
+    }
+    function resetFoodItemPicker() {
+      _foodModalItems = []; _pickedFoodDb = null;
+      const search = document.getElementById('food-item-search'); if (search) search.value = '';
+      const dd = document.getElementById('food-item-dd'); if (dd) dd.style.display = 'none';
+      const picker = document.getElementById('food-item-picker'); if (picker) picker.style.display = 'none';
+      renderFoodItemList();
+    }
+
     // ═══════════════════════ 식단 기록 (시간 + 메모 + 레시피 연동 kcal) ═══════════════════════
     // AI 매크로/혈당 추정은 다시 넣지 않는다. 대신 이미 칼로리를 아는 레시피 DB(RCPS)에서
     // 그 끼니 목표 구간에 맞는 것을 추천하거나 검색해서 고르면 kcal이 자동으로 채워지고,
     // 언제든 직접 숫자를 고쳐 쓸 수 있다.
-    const FOOD_QUICK_CHIPS = ['샐러드 파스타 1인분', '닭가슴살 현미밥', '오트밀 한그릇', '비빔밥 1인분', '두부 스테이크', '그릭요거트+견과류', '나시고랭 1인분', '김밥 1줄'];
+    const FOOD_QUICK_CHIPS =['샐러드 파스타 1인분', '닭가슴살 현미밥', '오트밀 한그릇', '비빔밥 1인분', '두부 스테이크', '그릭요거트+견과류', '나시고랭 1인분', '김밥 1줄'];
     const MEAL_SLOT_KEY = { '아침': 'breakfast', '점심': 'lunch', '저녁': 'dinner', '간식': 'snack', '야식': 'snack' };
     // RCPS_CURATED(칼로리 있는 것)만 대상으로, 그 끼니 목표 kcal의 ±40% 범위에 드는 레시피를 추천한다.
     // 밥/메인(에피타이저·디저트 제외 전부) · 에피타이저 · 디저트, 이렇게 3개 카테고리에서 목표 kcal에
@@ -3207,6 +3361,9 @@
       document.getElementById('food-quick-chips').innerHTML = FOOD_QUICK_CHIPS.map(c => `<span class="chip" onclick="document.getElementById('food-text').value='${c}'">${c}</span>`).join('');
       renderFoodSuggestions(m.label);
       labelSel.onchange = () => renderFoodSuggestions(labelSel.value);
+      resetFoodItemPicker();
+      _foodModalItems = Array.isArray(m.foods) ? m.foods.slice() : [];
+      renderFoodItemList();
       openMod('mod-food');
       setTimeout(() => document.getElementById('food-text')?.focus(), 300);
     }
@@ -3226,6 +3383,9 @@
       document.getElementById('food-quick-chips').innerHTML = FOOD_QUICK_CHIPS.map(c => `<span class="chip" onclick="document.getElementById('food-text').value='${c}'">${c}</span>`).join('');
       renderFoodSuggestions(label);
       labelSel.onchange = () => renderFoodSuggestions(labelSel.value);
+      resetFoodItemPicker();
+      _foodModalItems = Array.isArray(existing && existing.foods) ? existing.foods.slice() : [];
+      renderFoodItemList();
       openMod('mod-food');
     }
     function saveFoodEntry() {
@@ -3233,22 +3393,23 @@
       const label = document.getElementById('food-label')?.value;
       const kcalRaw = document.getElementById('food-kcal')?.value;
       const kcal = kcalRaw !== '' && !isNaN(parseInt(kcalRaw)) ? parseInt(kcalRaw) : null;
+      const foods = _foodModalItems.length ? _foodModalItems.slice() : null;
       if (!text) { alert('무엇을 드셨는지 적어주세요'); return; }
       if (_dayEditDate) {
         const dateStr = _dayEditDate; closeMod('mod-food');
-        if (typeof saveMealRow === 'function') saveMealRow({ label, time, text, kcal }, dateStr);
+        if (typeof saveMealRow === 'function') saveMealRow({ label, time, text, kcal, foods }, dateStr);
         const day = _dayDetailCache && _dayDetailCache.day;
         if (day) {
           day.meals = day.meals || [];
           const idx = day.meals.findIndex(m => m.label === label);
-          const row = { label, time, description: text, kcal };
+          const row = { label, time, description: text, kcal, foods };
           if (idx >= 0) day.meals[idx] = { ...day.meals[idx], ...row }; else day.meals.push(row);
         }
         _dayEditDate = null; renderDayDetail();
         return;
       }
       const m = S.meals.find(x => x.id === S.activeMealId); if (!m) return;
-      m.time = time || m.time; m.text = text; m.kcal = kcal;
+      m.time = time || m.time; m.text = text; m.kcal = kcal; m.foods = foods;
       if (label && label !== m.label) m.label = label; // 다른 끼니 슬롯으로 옮기면 그 슬롯에 upsert됨(기존 기록 있으면 덮어씀)
       if (typeof saveMealRow === 'function') saveMealRow(m);
       closeMod('mod-food'); goH('insulin');
@@ -3825,7 +3986,7 @@
     ];
     function rfil(el, k, v) { S.rFilters[k] = S.rFilters[k] === v ? null : v; document.querySelectorAll(`.chip[dfk="${k}"]`).forEach(c => { c.classList.remove('on'); }); el.setAttribute('dfk', k); if (S.rFilters[k]) el.classList.add('on'); else el.classList.remove('on'); renderRecipes(); }
     function renderRecipeCategoryChips() {
-      const box = document.getElementById('rcp-category-chips'); if (!box || box.childElementCount) return; // 한 번만 생성
+      const box = document.getElementById('rcp-category-chips'); if (!box) return;
       const cats = [...new Set(RCPS.map(r => r.tp))].sort((a, b) => a.localeCompare(b, 'ko'));
       box.innerHTML = cats.map(c => `<span class="chip" onclick="rfil(this,'type','${c}')">${c}</span>`).join('');
       const calBox = document.getElementById('rcp-cal-chips');
@@ -3883,43 +4044,43 @@
       return s || line.trim();
     }
     function buyIngredientOnCoupang(line) {
-      window.open(`https://www.coupang.com/np/search?q=${encodeURIComponent(ingredientSearchQuery(line))}`, '_blank');
+      window.open(`https://link.coupang.com/a/cmjENT?q=${encodeURIComponent(ingredientSearchQuery(line))}`, '_blank');
     }
     function showRecipeDetail(idx) {
       const r = RCPS[idx];
       document.getElementById('recipe-detail-body').innerHTML = `
-    <div style="text-align:center;margin-bottom:18px">
+    <div style="text-align:center;margin-bottom:18px;font-family:'Nunito',sans-serif">
       <div style="width:84px;height:84px;border-radius:50%;background:#fff3df;border:2px dashed #e8b978;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 12px">${r.img}</div>
       <span class="rcpd-tag">${r.tp}</span>
-      <div class="rcpd-title" style="display:block">${r.n}</div>
+      <div class="rcpd-title" style="display:block;font-family:'Nunito',sans-serif">${r.n}</div>
       <div class="rcpd-badges">
         <span class="rcpd-badge">⏱ ${r.t}분</span>
         <span class="rcpd-badge">💰 ~${r.cost.toLocaleString()}원</span>
         ${r.cal != null ? `<span class="rcpd-badge">🔥 ${r.cal}kcal</span>` : ''}
       </div>
     </div>
-    <div class="rcpd-section">
+    <div class="rcpd-section" style="font-family:'Nunito',sans-serif">
       <span class="rcpd-sec-label">★ 재료</span>
-      ${r.ingredients.map(ing => `<div class="rcpd-ing-row" onclick="buyIngredientOnCoupang('${ing.replace(/'/g, "\\'")}')">
-        <span>${ing}</span>
-        <span class="rcpd-buy">🛒 구매</span>
+      ${r.ingredients.map(ing => `<div class="rcpd-ing-row" onclick="buyIngredientOnCoupang('${ing.replace(/'/g, "\\'")}')"> 
+        <span style="font-family:'Nunito',sans-serif;font-size:13px">${ing}</span>
+        <span class="rcpd-buy">🛒구매</span>
       </div>`).join('')}
-      <button class="rcpd-buyall" onclick="window.open('https://www.coupang.com/np/search?q=${encodeURIComponent(r.cpgQ)}','_blank')">🛒 재료 전체 쿠팡에서 구매하기</button>
     </div>
-    <div class="rcpd-section">
+    <div class="rcpd-section" style="font-family:'Nunito',sans-serif">
       <span class="rcpd-sec-label">★ 만드는 방법</span>
       ${r.steps.map((s, i) => `<div class="rcpd-step">
         ${r.stepImg && r.stepImg[i] ? `<img class="rcpd-step-img" src="${r.stepImg[i]}" alt="" onerror="this.remove()">` : ''}
         <div class="rcpd-step-row">
           <div class="rcpd-step-num">${i + 1}</div>
-          <div class="rcpd-step-text">${s}</div>
+          <div class="rcpd-step-text" style="font-family:'Nunito',sans-serif">${s}</div>
         </div>
       </div>`).join('')}
     </div>
-    ${r.tip ? `<div class="rcpd-tip" style="margin-bottom:12px">
+    ${r.tip ? `<div class="rcpd-tip" style="margin-bottom:12px;font-family:'Nunito',sans-serif">
       <span class="rcpd-tip-label">💡 TIP</span>
       <div class="rcpd-tip-text">${r.tip}</div>
     </div>` : ''}
+    <div style="font-size:9px;color:#aaa;text-align:center;margin:8px 0 4px;font-weight:500">*이 게시물은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
     <button class="rcpd-close" onclick="closeMod('mod-recipe-detail')">닫기</button>`;
       openMod('mod-recipe-detail');
     }
