@@ -68,7 +68,7 @@ app.use('/api/report', reportRoutes);
 app.use('/api/user', authMiddleware, userRoutes);
 
 // 기본 헬스체크 라우트
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', message: 'Bellamona Backend is running' });
 });
 

@@ -1,5 +1,4 @@
 const express = require('express');
-const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
 const router = express.Router();
@@ -168,7 +167,7 @@ router.post('/logout', async (req, res) => {
 });
 
 // ── 5) 진단용
-router.get('/healthz', async (req, res) => {
+router.get('/healthz', async (_req, res) => {
     try {
         await pool.query('SELECT 1');
         res.json({
