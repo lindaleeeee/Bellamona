@@ -66,7 +66,6 @@ const STRENGTH_ROUTINES = {
       { id: 'lg-3', pose: 'hinge', name: '컨벤셔널 데드리프트', sets: 4, reps: '10회', estMin: 9, weight: '30kg', tips: ['발목이 쓰일 수 있게 살짝 앞으로 기울이기', "손은 바에 '매달린다'는 느낌으로 잡기", '복압 유지 필수'] },
       { id: 'lg-4', pose: 'squat', name: '덤벨 스쿼트 (고블릿 스쿼트)', sets: 4, reps: '15회', estMin: 8, tips: ['덤벨을 가슴 앞에 세로로 들고 앉기', '팔꿈치로 무릎을 살짝 밀어주며 가동범위 확보'] },
       { id: 'lg-5', pose: 'squat', name: '스미스머신 스쿼트', sets: 4, reps: '10회', estMin: 9, weight: '10kg', tips: ['복부 긴장을 잡고 허리를 곧게 세워 고관절부터 접기', '사타구니 사이로 몸통을 아래로 박아주듯 앉기'] },
-      { id: 'lg-6', pose: 'squat', name: '핵스쿼트', sets: 4, reps: '12회', estMin: 8, tips: ['뒤꿈치로 밟으며 엉덩이를 깔아뭉개듯 내려가기', '발 전체로 땅을 밀며 일어나기'] },
       { id: 'lg-7', pose: 'lunge', name: '스플릿 스쿼트', sets: 3, reps: '편측 10회', estMin: 8, tips: ['척추는 세우고 상체를 살짝 기울여 앞발 9 : 뒷발 1 무게중심 유지', '발로 땅을 누르며 일어나기'] },
       { id: 'lg-8', pose: 'lunge', name: '불가리안 스플릿 스쿼트', sets: 3, reps: '편측 10회', estMin: 8, tips: ['뒷발을 벤치에 올리고 앞다리 위주로 체중 싣기', '무릎이 안이나 밖으로 흔들리지 않게'] },
       { id: 'lg-9', pose: 'squat', name: '점프 스쿼트', sets: 3, reps: '10회', estMin: 6, tips: ['착지할 때 무릎을 부드럽게 굽혀 충격 흡수', '착지 즉시 바로 다음 점프로 이어가지 않아도 됨'] },
