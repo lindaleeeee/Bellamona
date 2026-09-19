@@ -10,7 +10,11 @@ function fetchApi(url, options = {}) {
     options.headers = options.headers || {};
     options.headers['Authorization'] = `Bearer ${token}`;
   }
-  return fetch(url, options);
+  // 세션이 만료/무효(401)면 앱 화면에 남지 않고 로그인 화면으로 보낸다(index.html의 onSessionExpired).
+  return fetch(url, options).then(res => {
+    if (res.status === 401 && typeof onSessionExpired === "function") onSessionExpired();
+    return res;
+  });
 }
 function fmtDateShort(isoDateStr) {
   if (!isoDateStr) return '';
@@ -88,7 +92,7 @@ async function doLogout() {
     console.error('[doLogout]', e);
   } finally {
     _clearLocalAuth();
-    location.reload();
+    location.replace("/"); // 로그아웃하면 소개(랜딩) 페이지로
   }
 }
 
@@ -106,7 +110,7 @@ async function doWithdraw() {
     return;
   }
   _clearLocalAuth();
-  location.reload();
+  location.replace("/");
 }
 
 // ── 로그인 후 / 새로고침 시 저장된 정보 복원 ──────────────────────
@@ -200,6 +204,7 @@ async function restoreFromServer() {
     }
 
     S.loggedIn = true;
+    _authed = true; // index.html의 화면 가드가 보는 값 — 서버가 세션을 인정했을 때만 true
     saveState();
 
     if (d.profile) initMain();
