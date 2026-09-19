@@ -1990,6 +1990,7 @@
   <script src="/js/data-cheat-foods.js"></script>
   <script src="/js/data-meal-plans.js"></script>
   <script src="/js/data-exercises.js"></script>
+  <script src="/js/data-pose-illustrations.js"></script>
   <script src="/js/data-workout-routines.js"></script>
   <script src="/js/data-recipes.js"></script>
   <script src="/js/data-foods.js"></script>
@@ -2977,14 +2978,19 @@
       const routine = mergedRoutines(bp).find(r => String(r.id) === String(routineId));
       if (!routine) return;
       const isDone = todayDoneRoutineNames(bp).has(routine.name);
+      const poseHtml = (routine.pose && typeof poseSvgFor === 'function')
+        ? `<div style="width:150px;height:150px;margin:0 auto 10px;background:var(--gro-bg);border:1.5px dashed rgba(129,199,132,.5);border-radius:16px;padding:10px">${poseSvgFor(routine.pose)}</div>`
+        : '';
       document.getElementById('wko-detail-body').innerHTML = `
     <div style="text-align:center;margin-bottom:14px">
-      <div style="font-size:40px;margin-bottom:8px">${STRENGTH_ROUTINES[bp].icon}</div>
+      ${poseHtml}
+      <div style="font-size:28px;margin-bottom:4px">${STRENGTH_ROUTINES[bp].icon}</div>
       <div class="serif" style="font-size:20px;font-weight:700;color:var(--text)">${routine.name}</div>
     </div>
     <div class="wko-pill-row">
       <span class="wko-pill">${routine.sets}세트 × ${routine.reps}</span>
       <span class="wko-pill">⏱ 약 ${routine.estMin}분</span>
+      ${routine.weight ? `<span class="wko-pill">🏋️ 참고 중량 ${routine.weight}</span>` : ''}
     </div>
     ${routine.tips && routine.tips.length ? `<div class="wko-tip">
       <span class="wko-tip-label">💡 TIP</span>
