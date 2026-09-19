@@ -116,7 +116,6 @@ const STRENGTH_ROUTINES = {
       { id: 'bl-1', pose: 'squat', name: '보수볼 스쿼트', sets: 3, reps: '12회', estMin: 8, tips: ['발바닥 전체로 보수볼을 눌러 균형 잡기', '무릎이 안쪽으로 무너지지 않게'] },
       { id: 'bl-2', pose: 'hinge', name: '보수볼 원레그 데드리프트 + 프레스', sets: 3, reps: '편측 8회', estMin: 8, tips: ['원레그 데드리프트 후 ㄱ자로 덤벨을 몸에 얹어 바로 프레스로 연결'] },
       { id: 'bl-3', pose: 'hinge', name: '보수볼 버티기 (데드리프트 변형)', sets: 3, reps: '30초 × 3세트', estMin: 6, tips: ['곧게 서는 힌지 자세가 중요', '상체는 광배에 힘을 주는 게 좋음'] },
-      { id: 'bl-5', pose: 'balanceSingle', name: '한발서기 (싱글레그 스탠드)', sets: 3, reps: '30초 × 좌우', estMin: 5, tips: ['시선을 한 곳에 고정하면 균형 잡기 쉬움', '익숙해지면 눈을 감고 시도'] },
       { id: 'bl-6', pose: 'hinge', name: '싱글레그 데드리프트', sets: 3, reps: '편측 10회', estMin: 8, tips: ['골반이 정면을 유지한 채 상체와 뒷다리를 일직선으로 뻗기'] },
       { id: 'bl-7', pose: 'lunge', name: '랜드마인 런지 > 원암 스탠딩프레스', sets: 3, reps: '편측 8회', estMin: 9, tips: ['앞손·앞발 같은 방향으로 런지 후 발을 교차하며 프레스로 연결', '스프링처럼 눌렀다 튀어오르는 반동이 중요'] },
       { id: 'bl-8', pose: 'kbSwing', name: '케틀벨 스윙', sets: 4, reps: '15회', estMin: 7, weight: '8kg', tips: ['케틀벨과 몸통이 한 타이밍으로 떨어질 수 있게', '허리가 아닌 고관절 힌지로 스윙'] },
