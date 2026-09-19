@@ -119,6 +119,47 @@
     legRaise: {
       joints: { head: [16, 72], neck: [30, 72], hip: [50, 72], lKnee: [58, 44], lFoot: [64, 14], rKnee: [58, 44], rFoot: [64, 14], lElbow: [35, 75], lHand: [22, 78], rElbow: [35, 75], rHand: [22, 78] },
     },
+    // ── 운동 후 스트레칭 자세 ──
+    stretchCrossBody: {
+      joints: { head: [50, 18], neck: [50, 26], hip: [50, 55], lKnee: [45, 73], lFoot: [42, 90], rKnee: [55, 73], rFoot: [58, 90], lElbow: [40, 32], lHand: [32, 38], rElbow: [30, 38], rHand: [20, 40] },
+    },
+    stretchNeckSide: {
+      joints: { head: [58, 14], neck: [50, 25], hip: [50, 55], lKnee: [45, 73], lFoot: [42, 90], rKnee: [55, 73], rFoot: [58, 90], lElbow: [30, 45], lHand: [20, 55], rElbow: [58, 18], rHand: [65, 12] },
+    },
+    stretchChestDoorway: {
+      joints: { head: [45, 20], neck: [45, 28], hip: [50, 55], lKnee: [45, 73], lFoot: [40, 90], rKnee: [55, 73], rFoot: [62, 90], lElbow: [38, 42], lHand: [35, 55], rElbow: [75, 25], rHand: [90, 20] },
+      extra: `<line x1="92" y1="5" x2="92" y2="95" stroke="var(--bdr)" stroke-width="3"/>`,
+    },
+    stretchChestClasp: {
+      joints: { head: [50, 20], neck: [50, 28], hip: [50, 55], lKnee: [45, 73], lFoot: [42, 90], rKnee: [55, 73], rFoot: [58, 90], lElbow: [58, 42], lHand: [54, 50], rElbow: [60, 46], rHand: [55, 52] },
+    },
+    stretchChildPose: {
+      joints: { head: [15, 72], neck: [26, 66], hip: [55, 58], lKnee: [62, 82], lFoot: [72, 88], rKnee: [62, 82], rFoot: [72, 88], lElbow: [30, 64], lHand: [12, 68], rElbow: [30, 64], rHand: [12, 68] },
+    },
+    stretchSeatedTwist: {
+      joints: { head: [55, 30], neck: [50, 38], hip: [50, 65], lKnee: [30, 75], lFoot: [22, 70], rKnee: [68, 75], rFoot: [78, 70], lElbow: [42, 55], lHand: [30, 60], rElbow: [60, 60], rHand: [66, 68] },
+    },
+    stretchOverheadTriceps: {
+      joints: { head: [50, 18], neck: [50, 26], hip: [50, 55], lKnee: [46, 73], lFoot: [44, 90], rKnee: [54, 73], rFoot: [56, 90], lElbow: [40, 30], lHand: [56, 14], rElbow: [58, 12], rHand: [52, 28] },
+    },
+    stretchWrist: {
+      joints: { head: [50, 22], neck: [50, 30], hip: [50, 55], lKnee: [46, 73], lFoot: [44, 90], rKnee: [54, 73], rFoot: [56, 90], lElbow: [60, 40], lHand: [85, 38], rElbow: [70, 45], rHand: [90, 45] },
+    },
+    stretchQuadStanding: {
+      joints: { head: [50, 18], neck: [50, 26], hip: [50, 52], lKnee: [50, 70], lFoot: [50, 90], rKnee: [58, 62], rFoot: [62, 48], lElbow: [30, 40], lHand: [18, 42], rElbow: [45, 45], rHand: [60, 50] },
+    },
+    stretchHamstringForward: {
+      joints: { head: [50, 65], neck: [50, 55], hip: [50, 52], lKnee: [45, 72], lFoot: [42, 90], rKnee: [55, 72], rFoot: [58, 90], lElbow: [48, 68], lHand: [45, 85], rElbow: [52, 68], rHand: [55, 85] },
+    },
+    stretchFigure4: {
+      joints: { head: [15, 55], neck: [25, 55], hip: [48, 58], lKnee: [65, 50], lFoot: [80, 55], rKnee: [60, 45], rFoot: [70, 42], lElbow: [35, 58], lHand: [50, 50], rElbow: [35, 62], rHand: [55, 58] },
+    },
+    stretchCobra: {
+      joints: { head: [45, 35], neck: [50, 42], hip: [70, 68], lKnee: [85, 72], lFoot: [95, 75], rKnee: [85, 72], rFoot: [95, 75], lElbow: [45, 58], lHand: [42, 72], rElbow: [45, 58], rHand: [42, 72] },
+    },
+    stretchSideBend: {
+      joints: { head: [60, 18], neck: [55, 26], hip: [50, 55], lKnee: [45, 73], lFoot: [42, 90], rKnee: [55, 73], rFoot: [58, 90], lElbow: [35, 45], lHand: [30, 60], rElbow: [70, 20], rHand: [80, 10] },
+    },
   };
 
   function poseSvgFor(key) {

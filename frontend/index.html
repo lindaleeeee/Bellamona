@@ -1689,11 +1689,15 @@
     <div class="mov" id="mod-strength">
       <div class="msh">
         <div class="mh"></div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">🏋️ 근력 운동 기록</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500">부위를 고르고 오늘 한 루틴을 체크하세요</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px" id="wko-modal-title">🏋️ 근력 운동 기록</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:500" id="wko-modal-sub">부위를 고르고 오늘 한 루틴을 체크하세요</div>
+        <div class="wko-chip-row" style="margin-bottom:6px">
+          <div class="wko-chip${''}" id="wko-mode-strength" onclick="setStrengthViewMode('strength')">🏋️ 근력</div>
+          <div class="wko-chip" id="wko-mode-stretch" onclick="setStrengthViewMode('stretch')">🧘 운동 후 스트레칭</div>
+        </div>
         <div class="wko-chip-row" id="wko-bodypart-chips"></div>
         <div id="wko-routine-list"></div>
-        <button class="btn btn-o" style="margin-top:6px" onclick="openCustomRoutineForm()">+ 내 루틴 추가</button>
+        <button class="btn btn-o" style="margin-top:6px" id="wko-add-custom-btn" onclick="openCustomRoutineForm()">+ 내 루틴 추가</button>
         <div id="wko-custom-form"
           style="display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--bdr)">
           <div class="cap" style="margin-bottom:5px">루틴 이름</div>
@@ -1992,6 +1996,7 @@
   <script src="/js/data-exercises.js"></script>
   <script src="/js/data-pose-illustrations.js"></script>
   <script src="/js/data-workout-routines.js"></script>
+  <script src="/js/data-stretches.js"></script>
   <script src="/js/data-recipes.js"></script>
   <script src="/js/data-foods.js"></script>
   <script src="/js/google-sheet-loader.js"></script>
@@ -2912,21 +2917,42 @@
     // 기록되므로 성장호르몬 점수(growthScorePoints)와 주간 그리드(weekWorkoutGrid)에 별도 코드 변경 없이
     // 자동으로 반영된다.
     let _strengthBodyPart = null;
+    let _strengthViewMode = 'strength'; // 'strength' | 'stretch'
     function mergedRoutines(bp) {
       const base = (typeof STRENGTH_ROUTINES !== 'undefined' && STRENGTH_ROUTINES[bp]?.routines) || [];
       const custom = (S.customRoutines && S.customRoutines[bp]) || [];
       return [...base, ...custom];
     }
+    function activePartOrder() {
+      return _strengthViewMode === 'stretch' ? STRETCH_BODY_PART_ORDER : BODY_PART_ORDER;
+    }
+    function activePartData() {
+      return _strengthViewMode === 'stretch' ? STRETCH_ROUTINES : STRENGTH_ROUTINES;
+    }
     function openStrengthModal() {
       _strengthBodyPart = _strengthBodyPart || BODY_PART_ORDER[0];
-      renderBodyPartChips();
-      renderStrengthRoutineList();
+      setStrengthViewMode('strength');
       const f = document.getElementById('wko-custom-form'); if (f) f.style.display = 'none';
       openMod('mod-strength');
     }
+    // 근력/스트레칭 탭 전환. 스트레칭은 카테고리가 다르므로(균형·기능성 제외) 현재 고른 부위가
+    // 새 모드에 없으면 그 모드의 첫 부위로 넘어간다.
+    function setStrengthViewMode(mode) {
+      _strengthViewMode = mode;
+      const order = activePartOrder();
+      if (!order.includes(_strengthBodyPart)) _strengthBodyPart = order[0];
+      document.getElementById('wko-mode-strength')?.classList.toggle('on', mode === 'strength');
+      document.getElementById('wko-mode-stretch')?.classList.toggle('on', mode === 'stretch');
+      setTxt('wko-modal-title', mode === 'strength' ? '🏋️ 근력 운동 기록' : '🧘 운동 후 스트레칭');
+      setTxt('wko-modal-sub', mode === 'strength' ? '부위를 고르고 오늘 한 루틴을 체크하세요' : '운동한 부위를 골라 스트레칭 방법을 확인하세요');
+      const addBtn = document.getElementById('wko-add-custom-btn'); if (addBtn) addBtn.style.display = mode === 'strength' ? '' : 'none';
+      renderBodyPartChips();
+      renderStrengthRoutineList();
+    }
     function renderBodyPartChips() {
       const box = document.getElementById('wko-bodypart-chips'); if (!box) return;
-      box.innerHTML = BODY_PART_ORDER.map(k => `<div class="wko-chip ${k === _strengthBodyPart ? 'on' : ''}" onclick="selectBodyPart('${k}')">${STRENGTH_ROUTINES[k].icon} ${STRENGTH_ROUTINES[k].label}</div>`).join('');
+      const order = activePartOrder(); const data = activePartData();
+      box.innerHTML = order.map(k => `<div class="wko-chip ${k === _strengthBodyPart ? 'on' : ''}" onclick="selectBodyPart('${k}')">${data[k].icon} ${data[k].label}</div>`).join('');
     }
     function selectBodyPart(k) {
       _strengthBodyPart = k;
@@ -2940,6 +2966,16 @@
     function renderStrengthRoutineList() {
       const box = document.getElementById('wko-routine-list'); if (!box) return;
       const bp = _strengthBodyPart;
+      if (_strengthViewMode === 'stretch') {
+        const routines = (STRETCH_ROUTINES[bp] && STRETCH_ROUTINES[bp].routines) || [];
+        box.innerHTML = routines.map(r => `<div class="wko-routine-row">
+      <div class="wko-routine-info" style="cursor:pointer" onclick="openStretchDetail('${bp}','${r.id}')">
+        <div class="wko-routine-name">${r.name}</div>
+        <div class="wko-routine-sub">${r.holdSec}초 유지 · ${r.reps}</div>
+      </div>
+    </div>`).join('') || `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">이 부위 스트레칭이 아직 없어요</div>`;
+        return;
+      }
       const routines = mergedRoutines(bp);
       const done = todayDoneRoutineNames(bp);
       box.innerHTML = routines.map(r => {
@@ -2954,6 +2990,31 @@
       ${isCustom ? `<button onclick="event.stopPropagation(); deleteCustomRoutine('${bp}','${r.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>` : ''}
     </div>`;
       }).join('') || `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;font-weight:500">이 부위에 저장된 루틴이 없어요</div>`;
+    }
+    // 스트레칭은 근력 완료 체크(workoutLogs/성장호르몬 점수)와 무관한 참고용 안내라
+    // 별도 상세 뷰로 자세·팁만 보여주고 "완료 체크" 버튼은 넣지 않는다.
+    function openStretchDetail(bp, id) {
+      const routine = (STRETCH_ROUTINES[bp]?.routines || []).find(r => String(r.id) === String(id));
+      if (!routine) return;
+      const poseHtml = (routine.pose && typeof poseSvgFor === 'function')
+        ? `<div style="width:150px;height:150px;margin:0 auto 10px;background:var(--gro-bg);border:1.5px dashed rgba(129,199,132,.5);border-radius:16px;padding:10px">${poseSvgFor(routine.pose)}</div>`
+        : '';
+      document.getElementById('wko-detail-body').innerHTML = `
+    <div style="text-align:center;margin-bottom:14px">
+      ${poseHtml}
+      <div style="font-size:28px;margin-bottom:4px">${STRETCH_ROUTINES[bp].icon}</div>
+      <div class="serif" style="font-size:20px;font-weight:700;color:var(--text)">${routine.name}</div>
+    </div>
+    <div class="wko-pill-row">
+      <span class="wko-pill">⏱ ${routine.holdSec}초 유지</span>
+      <span class="wko-pill">${routine.reps}</span>
+    </div>
+    ${routine.tips && routine.tips.length ? `<div class="wko-tip">
+      <span class="wko-tip-label">💡 TIP</span>
+      ${routine.tips.map(tp => `<div class="wko-tip-item">⭐ ${tp}</div>`).join('')}
+    </div>` : ''}
+    <button class="btn btn-o" onclick="closeMod('mod-routine-detail')">닫기</button>`;
+      openMod('mod-routine-detail');
     }
     // 체크를 누르면 오늘 날짜로 workoutLogs에 추가/제거한다(유산소 기록과 같은 배열, 같은 저장 방식).
     function toggleRoutineDone(bp, routineId) {
