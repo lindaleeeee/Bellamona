@@ -10,9 +10,10 @@ function fetchApi(url, options = {}) {
     options.headers = options.headers || {};
     options.headers['Authorization'] = `Bearer ${token}`;
   }
-  // 세션이 만료/무효(401)면 앱 화면에 남지 않고 로그인 화면으로 보낸다(index.html의 onSessionExpired).
+  // 세션이 만료/무효면 앱 화면에 남지 않고 로그인 화면으로 보낸다(index.html의 onSessionExpired).
+  // 백엔드는 토큰이 없으면 401, 토큰이 유효하지 않거나 탈퇴한 계정이면 403을 준다(routes/data.js).
   return fetch(url, options).then(res => {
-    if (res.status === 401 && typeof onSessionExpired === "function") onSessionExpired();
+    if ((res.status === 401 || res.status === 403) && typeof onSessionExpired === "function") onSessionExpired();
     return res;
   });
 }
