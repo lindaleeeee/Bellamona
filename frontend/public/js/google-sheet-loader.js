@@ -8,10 +8,14 @@
     'use strict';
 
     /* ─── 설정 ─── */
-    const SHEET_ID = '1-iNoJNou464Z4KR4X9SuFgl5hCQSeI_aAgg6sZo3WHM';
+    const SHEET_ID = '1_csWpbLnQsoJm9EYyWZfdL8-JyyQHhB16tfXu_UexQA';
     const GID = 0;                          // 시트1
-    const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
-    const CACHE_KEY = 'bellamona_sheet_recipes';
+    // 시트 전체(채널명·영상링크 등 30,000행)를 받으면 응답이 약 19MB라, 앱이 쓰는 컬럼(F~P)과 음식이름이 있는 행만 요청한다
+    // (약 10MB, gzip 전송 약 2MB). 컬럼을 추가/이동했다면 아래 SELECT의 열 문자를 함께 바꿔야 한다.
+    //   F 카테고리 · G 음식이름 · H 시간 · I 가격 · J 맛 · K 주재료 · L 부재료 · M 양념 · N 순서 · O 팁 · P 칼로리
+    const GVIZ_QUERY = 'select F,G,H,I,J,K,L,M,N,O,P where G is not null';
+    const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&tq=${encodeURIComponent(GVIZ_QUERY)}`;
+    const CACHE_KEY = 'bellamona_sheet_recipes_v2'; // 시트/쿼리를 바꾸면 이전 캐시(다른 시트 데이터)를 쓰지 않도록 키를 올린다
     const CACHE_TTL = 1000 * 60 * 10;             // 10분 캐시
 
     /* ─── 카테고리 → 이모지 ─── */
