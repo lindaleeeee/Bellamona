@@ -15,7 +15,7 @@
     //   F 카테고리 · G 음식이름 · H 시간 · I 가격 · J 맛 · K 주재료 · L 부재료 · M 양념 · N 순서 · O 팁 · P 칼로리
     const GVIZ_QUERY = 'select F,G,H,I,J,K,L,M,N,O,P where G is not null';
     const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&tq=${encodeURIComponent(GVIZ_QUERY)}`;
-    const CACHE_KEY = 'bellamona_sheet_recipes_v2'; // 시트/쿼리를 바꾸면 이전 캐시(다른 시트 데이터)를 쓰지 않도록 키를 올린다
+    const CACHE_KEY = 'bellamona_sheet_recipes_v3'; // 시트/쿼리/중복 규칙을 바꾸면 이전 캐시를 쓰지 않도록 키를 올린다
     const CACHE_TTL = 1000 * 60 * 10;             // 10분 캐시
 
     /* ─── 카테고리 → 이모지 ─── */
@@ -112,6 +112,64 @@
         };
     }
 
+    /* ─── 같은 이름의 서로 다른 레시피에 제목 구분 붙이기 ─── */
+    // 이름이 같은 레시피가 여러 개면 제목 뒤에 재료를 괄호로 붙여 목록에서 구분되게 한다.
+    // 예: "봄동 겉절이" ×3 → "봄동 겉절이 (봄동)", "봄동 겉절이 (참치)" ...
+    // 그룹 안에서 라벨이 서로 겹치지 않는 가장 짧은 후보를 쓰고, 끝까지 겹치면 번호를 붙인다. 이름이 하나뿐이면 그대로 둔다.
+    function disambiguateTitles(recipes) {
+        const groups = new Map();
+        for (const r of recipes) {
+            if (!groups.has(r.n)) groups.set(r.n, []);
+            groups.get(r.n).push(r);
+        }
+        // 제목 끝 괄호 안에 또 괄호가 들어가 깨지지 않게, 재료 줄의 괄호 설명("방울토마토 5개(50g)")은 떼고 길면 자른다.
+        const clip = (t) => {
+            t = t.replace(/\s*\([^)]*\)?/g, '').replace(/[()]/g, '').trim();
+            return t.length > 16 ? t.slice(0, 16) + '…' : t;
+        };
+        // 한 재료 줄에서 수량을 뗀 이름만 남긴다("봄동 1포기" → "봄동").
+        const ingName = (line) => cpgQuery(line);
+        // 그룹 안에서 "이 레시피에만 있는(또는 가장 드문)" 재료를 우선 골라, 목록에서 서로 구별되는 이름을 만든다.
+        // 예: 당근라페 ×2 → "(호두)", "(크랜베리)". 후보를 늘려 가며(재료 1~3개, 수량 포함) 유일해질 때까지 시도한다.
+        for (const [name, list] of groups) {
+            if (list.length < 2) continue;
+            const info = list.map(r => {
+                const seen = new Set(), names = [];
+                for (const line of r.ingredients) { const nm = ingName(line); if (nm && !seen.has(nm)) { seen.add(nm); names.push(nm); } }
+                return { names, lines: r.ingredients.filter(Boolean) };
+            });
+            // 재료별로 그룹 안에서 몇 개 레시피가 쓰는지(적을수록 그 레시피를 잘 구별해 준다)
+            const dfNames = new Map(), dfLines = new Map();
+            info.forEach(x => {
+                new Set(x.names).forEach(n => dfNames.set(n, (dfNames.get(n) || 0) + 1));
+                new Set(x.lines).forEach(n => dfLines.set(n, (dfLines.get(n) || 0) + 1));
+            });
+            const rare = (arr, df) => arr.map((v, i) => [v, i]).sort((a, b) => (df.get(a[0]) - df.get(b[0])) || (a[1] - b[1])).map(x => x[0]);
+            const levels = [
+                (x, k) => rare(x.names, dfNames).slice(0, k).join(', '),
+                (x, k) => rare(x.lines, dfLines).slice(0, k).join(', '),
+            ];
+            const done = new Array(list.length).fill(null);
+            const taken = new Set();
+            for (const level of levels) {
+                for (const k of [1, 2, 3]) {
+                    const pending = done.map((d, i) => (d == null ? i : -1)).filter(i => i >= 0);
+                    if (!pending.length) break;
+                    const tryLabels = pending.map(i => clip(level(info[i], k)));
+                    const count = new Map();
+                    tryLabels.forEach(l => count.set(l, (count.get(l) || 0) + 1));
+                    pending.forEach((i, j) => {
+                        const l = tryLabels[j];
+                        if (l && count.get(l) === 1 && !taken.has(l)) { done[i] = l; taken.add(l); }
+                    });
+                }
+            }
+            // 그래도 구별되지 않는 것(재료가 사실상 같은 변형)만 번호로 구분
+            let n = 0;
+            list.forEach((r, i) => { r.n = done[i] ? `${name} (${done[i]})` : `${name} (${++n})`; });
+        }
+    }
+
     /* ─── gviz JSON 응답 파싱 ─── */
     function parseGviz(rawText) {
         // google.visualization.Query.setResponse({...}); 형태에서 JSON만 추출
@@ -169,11 +227,15 @@
                         : [];
 
                     const r = rowToRecipe(cells, cm);
-                    if (r && !seen.has(r.n)) {
-                        seen.add(r.n);
-                        recipes.push(r);
-                    }
+                    if (!r) continue;
+                    // 이름만 같다고 같은 레시피가 아니다(같은 "봄동 겉절이"라도 재료가 다른 별개 레시피가 많다).
+                    // 이름과 재료 목록이 모두 같은 행만 중복으로 보고 버린다.
+                    const key = r.n + '\u0000' + r.ingredients.join('\u0001');
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                    recipes.push(r);
                 }
+                disambiguateTitles(recipes);
 
                 if (recipes.length > 0) {
                     applyRecipes(recipes);
