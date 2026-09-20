@@ -1,8 +1,4 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false,
-  "rewrites": [
-    { "source": "/", "destination": "/landing.html" },
-    { "source": "/(login|onboarding|home|dashboard|recipes|mypage|meal|exercise|mind|nutrition)", "destination": "/index.html" }
-  ]
+  "trailingSlash": false
 }
