@@ -4018,7 +4018,7 @@
       const insights = Array.isArray(r.insights) ? r.insights : [];
       const actions = Array.isArray(r.actions) ? r.actions : [];
       return `
-      ${r.degraded ? `<div style="font-size:11px;color:var(--warn);background:rgba(255,167,38,.1);border:1.5px solid rgba(255,167,38,.3);border-radius:11px;padding:8px 11px;margin-bottom:10px;font-weight:600">⚠️ AI 서버 연결에 문제가 있어 기본 안내로 보여드려요. 몸무게 예측 등 계산값은 정상입니다.</div>` : ''}
+      ${r.degraded ? `<div style="font-size:11px;color:var(--warn);background:rgba(255,167,38,.1);border:1.5px solid rgba(255,167,38,.3);border-radius:11px;padding:8px 11px;margin-bottom:10px;font-weight:600">⚠️ AI 서버 연결에 문제가 있어 기본 안내로 보여드려요. 몸무게 예측 등 계산값은 정상입니다.${r.degraded_reason ? `<div style="margin-top:4px;font-size:10px;color:var(--muted);font-weight:500;word-break:break-all">원인: ${String(r.degraded_reason).replace(/[<>&]/g, '')}</div>` : ''}</div>` : ''}
       <div class="card" style="background:linear-gradient(135deg,var(--sky3),var(--lav3));margin-bottom:12px">
         <div class="cap">AI 리포트</div>
         ${r.headline ? `<div style="font-size:13px;color:var(--text);font-weight:700;margin-bottom:8px">"${r.headline}"</div>` : ''}

@@ -77,31 +77,36 @@ async function verifyFirebaseUser(idToken) {
 }
 
 // 후보 모델을 순서대로 시도한다(모델 단종 404일 때만 다음 후보로).
+// - responseMimeType: JSON만 돌려받도록 강제(앞뒤 잡담으로 파싱 실패하는 일 방지)
+// - thinkingBudget 0: 2.5 계열은 기본으로 "생각" 토큰을 먼저 써서, 출력 상한(maxOutputTokens)에 걸려
+//   본문 JSON이 잘리거나 비는 일이 있다. 생각을 끄면 비용도 줄어든다. 이 옵션을 거부하는 모델이면 빼고 재시도.
+async function callModel(apiKey, model, prompt, withThinkingOff) {
+    const generationConfig = { maxOutputTokens: 2048, responseMimeType: 'application/json' };
+    if (withThinkingOff) generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig }),
+    });
+    const j = await r.json().catch(() => null);
+    return { r, j, msg: (j && j.error && j.error.message) || '' };
+}
 async function generateWithFallback(apiKey, prompt) {
     let lastError = null;
     for (const model of MODEL_CANDIDATES) {
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-            body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                // 응답 토큰 상한을 고정해 호출당 비용 상한을 묶는다
-                generationConfig: { maxOutputTokens: 800 },
-            }),
-        });
-        const j = await r.json().catch(() => null);
+        let { r, j, msg } = await callModel(apiKey, model, prompt, true);
+        if (!r.ok && r.status === 400 && /thinking/i.test(msg)) ({ r, j, msg } = await callModel(apiKey, model, prompt, false));
         if (!r.ok) {
-            const msg = (j && j.error && j.error.message) || '';
-            if (r.status === 404 || /not found|no longer available/i.test(msg)) {
+            if (r.status === 404 || /not found|no longer available|not supported/i.test(msg)) {
                 console.warn(`[REPORT] 모델 "${model}" 사용 불가, 다음 후보로:`, msg);
                 lastError = new Error(msg || `model ${model} unavailable`);
                 continue;
             }
             throw new Error(`Gemini ${r.status}: ${msg}`);
         }
-        const text = ((j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [])
-            .map(p => p.text || '').join('');
-        if (!text) throw new Error('Gemini empty response');
+        const cand = j && j.candidates && j.candidates[0];
+        const text = ((cand && cand.content && cand.content.parts) || []).filter(p => !p.thought).map(p => p.text || '').join('');
+        if (!text) throw new Error(`Gemini 빈 응답 (finishReason: ${(cand && cand.finishReason) || 'none'})`);
         console.log(`[REPORT] Gemini 호출 성공 (모델: ${model})`);
         return text;
     }
@@ -166,6 +171,9 @@ insights/actions는 각 항목 1문장씩 최대 2개로 제한합니다.
         return res.status(200).json({ success: true, report: reportJSON });
     } catch (error) {
         console.error('[REPORT] Gemini 실패 — 기본 안내 리포트로 응답:', error && error.message);
-        return res.status(200).json({ success: true, report: fallbackReport(data) });
+        // 원인을 화면에서도 볼 수 있게 짧은 사유를 같이 보낸다(키 값 같은 비밀은 들어가지 않음)
+        const report = fallbackReport(data);
+        report.degraded_reason = String((error && error.message) || 'unknown').replace(/AIza[0-9A-Za-z_-]+/g, '***').slice(0, 160);
+        return res.status(200).json({ success: true, report });
     }
 }
