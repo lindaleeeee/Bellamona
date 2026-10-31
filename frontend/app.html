@@ -2568,6 +2568,10 @@
         }
         saveState();
         if (typeof saveProfileRow === 'function') saveProfileRow();
+        // 온보딩에서 입력한 생리기와 시작 체중도 서버(Firebase)에 저장 — 안 하면 이 기기에만 남아
+        // 새로고침/다른 기기에서 대시보드 달력과 체중 그래프에 안 나온다.
+        if (S.periods.length && typeof savePeriodRow === 'function') savePeriodRow();
+        if (S.initWeight && typeof saveWeightRow === 'function') saveWeightRow(S.weights[0]);
         initMain();
       }
     }
