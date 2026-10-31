@@ -142,6 +142,11 @@ CURATED_RAW = {
         ('옥수수', r'^옥수수 (?!기름|순)'), ('감자', r'^감자( |$)'), ('고구마', r'^고구마 (?!줄기|잎)'), ('밀가루', r'^밀가루')],
 }
 STATE_WORDS = ('생것', '구운것', '삶은것', '찐것', '데친것', '볶은것')
+SUB_ITEMS = [('연어 알', '연어알'), ('명태 알', '명란'), ('인삼 홍삼', '홍삼'), ('인삼 수삼', '수삼'), ('인삼 백삼', '백삼'),
+             ('올리브 피클', '올리브 피클'), ('달걀 난백', '달걀흰자'), ('달걀 난황', '달걀노른자'), ('배추우거지', '우거지'),
+             ('고구마 줄기', '고구마줄기'), ('고구마 잎', '고구마잎'), ('호박 애호박', '애호박'), ('호박 단호박', '단호박'),
+             ('콩 서리태', '서리태'), ('콩 흑태', '검정콩'), ('콩 대두', '대두'), ('콩 노란콩', '노란콩')]
+COMMON_STATES = {'', '생것', '삶은것', '데친것', '찐것', '구운것', '볶은것', '말린것', '튀긴것', '추출', '통조림', '얼린것'}
 def state_of(key):
     i = key.rfind(' (')
     st = re.sub(r'\(.*\)', '', key[i + 2:-1]) if i >= 0 and key.endswith(')') else ''
@@ -179,6 +184,17 @@ def main(paths):
             origin = str(row.get('식품기원명') or '')
             if '원재료' in kind:
                 key, gk = raw_name(name), 'raw'
+                # 품종, 부위, 산지를 떼고 "기본 이름 + 조리상태"로도 묶어 둔다(예: 대게 (삶은것), 피스타치오 (볶은것))
+                base = key.split(' (')[0].split()[0] if key else ''
+                # 품종이 아니라 다른 음식인 경우는 두 단어를 살린다(연어알, 홍삼, 달걀흰자 등)
+                for pre, nm in SUB_ITEMS:
+                    if key.startswith(pre): base = nm; break
+                st = state_of(key)
+                if st not in COMMON_STATES:  # "쪄서 말린것" → "말린것"처럼 끝말로 맞춘다
+                    st = next((w for w in sorted(COMMON_STATES, key=len, reverse=True) if w and st.endswith(w)), None)
+                if base and st is not None:
+                    ag = groups[('rawbase', f'{base} ({st})' if st else base)]
+                    ag['cat'] = cat; ag['rows'].append(vals); ag['kind'] = 'rawbase'
             elif '가공' in kind:
                 # 가공식품은 브랜드 제품이 너무 많아 검색만 헷갈리게 해서 넣지 않는다(파일을 넘겨도 무시)
                 if not INCLUDE_PROCESSED: continue
@@ -195,7 +211,7 @@ def main(paths):
             g['brands'].add(str(row.get('업체명') or row.get('제조사명') or row.get('식품기원명') or ''))
 
     seen, out, by_name = existing_names(), [], {}
-    order = {'raw': 0, 'dish': 1, 'fr': 2, 'procrep': 3, 'procname': 4}
+    order = {'raw': 0, 'dish': 1, 'fr': 2, 'procrep': 3, 'procname': 4, 'rawbase': 9}
     for (gk, key), g in sorted(groups.items(), key=lambda kv: order[kv[0][0]]):
         if gk == 'fr' and len(g['brands']) < 3: continue
         if gk == 'procname' and len(g['rows']) < 5: continue
@@ -214,7 +230,7 @@ def main(paths):
         if gk == 'fr' and med['c'] == 0 and med['kcal'] >= 100: continue
         item = {'n': key, 'cat': g['cat'] or '기타', 'e': emoji(key, g['cat']), **med, 'gi': est_gi(key, g['cat'], med['c'])}
         by_name.setdefault(key, item)
-        if gk == 'raw': continue  # 원재료성은 아래 CURATED_RAW로만 내보낸다
+        if gk in ('raw', 'rawbase'): continue  # 원재료성은 아래에서 따로 내보낸다
         if gk == 'dish' and '간편조리세트' in key: continue  # 밀키트 제품은 가공식품 성격이라 뺀다
         ck = canon(key)
         if gk == 'fr' and key.startswith('디카페인'): continue  # 영양값은 일반 메뉴와 같다
@@ -239,8 +255,22 @@ def main(paths):
                     med[k] = round(statistics.median(vs), 1) if vs else 0.0
                 n = f'{disp} ({st})'
                 if n in seen: continue
-                seen.add(n)
+                seen.add(n); seen.add(canon(n))
                 out.append({'n': n, 'cat': catname, 'e': emo, **med, 'gi': est_gi(disp, catname, med['c'])})
+
+    # 그 밖의 원재료는 "기본 이름 (조리상태)" 하나씩만(품종, 산지, 등급 샘플은 합침)
+    for (gk, key), g in groups.items():
+        if gk != 'rawbase': continue
+        disp = key.split(' (')[0]
+        if key.endswith('(생것)') and disp in basic_names: continue
+        ck = canon(key)
+        if key in seen or ck in seen: continue
+        med = {}
+        for k in NUM_KEYS:
+            vs = [r[k] for r in g['rows'] if r[k] is not None]
+            med[k] = round(statistics.median(vs), 1) if vs else 0.0
+        seen.add(key); seen.add(ck)
+        out.append({'n': key, 'cat': g['cat'] or '기타', 'e': emoji(key, g['cat']), **med, 'gi': est_gi(key, g['cat'], med['c'])})
 
     official = {}
     for basic, src in BASIC_MATCH.items():
@@ -257,7 +287,7 @@ def main(paths):
                    + '// 기본 음식(data-foods-basic.js) 중 식약처 값으로 덮어쓸 것\n'
                    + 'const FOODS_BASIC_OFFICIAL = ' + json.dumps(official, ensure_ascii=False, separators=(',', ':')) + ';\n', encoding='utf8')
     kinds = defaultdict(int)
-    for o in out: kinds[o['cat'] if o['cat'] in ('과일', '채소', '고기', '생선', '곡류') else '외식/음식'] += 1
+    for o in out: kinds['원재료' if o['cat'] in ('과일', '채소', '고기', '생선', '곡류') or '류' in o['cat'] else '외식/음식'] += 1
     print(f'{len(out)}개 저장 → {OUT.name} ({OUT.stat().st_size // 1024}KB)', dict(kinds))
     print(f'기본 음식 식약처 값 적용 {len(official)}개, 못 찾음: {missing}')
     return out, official
