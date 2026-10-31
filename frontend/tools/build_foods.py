@@ -110,9 +110,49 @@ def emoji(name, cat):
         if re.search(pat, s): return e
     return '🍽'
 
+
+# 원재료성 식품은 품종, 지역, 부위 샘플이 3,000개가 넘어 검색을 어지럽힌다. 자주 먹는 것만 골라
+# "이름 (조리상태)" 하나로 묶는다(품종, 지역, 등급은 중앙값으로 합침). 형식: (표시 이름, 원재료 이름 정규식)
+def _w(*words): return [(w, rf'^{w}( |$)') for w in words]
+CURATED_RAW = {
+    ('과일', '🍎', ('생것',)): _w('사과', '배', '바나나', '귤', '오렌지', '딸기', '블루베리', '포도', '수박', '참외', '멜론', '복숭아', '자두',
+                                  '키위', '망고', '파인애플', '감', '체리', '레몬', '아보카도', '석류', '무화과', '대추', '살구', '아로니아',
+                                  '라즈베리', '블랙베리', '천도복숭아', '한라봉') + [('자몽', r'^자몽')],
+    ('채소', '🥬', ('생것', '데친것', '삶은것')): _w('양배추', '배추', '시금치', '브로콜리', '오이', '당근', '무', '양파', '마늘', '가지', '토마토',
+                                                  '피망', '고추', '깻잎', '콩나물', '숙주나물', '연근', '우엉', '아스파라거스', '케일', '청경채',
+                                                  '미나리', '쑥갓', '부추', '비트', '콜리플라워', '미역', '김', '다시마', '고사리', '도라지', '애호박',
+                                                  '단호박', '표고버섯', '느타리버섯', '팽이버섯', '양송이버섯', '상추', '셀러리')
+                                                + [('대파', r'^파 대파'), ('쪽파', r'^파 쪽파'), ('양상추', r'양상추'), ('방울토마토', r'방울토마토'),
+                                                   ('파프리카', r'^파프리카'), ('새송이버섯', r'새송이'), ('호박', r'^호박( |$)')],
+    ('고기', '🍖', ('생것', '구운것', '삶은것')): [
+        ('소고기 등심', r'^소고기 .*등심'), ('소고기 안심', r'^소고기 .*안심'), ('소고기 채끝', r'^소고기 .*채끝'), ('소고기 양지', r'^소고기 .*양지'),
+        ('소고기 사태', r'^소고기 .*사태'), ('소고기 우둔', r'^소고기 .*우둔'), ('소고기 갈비', r'^소고기 .*갈비'), ('소고기 살코기', r'^소고기 .*살코기'),
+        ('돼지고기 삼겹살', r'^돼지고기 삼겹살 \('), ('돼지고기 목심', r'^돼지고기 목심'), ('돼지고기 안심', r'^돼지고기 안심'),
+        ('돼지고기 등심', r'^돼지고기 등심'), ('돼지고기 앞다리', r'^돼지고기 앞다리'), ('돼지고기 뒷다리', r'^돼지고기 뒷다리'),
+        ('돼지고기 갈비', r'^돼지고기 갈비'), ('돼지고기 살코기', r'^돼지고기 살코기'),
+        ('닭가슴살', r'^닭고기 가슴'), ('닭다리', r'^닭고기 .*(아랫다리|넓적다리)'), ('닭날개', r'^닭고기 .*날개'), ('닭고기 살코기', r'^닭고기 살코기'),
+        ('오리고기', r'^오리고기'), ('양고기', r'^양고기')],
+    ('생선', '🐟', ('생것', '구운것', '찐것', '삶은것')): _w('고등어', '갈치', '삼치', '꽁치', '조기', '대구', '명태', '가자미', '장어', '멸치',
+                                                         '오징어', '문어', '낙지', '전복', '굴', '홍합', '바지락', '꽃게', '가리비')
+                                                       + [('새우', r'^(새우|흰다리새우|대하) \('), ('연어', r'^연어 (?!알)'), ('참치', r'^(다랑어|참치)'), ('광어', r'^(넙치|광어)'),
+                                                          ('우럭', r'조피볼락'), ('도미', r'^(참돔|도미|돔 )'), ('주꾸미', r'^(주꾸미|쭈꾸미)')],
+    ('곡류', '🌾', ('생것', '삶은것', '찐것', '구운것')): [
+        ('백미', r'^멥쌀 .*백미'), ('현미', r'^(멥쌀 .*현미|현미)'), ('찹쌀', r'^찹쌀'), ('흑미', r'흑미'), ('보리', r'^(보리|겉보리|쌀보리)( |$)'),
+        ('귀리', r'^귀리'), ('메밀', r'^메밀( |$)'), ('수수', r'^수수( |$)'), ('기장', r'^기장( |$)'), ('퀴노아', r'^퀴노아'), ('율무', r'^율무'),
+        ('옥수수', r'^옥수수 (?!기름|순)'), ('감자', r'^감자( |$)'), ('고구마', r'^고구마 (?!줄기|잎)'), ('밀가루', r'^밀가루')],
+}
+STATE_WORDS = ('생것', '구운것', '삶은것', '찐것', '데친것', '볶은것')
+def state_of(key):
+    i = key.rfind(' (')
+    st = re.sub(r'\(.*\)', '', key[i + 2:-1]) if i >= 0 and key.endswith(')') else ''
+    if not st:
+        st = next((w for w in STATE_WORDS if w in key.split()), '')
+    return st.strip()
+
 def existing_names():
     txt = (ROOT / 'public/js/data-foods.js').read_text(encoding='utf8')
     names = set(re.findall(r'"n":"([^"]+)"', txt))
+    names |= {n.replace(' ', '') for n in names}
     basic = (ROOT / 'public/js/data-foods-basic.js').read_text(encoding='utf8')
     names |= set(re.findall(r"^\s*\['([^']+)', '기본", basic, re.M))
     return names
@@ -165,8 +205,30 @@ def main(paths):
         if gk == 'fr' and med['c'] == 0 and med['kcal'] >= 100: continue
         item = {'n': key, 'cat': g['cat'] or '기타', 'e': emoji(key, g['cat']), **med, 'gi': est_gi(key, g['cat'], med['c'])}
         by_name.setdefault(key, item)
-        if key in seen: continue
-        seen.add(key); out.append(item)
+        if gk == 'raw': continue  # 원재료성은 아래 CURATED_RAW로만 내보낸다
+        if gk == 'dish' and '간편조리세트' in key: continue  # 밀키트 제품은 가공식품 성격이라 뺀다
+        nospace = key.replace(' ', '')
+        if key in seen or nospace in seen: continue
+        seen.add(key); seen.add(nospace); out.append(item)
+
+    # 자주 먹는 원재료만 "이름 (조리상태)"로 묶어 추가
+    raw_rows = {key: g['rows'] for (gk, key), g in groups.items() if gk == 'raw'}
+    basic_names = set(BASIC_MATCH) | existing_names()
+    for (catname, emo, states), entries in CURATED_RAW.items():
+        for disp, pat in entries:
+            rx = re.compile(pat)
+            for st in states:
+                rows = [r for key, rs in raw_rows.items() if rx.search(key) and state_of(key) == st for r in rs]
+                if not rows: continue
+                if st == '생것' and disp in basic_names: continue  # 기본 음식에 이미 있음(식약처 값으로 덮어씀)
+                med = {}
+                for k in NUM_KEYS:
+                    vs = [r[k] for r in rows if r[k] is not None]
+                    med[k] = round(statistics.median(vs), 1) if vs else 0.0
+                n = f'{disp} ({st})'
+                if n in seen: continue
+                seen.add(n)
+                out.append({'n': n, 'cat': catname, 'e': emo, **med, 'gi': est_gi(disp, catname, med['c'])})
 
     official = {}
     for basic, src in BASIC_MATCH.items():
@@ -183,8 +245,7 @@ def main(paths):
                    + '// 기본 음식(data-foods-basic.js) 중 식약처 값으로 덮어쓸 것\n'
                    + 'const FOODS_BASIC_OFFICIAL = ' + json.dumps(official, ensure_ascii=False, separators=(',', ':')) + ';\n', encoding='utf8')
     kinds = defaultdict(int)
-    for (gk, key), g in groups.items():
-        if key in {o['n'] for o in out}: kinds[gk] += 1
+    for o in out: kinds[o['cat'] if o['cat'] in ('과일', '채소', '고기', '생선', '곡류') else '외식/음식'] += 1
     print(f'{len(out)}개 저장 → {OUT.name} ({OUT.stat().st_size // 1024}KB)', dict(kinds))
     print(f'기본 음식 식약처 값 적용 {len(official)}개, 못 찾음: {missing}')
     return out, official
