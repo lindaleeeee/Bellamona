@@ -2012,7 +2012,7 @@
   <script src="/js/data-cheat-foods.js"></script>
   <script src="/js/data-meal-plans.js"></script>
   <script src="/js/data-exercises.js"></script>
-  <script src="/js/data-pose-illustrations.js"></script>
+  <script src="/js/data-exercise-photos.js"></script>
   <script src="/js/data-workout-routines.js"></script>
   <script src="/js/data-stretches.js"></script>
   <script src="/js/data-recipes.js"></script>
@@ -3104,9 +3104,8 @@
     function openStretchDetail(bp, id) {
       const routine = (STRETCH_ROUTINES[bp]?.routines || []).find(r => String(r.id) === String(id));
       if (!routine) return;
-      const poseHtml = (routine.pose && typeof poseSvgFor === 'function')
-        ? `<div style="width:150px;height:150px;margin:0 auto 10px;background:var(--gro-bg);border:1.5px dashed rgba(129,199,132,.5);border-radius:16px;padding:10px">${poseSvgFor(routine.pose)}</div>`
-        : '';
+      // 실제 동작 사진(시작↔끝 자세). 맞는 사진이 없는 운동은 그림 없이 설명만 보여준다.
+      const poseHtml = typeof exercisePhotoHtml === 'function' ? exercisePhotoHtml(routine.id) : '';
       document.getElementById('wko-detail-body').innerHTML = `
     <div style="text-align:center;margin-bottom:14px">
       ${poseHtml}
@@ -3148,9 +3147,8 @@
       const routine = mergedRoutines(bp).find(r => String(r.id) === String(routineId));
       if (!routine) return;
       const isDone = todayDoneRoutineNames(bp).has(routine.name);
-      const poseHtml = (routine.pose && typeof poseSvgFor === 'function')
-        ? `<div style="width:150px;height:150px;margin:0 auto 10px;background:var(--gro-bg);border:1.5px dashed rgba(129,199,132,.5);border-radius:16px;padding:10px">${poseSvgFor(routine.pose)}</div>`
-        : '';
+      // 실제 동작 사진(시작↔끝 자세). 맞는 사진이 없는 운동은 그림 없이 설명만 보여준다.
+      const poseHtml = typeof exercisePhotoHtml === 'function' ? exercisePhotoHtml(routine.id) : '';
       document.getElementById('wko-detail-body').innerHTML = `
     <div style="text-align:center;margin-bottom:14px">
       ${poseHtml}
