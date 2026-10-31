@@ -149,13 +149,22 @@ def state_of(key):
         st = next((w for w in STATE_WORDS if w in key.split()), '')
     return st.strip()
 
+# 표기만 다른 같은 메뉴를 하나로 보기 위한 비교용 이름(카라멜마끼야또=카라멜 마끼아또, 자몽티=자몽차, 그린티 라떼=녹차 라떼 등)
+def canon(n):
+    n = str(n).replace(' ', '')
+    for a, b in (('마끼야또', '마끼아또'), ('페페로니', '페퍼로니'), ('그린티', '녹차'), ('초콜릿', '초코'), ('카라멜', '캐러멜'), ('쉐이크', '셰이크')):
+        n = n.replace(a, b)
+    n = re.sub(r'^(카페|리얼|디카페인)', '', n)
+    n = re.sub(r'(티|차)$', '', n) if len(n) >= 3 else n
+    return n
+
 def existing_names():
     txt = (ROOT / 'public/js/data-foods.js').read_text(encoding='utf8')
     names = set(re.findall(r'"n":"([^"]+)"', txt))
-    names |= {n.replace(' ', '') for n in names}
+    names |= {canon(n) for n in names}
     basic = (ROOT / 'public/js/data-foods-basic.js').read_text(encoding='utf8')
-    names |= set(re.findall(r"^\s*\['([^']+)', '기본", basic, re.M))
-    return names
+    bn = set(re.findall(r"^\s*\['([^']+)', '기본", basic, re.M))
+    return names | bn | {canon(n) for n in bn}
 
 def main(paths):
     groups = defaultdict(lambda: {'cat': '', 'rows': [], 'brands': set(), 'kind': ''})
@@ -207,9 +216,12 @@ def main(paths):
         by_name.setdefault(key, item)
         if gk == 'raw': continue  # 원재료성은 아래 CURATED_RAW로만 내보낸다
         if gk == 'dish' and '간편조리세트' in key: continue  # 밀키트 제품은 가공식품 성격이라 뺀다
-        nospace = key.replace(' ', '')
-        if key in seen or nospace in seen: continue
-        seen.add(key); seen.add(nospace); out.append(item)
+        ck = canon(key)
+        if gk == 'fr' and key.startswith('디카페인'): continue  # 영양값은 일반 메뉴와 같다
+        # 외식 메뉴는 5개 이상 브랜드에 있는 흔한 메뉴만 검색에 넣는다(3~4곳은 기본 음식 값 보정용으로만 씀)
+        if gk == 'fr' and len(g['brands']) < 5: continue
+        if key in seen or ck in seen: continue
+        seen.add(key); seen.add(ck); out.append(item)
 
     # 자주 먹는 원재료만 "이름 (조리상태)"로 묶어 추가
     raw_rows = {key: g['rows'] for (gk, key), g in groups.items() if gk == 'raw'}
