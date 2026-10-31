@@ -611,6 +611,19 @@ async function restoreFromServer() {
 
     const d = await res.json();
 
+    // 이 기기에 저장된 상태가 지금 로그인한 계정 것이 아니면(다른 계정, 또는 서버 이전 전의 옛 데이터)
+    // 기본값으로 비운 뒤 Firebase에서 받은 내 기록만 채운다 — 남의/옛 기록(세이브 칼로리, 식사,
+    // 체중 등)이 섞여 보이지 않게 한다.
+    if (S._uid !== _uid() && typeof S_DEFAULTS !== 'undefined') {
+      Object.keys(S).forEach(k => { delete S[k]; });
+      Object.assign(S, JSON.parse(JSON.stringify(S_DEFAULTS)));
+      const now = new Date();
+      S.calMon = { y: now.getFullYear(), m: now.getMonth() };
+      if (typeof SCHEMA_VERSION !== 'undefined') S._schemaVersion = SCHEMA_VERSION;
+      if (typeof ensureFreshDay === 'function') ensureFreshDay();
+    }
+    S._uid = _uid();
+
     if (d.user && d.user.name) S.name = d.user.name;
     // avatar는 구글 프로필 사진 URL이 기본값으로 들어있을 수 있어(길다),
     // 사용자가 아이콘 선택 모달에서 고른 짧은 이모지일 때만 적용한다.
@@ -631,7 +644,7 @@ async function restoreFromServer() {
       if (d.profile.gender) S.gender = d.profile.gender;
       // 세이브(치팅) 칼로리는 서버가 로그인/새로고침마다 전날까지 정산해서 내려주는 값이 항상 정답이라
       // 로컬 값과 병합하지 않고 그대로 덮어쓴다.
-      if (d.profile.saved_total_kcal != null) S.savedTotal = Number(d.profile.saved_total_kcal);
+      S.savedTotal = Number(d.profile.saved_total_kcal || 0);
     }
 
     if (d.weights && d.weights.length) {

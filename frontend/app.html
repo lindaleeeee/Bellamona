@@ -2144,6 +2144,9 @@
     // 계속 옛날 루틴이 보이는 버그가 있었다. 스키마 버전이 바뀌면 routines/checks/exBurned만 새
     // 기본값으로 리셋하고 이름·몸무게·식단 등 실제 사용자 데이터는 그대로 유지한다.
     const SCHEMA_VERSION = 4;
+    // 기본값 사본 — 다른 계정으로 로그인했거나 예전(서버 이전 전) 기기 데이터가 남아 있으면
+    // js/sync.js의 restoreFromServer가 이 값으로 S를 초기화한 뒤 내 기록만 채운다.
+    const S_DEFAULTS = JSON.parse(JSON.stringify(S));
     try {
       const saved = localStorage.getItem('bellamona_data');
       if (saved) {
@@ -3625,7 +3628,8 @@
     function getPDays(y, m) { const r = []; allPeriodWindows(new Date(y, m + 1, 0)).forEach(p => { const s = new Date(p.start); for (let i = 0; i < p.days; i++) { const d = new Date(s); d.setDate(d.getDate() + i); if (d.getFullYear() === y && d.getMonth() === m) r.push(d.getDate()); } }); return r; }
     function getODays(y, m) { const r = []; allPeriodWindows(new Date(y, m + 1, 0)).forEach(p => { const s = new Date(p.start); const os = new Date(s); os.setDate(os.getDate() + S.cycleLen - 18); const oe = new Date(s); oe.setDate(oe.getDate() + S.cycleLen - 10); const c = new Date(os); while (c <= oe) { if (c.getFullYear() === y && c.getMonth() === m) r.push(c.getDate()); c.setDate(c.getDate() + 1); } }); return r; }
 
-    if (typeof S !== 'undefined' && S.calMon && S.calMon.y === 2026 && S.calMon.m === 3) {
+    // 대시보드는 앱을 열 때마다 이번 달로 시작한다(마지막에 보던 달이 저장돼 남아 있지 않게)
+    {
       const d = new Date();
       S.calMon = { y: d.getFullYear(), m: d.getMonth() };
     }
