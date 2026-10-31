@@ -36,6 +36,7 @@ function capReportData(data) {
     if (Array.isArray(capped.recentWorkouts)) capped.recentWorkouts = capped.recentWorkouts.slice(-MAX_ARR);
     if (Array.isArray(capped.sleepThisWeek)) capped.sleepThisWeek = capped.sleepThisWeek.slice(-MAX_ARR);
     if (Array.isArray(capped.supplementsChecked)) capped.supplementsChecked = capped.supplementsChecked.slice(0, 20).map(s => truncateStr(s, 30));
+    if (Array.isArray(capped.insightFacts)) capped.insightFacts = capped.insightFacts.slice(0, 14).map(s => truncateStr(s, 90));
     capped.diaryThatDay = truncateStr(capped.diaryThatDay, MAX_DIARY_CHARS);
     capped.periodContext = truncateStr(capped.periodContext, 60);
     let json = JSON.stringify(capped);
@@ -131,29 +132,30 @@ export default async function handler(req, res) {
         const prompt = `
 이 사용자의 생활습관 기록(식사·운동·수면·일기)을 분석하여 저속노화를 위한 통찰과 추천을 제공해 주세요.
 이 앱은 의료기기가 아닌 일반 웰니스 앱입니다 — 특정 질병의 진단·치료·예방을 언급하거나 암시하지 말고,
-"의학적 소견", "치료", "질환" 같은 표현 없이 생활습관 관점의 코멘트만 작성하세요. 데이터가 부족한
-항목은 "기록이 더 쌓이면 알려드릴게요" 같은 정직한 문구로 채우고, 절대 필드를 비우거나 JSON을
-깨뜨리지 마세요. 반드시 JSON 형식으로만 응답해야 합니다.
+"의학적 소견", "치료", "질환" 같은 표현 없이 생활습관 관점의 코멘트만 작성하세요. JSON을 깨뜨리지 마세요. 반드시 JSON 형식으로만 응답해야 합니다.
 
-이 리포트는 5개 섹션으로 구성됩니다: ① 목표 체중 예측(프론트에서 계산) ② 식사(식사 시간+메모 기록)
-③ 운동(내일 운동 추천) ④ 마음(수면) ⑤ 일기.
-비용 관리를 위해 응답은 짧고 간결하게 작성하세요 — 문장형 필드는 각각 1~2문장(최대 60자 내외)으로,
-insights/actions는 각 항목 1문장씩 최대 2개로 제한합니다.
+화면에는 숫자 카드가 따로 보이므로, 여기서는 짧은 코멘트만 씁니다. 사용자는 긴 글을 싫어합니다.
+- 문장형 필드는 각각 한 문장, 40자 이내. 수식어와 인사말 없이 핵심만.
+- insights는 최대 2개, 각 40자 이내. 반드시 data.insightFacts(코드로 계산된 사실) 중에서 골라 의미를 풀어 쓰고,
+  insightFacts에 없는 수치나 패턴은 절대 지어내지 마세요. [가설]이 붙은 사실은 "~인 것 같아요"처럼 단정하지 마세요.
+- actions는 최대 2개, 각 25자 이내의 바로 할 수 있는 행동.
+- 데이터가 없는 필드는 빈 문자열("")로 두세요. "기록이 쌓이면 알려드릴게요" 같은 빈말은 쓰지 마세요.
+- data.recordedDays는 지금까지 기록한 날 수입니다. 기록일이 늘수록 더 구체적으로 쓰세요.
 
 데이터: ${capReportData(data)}
 
 응답 JSON 형식:
 {
-  "headline": "오늘의 한줄 평 (짧고 강력하게)",
+  "headline": "오늘의 한줄 평 (25자 이내)",
   "scores": { "overall": 80, "biological_age_delta": -1.2 },
-  "tomorrow_workout": "오늘 강도/부위 기록을 근거로 내일 추천 운동 (기록이 없으면 일반적인 저속노화 운동 팁)",
-  "sleep_suggestion": "최근 수면 패턴을 근거로 내일 목표 수면시간과 이유",
+  "tomorrow_workout": "오늘 운동 기록 근거로 내일 추천 운동 한 문장",
+  "sleep_suggestion": "내일 목표 수면시간 한 문장 (수면 기록 없으면 \"\")",
   "emotion_keywords": [ { "word": "뿌듯", "count": 2, "type": "positive" } ],
-  "diary_word_health": "일기 속 단어가 건강과 어떤 관련이 있는지 설명 (일기 없으면 그렇다고 안내)",
-  "meal_pattern_insight": "식사 시간·메모 기록에서 보이는 패턴에 대한 한줄 코멘트 (식사 기록 없으면 그렇다고 안내)",
-  "insights": ["통찰력 있는 분석 문장 1", "통찰력 있는 분석 문장 2"],
-  "actions": ["구체적인 추천 행동 1", "구체적인 추천 행동 2"],
-  "pcos_insight": "PCOS 맞춤형 통찰 (선택, 생리주기 데이터 기반)"
+  "diary_word_health": "일기 단어가 보여주는 컨디션 한 문장 (일기 없으면 \"\")",
+  "meal_pattern_insight": "식사 시간과 메뉴에서 보이는 점 한 문장 (식사 기록 없으면 \"\")",
+  "insights": ["insightFacts 근거 한 문장"],
+  "actions": ["바로 할 수 있는 행동"],
+  "pcos_insight": "생리주기 단계 관련 한 문장 (주기 정보 없으면 \"\")"
 }
 `;
 

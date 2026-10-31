@@ -224,6 +224,8 @@ async function _deleteCollection(colRef) {
 }
 
 // ═══════════════ 예전 서버 API를 그대로 흉내 내는 라우터 ═══════════════
+// 인사이트 계산용 기록 히스토리(최근 N일) 캐시 — 같은 화면을 여러 번 열 때 Firestore 읽기를 아낀다
+let _histCache = null; // { uid, from, at, data }
 async function _route(method, url, rawBody) {
   await _authReady;
   const [path, qs = ''] = String(url).split('?');
@@ -237,6 +239,7 @@ async function _route(method, url, rawBody) {
     return _resp(200, { success: true });
   }
   if (!FB || !_authUser) return _resp(401, { error: 'unauthorized' });
+  if (method !== 'GET') _histCache = null; // 기록이 바뀌면 인사이트용 히스토리 캐시를 버린다
 
   try {
     const today = todayISO();
@@ -299,6 +302,33 @@ async function _route(method, url, rawBody) {
       const period = _periodsOf(pS).filter(p => p.start_date <= date).pop() || null;
       const hasAnyRecord = !!checks || meals.length > 0 || workouts.length > 0 || weight != null || !!diary;
       return _resp(200, { date, checks, meals, workouts, weight, diary, period, hasAnyRecord });
+    }
+
+    // 인사이트(기록 일수별 리포트) 계산용: from 이후의 모든 기록을 한 번에
+    if (method === 'GET' && path === '/api/data/history') {
+      const from = _DATE_RE.test(query.from || '') ? query.from : _addDays(today, -89);
+      if (_histCache && _histCache.uid === _uid() && _histCache.from <= from && Date.now() - _histCache.at < 5 * 60 * 1000) return _resp(200, _histCache.data);
+      const [mS, wS, sS, cS, dS, wtS, pS] = await Promise.all([
+        _sub('meals').where('eaten_date', '>=', from).get(),
+        _sub('workouts').where('performed_date', '>=', from).get(),
+        _sub('sleep_logs').where('log_date', '>=', from).get(),
+        _sub('routine_checks').where('check_date', '>=', from).get(),
+        _sub('diaries').where('written_date', '>=', from).get(),
+        _sub('weights').get(),
+        _sub('periods').get(),
+      ]);
+      const data = {
+        from,
+        meals: mS.docs.map(_mealOut),
+        workouts: wS.docs.map(_workoutOut),
+        sleep: sS.docs.map(d => d.data()),
+        checks: cS.docs.map(d => ({ date: d.id, checks: d.data().checks || {} })),
+        diaries: dS.docs.map(d => d.data()),
+        weights: wtS.docs.map(d => d.data()).filter(w => w.logged_date >= from).sort((a, b) => a.logged_date.localeCompare(b.logged_date) || (a.created_at || 0) - (b.created_at || 0)),
+        periods: _periodsOf(pS),
+      };
+      _histCache = { uid: _uid(), from, at: Date.now(), data };
+      return _resp(200, data);
     }
 
     if (method === 'GET' && path === '/api/data/month-summary') {

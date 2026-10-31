@@ -1034,6 +1034,48 @@
     .report-ready {
       animation: reportPulse 1.8s ease-in-out infinite
     }
+
+    /* ── 기록 일수별 인사이트 카드 ── */
+    .ins-wrap { margin-bottom: 12px }
+    .ins-head, .ins-mini { background: linear-gradient(135deg, var(--sky3), var(--lav3)); border: 1.5px solid var(--bdr); border-radius: 16px; padding: 12px; margin-bottom: 12px }
+    .ins-mini { margin: 0 0 10px }
+    .ins-head-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px }
+    .ins-badge { font-size: 11px; font-weight: 800; color: var(--text); background: var(--card); border: 1.5px solid var(--bdr); border-radius: 99px; padding: 3px 10px }
+    .ins-badge.soft { color: var(--sky2) }
+    .ins-prog { height: 8px; background: var(--card); border-radius: 99px; overflow: hidden }
+    .ins-prog-f { height: 100%; background: linear-gradient(90deg, var(--sky2), var(--lav2)); border-radius: 99px }
+    .ins-prog-t { font-size: 11px; color: var(--muted); font-weight: 700; margin-top: 6px }
+    .ins-prog-t b { color: var(--text) }
+    .ins-sec { margin-bottom: 12px }
+    .ins-sec-t { font-size: 12px; font-weight: 800; color: var(--text); margin: 0 2px 6px; display: flex; align-items: center; gap: 6px }
+    .ins-sec-t span { font-size: 10px; color: var(--muted); font-weight: 700 }
+    .ins-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
+    .ins-card { background: var(--card); border: 1.5px solid var(--bdr); border-radius: 14px; padding: 10px 11px; min-width: 0; position: relative }
+    .ins-card.wide { grid-column: 1 / -1 }
+    .ins-top { display: flex; align-items: center; gap: 5px; margin-bottom: 4px }
+    .ins-ic { font-size: 17px; line-height: 1 }
+    .ins-t { font-size: 10px; color: var(--muted); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+    .ins-v { font-size: 17px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+    .ins-v.blur { filter: blur(5px); user-select: none }
+    .ins-s { font-size: 10px; color: var(--muted); font-weight: 600; margin-top: 2px; line-height: 1.4 }
+    .ins-ar { font-size: 10px }
+    .ins-ar.up { color: var(--ok) }
+    .ins-ar.down { color: var(--warn) }
+    .ins-conf { display: inline-block; margin-top: 5px; font-size: 9px; font-weight: 800; border-radius: 99px; padding: 1px 7px; background: var(--card2); color: var(--muted) }
+    .ins-conf.pattern { background: rgba(91, 184, 245, .15); color: var(--sky2) }
+    .ins-list { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 700; color: var(--text) }
+    .ins-list b { color: var(--sky2); margin-right: 4px }
+    .ins-sec.locked .ins-card { opacity: .55 }
+    .ins-quick-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px }
+    .ins-quick { border: 1.5px dashed var(--bdr); background: transparent; color: var(--sky2); font-weight: 800; font-size: 11px; border-radius: 99px; padding: 6px 11px; cursor: pointer; font-family: inherit }
+    .ins-rules { display: flex; flex-direction: column; gap: 6px }
+    .ins-rule { display: flex; gap: 8px; align-items: flex-start; background: var(--card); border: 1.5px solid var(--bdr); border-radius: 12px; padding: 9px 11px; font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.45 }
+    .ins-rule em { margin-left: auto; font-style: normal; font-size: 9px; color: var(--muted); white-space: nowrap }
+    .ai-row { display: flex; gap: 9px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--bdr); font-size: 12px; color: var(--text); font-weight: 600; line-height: 1.5 }
+    .ai-row:last-child { border-bottom: none }
+    .ai-row > span:first-child { font-size: 16px; line-height: 1.2 }
+    .ai-chips { display: flex; flex-direction: column; gap: 6px }
+    .ai-chip { display: flex; gap: 7px; align-items: flex-start; font-size: 12px; font-weight: 700; color: var(--text); background: var(--card2); border-radius: 12px; padding: 8px 10px; line-height: 1.45 }
   </style>
 </head>
 
@@ -1557,6 +1599,7 @@
           </div>
           <div class="card" style="margin-bottom:10px">
             <div class="cap" style="margin-bottom:8px">🤖 AI 리포트</div>
+            <div id="prof-insight-progress"></div>
             <button id="prof-report-btn" class="btn btn-p" onclick="openTodayReport()">리포트 확인하기</button>
           </div>
           <div style="display:flex;flex-direction:column;gap:6px">
@@ -2009,6 +2052,7 @@
     };
   </script>
   <script src="/js/sync.js"></script>
+  <script src="/js/insights.js"></script>
   <script src="/js/data-cheat-foods.js"></script>
   <script src="/js/data-meal-plans.js"></script>
   <script src="/js/data-exercises.js"></script>
@@ -2017,6 +2061,8 @@
   <script src="/js/data-stretches.js"></script>
   <script src="/js/data-recipes.js"></script>
   <script src="/js/data-foods.js"></script>
+  <script src="/js/data-foods-basic.js"></script>
+  <script src="/js/data-foods-extra.js"></script>
   <script src="/js/google-sheet-loader.js"></script>
   <script>
     // 데이터 저장/로그인은 js/sync.js(Firebase)가 처리한다. 별도 백엔드 서버 주소는 더 이상 필요 없다.
@@ -2397,6 +2443,7 @@
       setTxt('hc-oxy-label', hormoneScreenLabel());
       ['ins', 'gro', 'cor', 'oxy'].forEach((k, i) => { const hids = ['insulin', 'growth', 'cortisol', 'oxytocin']; const p = hormonePct(hids[i]); setTxt('hc-' + k, p + '%'); const bar = document.getElementById('bar-' + k); if (bar) bar.style.width = p + '%'; const b = document.getElementById('h-' + k + '-badge'); if (b) b.textContent = { ins: '식사', gro: '운동', cor: '마음', oxy: hormoneScreenLabel() }[k] + ' ' + p + '%'; });
       setTxt('prof-save-val', S.savedTotal + ' kcal');
+      if (typeof refreshInsightProgress === 'function') refreshInsightProgress();
       // Weight display
       const lastWt = S.weights.length ? S.weights[S.weights.length - 1].w : S.initWeight;
       setTxt('h-wt', lastWt.toFixed(1) + ' kg');
@@ -3361,22 +3408,53 @@
     // 바로 가져다 쓸 수 있다.
     let _foodModalItems = []; // 이번 끼니에 담은 음식 목록
     let _pickedFoodDb = null; // 검색에서 고른, 아직 그램수 확정 전인 후보
+    // 검색 대상: 기본 음식(data-foods-basic.js, 원재료·음료·치킨 등) + 식약처 추가 DB(있으면) + 식약처 음식 DB
+    let _allFoodsCache = null;
+    function allFoodsDb() {
+      if (_allFoodsCache) return _allFoodsCache;
+      _allFoodsCache = [
+        ...(typeof BASIC_FOODS !== 'undefined' ? BASIC_FOODS : []),
+        ...(typeof FOODS_EXTRA !== 'undefined' ? FOODS_EXTRA : []),
+        ...(typeof FOODS_DB !== 'undefined' ? FOODS_DB : []),
+      ];
+      return _allFoodsCache;
+    }
+    // 이름이 정확히 같은 것 → 앞부분이 같은 것 → 단어가 그걸로 시작하는 것 → 어디든 포함된 것 순서.
+    // 같은 순위면 기본 음식을 먼저, 그다음 이름이 짧은 것(=변형이 적은 것)을 먼저 보여준다.
+    function foodSearchScore(f, q) {
+      const norm = x => String(x).replace(/[\s()]/g, '').toLowerCase();
+      const nn = norm(f.n); const al = (f.a || []).map(norm);
+      let sc;
+      if (nn === q || al.includes(q)) sc = 0;
+      else if (nn.startsWith(q) || al.some(x => x.startsWith(q))) sc = 1;
+      else if (String(f.n).split(/\s+/).some(w => norm(w).startsWith(q))) sc = 2;
+      else if (nn.includes(q) || al.some(x => x.includes(q))) sc = 3;
+      else return null;
+      // 기본 음식끼리는 목록에 적은 순서(대표 음식이 먼저)를 지킨다
+      return sc - (f.b ? 0.5 : 0) + (f.b ? (f._i || 0) / 100000 : nn.length / 1000);
+    }
+    function searchFoods(q, limit = 12) {
+      const qq = String(q).replace(/[\s()]/g, '').toLowerCase();
+      if (!qq) return [];
+      return allFoodsDb().map(f => ({ f, sc: foodSearchScore(f, qq) })).filter(x => x.sc != null)
+        .sort((a, b) => a.sc - b.sc).slice(0, limit).map(x => x.f);
+    }
     function searchFoodItem(q) {
       const dd = document.getElementById('food-item-dd');
       if (!q.trim()) { dd.style.display = 'none'; return; }
-      const qq = q.trim();
-      const db = typeof FOODS_DB !== 'undefined' ? FOODS_DB : [];
-      const res = db.filter(f => f.n.includes(qq)).slice(0, 10);
-      if (!res.length) { dd.innerHTML = `<div class="ddi" style="color:var(--muted)">검색 결과가 없어요</div>`; dd.style.display = 'block'; return; }
-      dd.innerHTML = res.map(f => `<div class="ddi" onclick='pickFoodItem(${JSON.stringify(f.n)})'>
-        <span style="font-weight:600">${f.e} ${f.n}</span>
-        <span style="font-size:10px;color:var(--muted);font-weight:600">100g당 ${Math.round(f.kcal)}kcal · GI ${f.gi}</span>
-      </div>`).join('');
+      const res = searchFoods(q);
+      if (!res.length) { dd.innerHTML = `<div class="ddi" style="color:var(--muted);font-size:11px;line-height:1.5">검색 결과가 없어요. 아래 "무엇을 드셨나요"에 적고 칼로리를 직접 넣어도 돼요.</div>`; dd.style.display = 'block'; return; }
+      dd.innerHTML = res.map(f => {
+        const per = f.u ? `${f.u[0]} ${Math.round(f.kcal * f.u[1] / 100)}kcal` : `100g당 ${Math.round(f.kcal)}kcal`;
+        return `<div class="ddi" onclick='pickFoodItem(${JSON.stringify(f.n)})'>
+        <span style="font-weight:600">${f.e} ${f.n}${f.b ? ' <span style="font-size:9px;font-weight:800;color:var(--sky2);background:var(--sky3);border-radius:99px;padding:1px 6px;vertical-align:middle">기본</span>' : ''}</span>
+        <span style="font-size:10px;color:var(--muted);font-weight:600">${per} · GI ${f.gi}</span>
+      </div>`;
+      }).join('');
       dd.style.display = 'block';
     }
     function pickFoodItem(name) {
-      const db = typeof FOODS_DB !== 'undefined' ? FOODS_DB : [];
-      const f = db.find(x => x.n === name);
+      const f = allFoodsDb().find(x => x.n === name);
       if (!f) return;
       _pickedFoodDb = f;
       document.getElementById('food-item-search').value = '';
@@ -3384,10 +3462,11 @@
       document.getElementById('food-item-picker').style.display = 'block';
       document.getElementById('food-item-picker-emoji').textContent = f.e;
       document.getElementById('food-item-picker-name').textContent = f.n;
-      document.getElementById('food-item-picker-per100').textContent = `100g 기준 ${Math.round(f.kcal)}kcal · 탄수 ${f.c}g · 단백 ${f.p}g · 지방 ${f.f}g · GI ${f.gi}(추정)`;
-      document.getElementById('food-item-grams').value = 100;
-      document.getElementById('food-item-qty-chips').innerHTML = [50, 100, 150, 200, 300].map(g =>
-        `<span class="chip" onclick="document.getElementById('food-item-grams').value=${g};updateFoodItemPickerPreview()">${g}g</span>`).join('');
+      document.getElementById('food-item-picker-per100').textContent = `100g(ml) 기준 ${Math.round(f.kcal)}kcal · 탄수 ${f.c}g · 단백 ${f.p}g · 지방 ${f.f}g · GI ${f.gi}(추정)`;
+      document.getElementById('food-item-grams').value = f.u ? f.u[1] : 100;
+      const chips = (f.u ? [[f.u[1], `${f.u[0]} ${f.u[1]}g`]] : []).concat([50, 100, 150, 200, 300].filter(g => !f.u || g !== f.u[1]).map(g => [g, `${g}g`]));
+      document.getElementById('food-item-qty-chips').innerHTML = chips.map(([g, l]) =>
+        `<span class="chip" onclick="document.getElementById('food-item-grams').value=${g};updateFoodItemPickerPreview()">${l}</span>`).join('');
       updateFoodItemPickerPreview();
     }
     function updateFoodItemPickerPreview() {
@@ -3896,11 +3975,53 @@
       <div style="font-size:12px;color:var(--text);font-weight:600">${workoutTxt}</div>
       ${day.weight != null ? `<div style="font-size:12px;color:var(--text);font-weight:600;margin-top:6px">체중 ${Number(day.weight).toFixed(1)}kg</div>` : ''}
     </div>
+    <div id="day-insight-slot"></div>
     <div id="day-report-slot">
       <button class="btn btn-p" style="margin-bottom:8px" onclick="generateDayReport()">🤖 이 날의 AI 리포트 생성</button>
     </div>
     <button class="btn btn-o" onclick="closeMod('mod-day-detail')">닫기</button>`;
       loadCachedReportIfAny(dateStr, day);
+      loadDayInsights(dateStr);
+    }
+
+    // ═══════════════════════ 기록 일수별 인사이트 (js/insights.js) ═══════════════════════
+    // 최근 90일 기록을 한 번에 가져와(sync.js가 5분 캐시) 코드로 계산한다. AI 호출 없음.
+    let _lastInsights = null; // { date, result } — AI 리포트 요청 때 계산값을 같이 넘긴다
+    function insightCtx() {
+      return {
+        routinePct: c => overallPctForChecks(c),
+        phaseOf: d => getCycleInfo(d + 'T00:00:00'),
+        goalCal: d => phaseGoalCal(d + 'T00:00:00'),
+      };
+    }
+    async function fetchInsights(asOf) {
+      if (typeof buildInsights !== 'function') return null;
+      const from = new Date(asOf + 'T00:00:00'); from.setDate(from.getDate() - 89);
+      const fromStr = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}-${String(from.getDate()).padStart(2, '0')}`;
+      const res = await fetchApi(apiUrl(`/api/data/history?from=${fromStr}`), { credentials: 'include' });
+      if (!res.ok) return null;
+      const hist = await res.json();
+      return buildInsights(hist, asOf, insightCtx());
+    }
+    async function loadDayInsights(dateStr) {
+      try {
+        const r = await fetchInsights(dateStr);
+        if (!r || !_dayDetailCache || _dayDetailCache.dateStr !== dateStr) return;
+        _lastInsights = { date: dateStr, result: r };
+        const slot = document.getElementById('day-insight-slot');
+        if (slot) slot.innerHTML = renderInsightsHtml(r);
+      } catch (e) { console.error('[loadDayInsights]', e); }
+    }
+    let _insProgBusy = false, _insProgAt = 0;
+    // 홈 화면이 자주 다시 그려져서(체크 하나마다) 1분에 한 번만 다시 계산한다
+    async function refreshInsightProgress() {
+      const el = document.getElementById('prof-insight-progress');
+      if (!el || _insProgBusy || !localStorage.getItem('bellamona_token')) return;
+      if (Date.now() - _insProgAt < 60 * 1000 && el.innerHTML) return;
+      _insProgBusy = true; _insProgAt = Date.now();
+      try { const r = await fetchInsights(todayISOLocal()); if (r) el.innerHTML = renderInsightProgressHtml(r); }
+      catch (e) { console.error('[refreshInsightProgress]', e); }
+      finally { _insProgBusy = false; }
     }
 
     // 이 날짜에 이미 저장된 리포트가 있는지 확인만 하고(Gemini 호출 없음) 있으면 바로 보여준다.
@@ -3943,7 +4064,10 @@
         dailyKcalGoal: Math.round(S.goalCal * PHASE_CAL_RATIO[phaseFromServerPeriod(day.period, dateStr).id]),
         periodContext: day.period,
         diaryThatDay: day.diary,
-        supplementsChecked: (S.routines.oxytocin || []).filter(r => day.checks && day.checks[r.id]).map(r => r.label)
+        supplementsChecked: (S.routines.oxytocin || []).filter(r => day.checks && day.checks[r.id]).map(r => r.label),
+        // 코드로 계산한 인사이트(누적 기록일 단계별). AI는 이 숫자만 근거로 짧게 풀어 쓴다.
+        recordedDays: _lastInsights && _lastInsights.date === dateStr ? _lastInsights.result.recordedDays : null,
+        insightFacts: _lastInsights && _lastInsights.date === dateStr && typeof insightFacts === 'function' ? insightFacts(_lastInsights.result) : []
       };
     }
 
@@ -4017,38 +4141,30 @@
       const wc = keywords.map(k => { const [bg, col] = kwColor(k.type); return `<div style="padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;background:${bg};color:${col}">${k.word} <span style="font-size:9px;opacity:.7">${k.count || 1}</span></div>`; }).join('');
       const insights = Array.isArray(r.insights) ? r.insights : [];
       const actions = Array.isArray(r.actions) ? r.actions : [];
+      const esc = t => String(t == null ? '' : t).replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[c]);
+      // 문단 대신 아이콘 한 줄씩. 비어 있거나 "기록이 쌓이면" 류의 빈말은 숨긴다.
+      const filler = t => !t || /기록이 (더 )?쌓이면|기록하면 .*(분석|볼 수)|없어요$|문제가 있었어요/.test(t);
+      const rows = [
+        ['🍽', r.meal_pattern_insight], ['🏃', r.tomorrow_workout], ['😴', r.sleep_suggestion],
+        ['📝', r.diary_word_health], ['🌸', r.pcos_insight],
+      ].filter(([, t]) => !filler(t)).map(([ic, t]) => `<div class="ai-row"><span>${ic}</span><span>${esc(t)}</span></div>`).join('');
+      const chips = [...insights.map(t => ['💡', t]), ...actions.map(t => ['👉', t])].filter(([, t]) => !filler(t))
+        .map(([ic, t]) => `<div class="ai-chip"><span>${ic}</span><span>${esc(t)}</span></div>`).join('');
       return `
-      ${r.degraded ? `<div style="font-size:11px;color:var(--warn);background:rgba(255,167,38,.1);border:1.5px solid rgba(255,167,38,.3);border-radius:11px;padding:8px 11px;margin-bottom:10px;font-weight:600">⚠️ AI 서버 연결에 문제가 있어 기본 안내로 보여드려요. 몸무게 예측 등 계산값은 정상입니다.${r.degraded_reason ? `<div style="margin-top:4px;font-size:10px;color:var(--muted);font-weight:500;word-break:break-all">원인: ${String(r.degraded_reason).replace(/[<>&]/g, '')}</div>` : ''}</div>` : ''}
+      ${r.degraded ? `<div style="font-size:11px;color:var(--warn);background:rgba(255,167,38,.1);border:1.5px solid rgba(255,167,38,.3);border-radius:11px;padding:8px 11px;margin-bottom:10px;font-weight:600">⚠️ AI 서버 연결에 문제가 있어 기본 안내로 보여드려요. 위 인사이트와 계산값은 정상입니다.${r.degraded_reason ? `<div style="margin-top:4px;font-size:10px;color:var(--muted);font-weight:500;word-break:break-all">원인: ${esc(r.degraded_reason)}</div>` : ''}</div>` : ''}
       <div class="card" style="background:linear-gradient(135deg,var(--sky3),var(--lav3));margin-bottom:12px">
-        <div class="cap">AI 리포트</div>
-        ${r.headline ? `<div style="font-size:13px;color:var(--text);font-weight:700;margin-bottom:8px">"${r.headline}"</div>` : ''}
-        ${typeof scores.overall === 'number' ? `<div style="font-size:38px;font-weight:800;color:var(--text)">${scores.overall}<span style="font-size:11px;color:var(--muted);font-weight:600"> /100</span></div>` : ''}
+        <div style="display:flex;align-items:center;gap:12px">
+          ${typeof scores.overall === 'number' ? `<div style="font-size:34px;font-weight:800;color:var(--text);line-height:1">${scores.overall}<span style="font-size:10px;color:var(--muted);font-weight:700">/100</span></div>` : '<div style="font-size:30px">🤖</div>'}
+          <div style="min-width:0"><div class="cap" style="margin-bottom:2px">AI 한줄평</div>${r.headline ? `<div style="font-size:13px;color:var(--text);font-weight:800;line-height:1.45">${esc(r.headline)}</div>` : ''}</div>
+        </div>
       </div>
-      <div class="card" style="margin-bottom:12px">
-        <div class="cap">① 목표일자 도달 예상 몸무게</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:500">최근 체중 변화 추세가 남은 ${proj.daysRemain}일간 이어진다면</div>
-        <div style="font-size:26px;font-weight:800;color:var(--sky2)">${proj.projected}kg</div>
-        <div style="font-size:10px;color:var(--muted);font-weight:500">현재 ${proj.currentW}kg → 목표일자 예상치 (하루 ${proj.kgPerDay > 0 ? '+' : ''}${proj.kgPerDay}kg 추세 기준)</div>
+      <div class="ins-grid" style="margin-bottom:12px">
+        <div class="ins-card"><div class="ins-top"><span class="ins-ic">🎯</span><span class="ins-t">목표일 예상 체중</span></div><div class="ins-v">${proj.projected}kg</div><div class="ins-s">D-${proj.daysRemain} · 하루 ${proj.kgPerDay > 0 ? '+' : ''}${proj.kgPerDay}kg 추세</div></div>
+        <div class="ins-card"><div class="ins-top"><span class="ins-ic">😴</span><span class="ins-t">이번 주 수면</span></div>${weekSleepChart()}</div>
       </div>
-      <div class="card" style="margin-bottom:12px">
-        <div class="cap">② 식사 기록</div>
-        ${dayMeals.length ? dayMeals.map(m => `<div style="font-size:12px;color:var(--text);font-weight:600;padding:4px 0;border-bottom:1px solid var(--bdr)">${m.label}${m.time ? ' · ' + String(m.time).slice(0, 5) : ''} — ${m.description || m.text}</div>`).join('') : `<div style="font-size:11px;color:var(--muted)">이 날은 식사 기록이 없어요</div>`}
-        ${r.meal_pattern_insight ? `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;margin-top:8px">${r.meal_pattern_insight}</div>` : ''}
-      </div>
-      ${r.tomorrow_workout ? `<div class="card" style="margin-bottom:12px"><div class="cap">③ 내일 운동 추천</div><div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.tomorrow_workout}</div></div>` : ''}
-      <div class="card" style="margin-bottom:12px">
-        <div class="cap">④ 마음 · 이번 주 수면</div>
-        ${weekSleepChart()}
-        ${r.sleep_suggestion ? `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;margin-top:8px">${r.sleep_suggestion}</div>` : ''}
-      </div>
-      <div class="card" style="margin-bottom:12px">
-        <div class="cap">⑤ 일기 · 감정 분석</div>
-        ${wc ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${wc}</div>` : ''}
-        ${r.diary_word_health ? `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.diary_word_health}</div>` : '<div style="font-size:11px;color:var(--muted)">일기를 쓰면 단어 기반 분석을 볼 수 있어요</div>'}
-      </div>
-      ${insights.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">인사이트</div>${insights.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:4px 0;border-bottom:1px solid var(--bdr)">${t}</div>`).join('')}</div>` : ''}
-      ${actions.length ? `<div class="card" style="margin-bottom:12px"><div class="cap">추천 행동</div>${actions.map(t => `<div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;padding:3px 0">・ ${t}</div>`).join('')}</div>` : ''}
-      ${r.pcos_insight ? `<div class="card" style="margin-bottom:12px;border-color:rgba(244,143,177,.3);background:rgba(244,143,177,.05)"><div class="cap" style="color:var(--rose2)">PCOS 인사이트</div><div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500">${r.pcos_insight}</div></div>` : ''}
+      ${rows ? `<div class="card" style="margin-bottom:12px"><div class="cap" style="margin-bottom:2px">AI 코멘트</div>${rows}</div>` : ''}
+      ${wc ? `<div class="card" style="margin-bottom:12px"><div class="cap" style="margin-bottom:8px">📝 일기 감정 단어</div><div style="display:flex;flex-wrap:wrap;gap:6px">${wc}</div></div>` : ''}
+      ${chips ? `<div class="card" style="margin-bottom:12px"><div class="cap" style="margin-bottom:8px">인사이트 · 내일 해볼 것</div><div class="ai-chips">${chips}</div></div>` : ''}
       ${renderCalMissSection(missStats)}
       ${renderGoalAdjustSection()}
       <button class="btn btn-o" onclick="generateDayReport(true)">🔄 다시 생성</button>`;
@@ -4115,10 +4231,10 @@
       if (!s) return '';
       const { proj, extraDaysNeeded } = s;
       const msg = extraDaysNeeded == null
-        ? `최근 체중 변화 추세가 목표 방향과 달라요. 기간이나 목표 체중을 다시 점검해보는 걸 추천해요.`
+        ? `📉 체중 흐름이 목표 방향과 달라요. 목표를 다시 점검해 보세요.`
         : extraDaysNeeded > 0
-          ? `지금 추세라면 목표일까지 ${proj.projected}kg가 예상돼요. 목표(${S.goalWeight}kg)까지 가려면 기간을 약 ${extraDaysNeeded}일 늘리거나, 목표 체중을 ${proj.projected}kg로 조정하는 걸 고려해보세요.`
-          : `지금 추세라면 목표보다 빠르게 ${proj.projected}kg에 도달할 것 같아요. 기간을 약 ${Math.abs(extraDaysNeeded)}일 줄이거나, 목표를 ${proj.projected}kg로 더 도전적으로 조정할 수 있어요.`;
+          ? `📅 지금 추세면 목표일에 ${proj.projected}kg 예상 · 기간 +${extraDaysNeeded}일 또는 목표 ${proj.projected}kg`
+          : `🚀 목표보다 빨라요 · 기간 −${Math.abs(extraDaysNeeded)}일 또는 목표 ${proj.projected}kg로 도전`;
       return `<div class="card" style="margin-bottom:12px;border-color:rgba(255,167,38,.3)">
       <div class="cap">🎯 목표 조정 제안</div>
       <div style="font-size:12px;color:var(--text);line-height:1.7;font-weight:500;margin-bottom:10px">${msg}</div>
