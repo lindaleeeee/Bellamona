@@ -111,7 +111,9 @@ function buildInsights(history, asOf, ctx = {}) {
   const recordedDays = dates.length;
   const tierIdx = INSIGHT_TIERS.reduce((acc, t, i) => (recordedDays >= t.min ? i : acc), -1);
   const next = INSIGHT_TIERS[tierIdx + 1] || null;
-  const winFrom = _insAddDays(asOf, -29);
+  // 최근 30일. 단, 그달 1일이 더 앞이면 1일부터(10월 31일에 보면 10월 1일~31일 전체가 들어가게)
+  const monthStart = asOf.slice(0, 8) + '01';
+  const winFrom = monthStart < _insAddDays(asOf, -29) ? monthStart : _insAddDays(asOf, -29);
   const win = dates.filter(d => d >= winFrom).map(d => days[d]); // 최근 30일(기록 있는 날만)
   const cards = []; // {tier, icon, title, value, sub, conf?, n?, delta?, wide?, rule?}
   const push = c => cards.push(c);

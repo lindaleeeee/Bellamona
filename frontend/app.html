@@ -3847,6 +3847,19 @@
     <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">${label}</div><div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:500">${sub}</div></div>
   </div>`;
     }
+    // 캘린더에서 지난 날짜의 체중을 소급 기록한다(그날 날짜로 저장되어 체중 흐름 인사이트에 반영)
+    async function saveDayWeight() {
+      if (!_dayDetailCache) return;
+      const { dateStr, day } = _dayDetailCache;
+      const w = parseFloat(document.getElementById('day-weight-input')?.value);
+      if (!(w > 20 && w < 300)) { alert('체중을 kg 단위로 입력해주세요'); return; }
+      day.weight = Math.round(w * 10) / 10;
+      try {
+        await fetchApi(apiUrl('/api/data/weights'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logged_date: dateStr, weight_kg: day.weight }) });
+        if (dateStr === todayISOLocal() && Array.isArray(S.weights)) { const n = new Date(); S.weights.push({ d: `${n.getMonth() + 1}/${n.getDate()}`, w: day.weight, t: n.getTime() }); saveState(); }
+      } catch (e) { console.error('[saveDayWeight]', e); }
+      renderDayDetail();
+    }
     function toggleDayCheck(id) {
       if (!_dayDetailCache) return;
       const { dateStr, day } = _dayDetailCache;
@@ -3935,6 +3948,11 @@
       // 그 날짜에 소급 기록할 수 있는 영역 — 4개 호르몬 루틴 체크 + 끼니별 식사 추가 버튼.
       const mealAddBtns = MEAL_LABEL_OPTIONS.slice(0, 4).map(l => `<button onclick="openFoodModalForDate('${dateStr}','${l}')" style="background:var(--sky3);border:1.5px solid rgba(91,184,245,.3);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--sky2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">+ ${l}</button>`).join('');
       const editSection = `
+    <div class="card" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
+      <div class="cap" style="margin:0;flex-shrink:0">⚖️ 체중</div>
+      <input class="input" id="day-weight-input" type="number" step="0.1" inputmode="decimal" placeholder="kg" value="${day.weight != null ? Number(day.weight).toFixed(1) : ''}" style="flex:1;min-width:0"/>
+      <button class="btn btn-p" style="width:auto;padding:8px 14px;margin:0" onclick="saveDayWeight()">저장</button>
+    </div>
     <div class="card" style="margin-bottom:12px">
       <div class="cap" style="margin-bottom:6px">🍽 식사 체크</div>
       ${S.routines.insulin.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--sky2)')).join('')}
