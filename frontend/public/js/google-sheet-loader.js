@@ -15,7 +15,7 @@
     //   F 카테고리 · G 음식이름 · H 시간 · I 가격 · J 맛 · K 주재료 · L 부재료 · M 양념 · N 순서 · O 팁 · P 칼로리
     const GVIZ_QUERY = 'select F,G,H,I,J,K,L,M,N,O,P where G is not null';
     const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&tq=${encodeURIComponent(GVIZ_QUERY)}`;
-    const CACHE_KEY = 'bellamona_sheet_recipes_v3'; // 시트/쿼리/중복 규칙을 바꾸면 이전 캐시를 쓰지 않도록 키를 올린다
+    const CACHE_KEY = 'bellamona_sheet_recipes_v4'; // 시트/쿼리/중복 규칙을 바꾸면 이전 캐시를 쓰지 않도록 키를 올린다
     const CACHE_TTL = 1000 * 60 * 10;             // 10분 캐시
 
     /* ─── 카테고리 → 이모지 ─── */
@@ -98,7 +98,7 @@
         const cost = parseInt(v(cm.cost)) || 5000;
         const cal = parseInt(v(cm.cal)) || null;
 
-        return {
+        const r = {
             n: name,
             t: time,
             tp: cat,
@@ -110,6 +110,9 @@
             tip: v(cm.tip) || '',
             cpgQ: cpgQuery(mainText),
         };
+        // 시트 카테고리 칸의 맛 태그 등을 8개 음식 종류로 통일(js/recipe-categories.js)
+        if (typeof normalizeRecipe === 'function') { normalizeRecipe(r); if (typeof RECIPE_CAT_EMOJI !== 'undefined' && !CAT_EMOJI[r.tp0]) r.img = RECIPE_CAT_EMOJI[r.tp] || r.img; }
+        return r;
     }
 
     /* ─── 같은 이름의 서로 다른 레시피에 제목 구분 붙이기 ─── */

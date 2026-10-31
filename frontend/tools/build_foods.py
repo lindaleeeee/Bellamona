@@ -1,126 +1,190 @@
 #!/usr/bin/env python3
-"""식약처 식품영양성분 DB(원재료성식품, 가공식품) → public/js/data-foods-extra.js
+"""식약처 식품영양성분 DB → public/js/data-foods-extra.js
 
-사용법:
-  python3 tools/build_foods.py 원재료성.xlsx 가공식품.xlsx [더 있으면 계속]
-  (csv도 가능: utf-8 또는 cp949)
+사용법 (공공데이터포털/식품안전나라에서 받은 파일을 그대로, 순서 상관없음):
+  python3 tools/build_foods.py 음식.xls 원재료성.xls 가공식품.xls
+  (.xls, .xlsx, .csv 모두 가능. 파일 종류는 '데이터구분명' 열(음식/원재료성 식품/가공식품)로 판단)
 
-- 원재료성식품: 행 하나가 음식 하나(예: "바나나, 생것"). 모두 넣는다.
-- 가공식품: 같은 제품이 브랜드별로 수만 건이라 "대표식품명"별로 묶어 중앙값 1건만 넣는다
-  (예: 두유 제품 수백 개 → "두유" 1건). 브랜드 이름이 검색 결과를 뒤덮지 않게 하려는 것.
-- 값은 100g(ml) 기준으로 맞춘다. 기준량이 100g이 아니면 비례 환산한다.
-- GI는 DB에 없어서 분류/이름 키워드로 추정한다(data-foods.js와 같은 방식, 참고용).
-- 이미 data-foods.js(음식 DB)나 data-foods-basic.js에 같은 이름이 있으면 건너뛴다.
+검색 결과가 브랜드명이나 지역별 샘플로 뒤덮이지 않게 "대표 이름" 하나로 묶어 중앙값을 쓴다.
+  - 원재료성: "사과_부사_생것", "전복류_전복_육_생것_완도_11월" → "사과 부사 (생것)", "전복 (생것)"
+  - 음식(가정식/급식/외식): 이름의 "_"를 띄어쓰기로. 기존 data-foods.js에 있는 이름은 건너뛴다
+  - 음식(프랜차이즈): 3개 이상 브랜드에 같은 이름이 있는 메뉴만(예: 아메리카노, 카페 라떼, 후라이드 치킨). HOT/ICE, 사이즈 표기는 합친다
+  - 가공식품: 대표식품명별 1건 + 5곳 이상에서 같은 이름으로 파는 제품(예: 포기김치, 플레인 베이글)
+값은 모두 100g(ml) 기준. GI는 DB에 없어서 분류/이름 키워드로 추정한다(참고용).
+data-foods-basic.js의 기본 음식 중 식약처 값이 있는 것은 FOODS_BASIC_OFFICIAL로 값을 덮어쓴다.
 """
 import csv, json, re, statistics, sys
+from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / 'public/js/data-foods-extra.js'
+NUM_KEYS = {'kcal': '에너지(kcal)', 'c': '탄수화물(g)', 'p': '단백질(g)', 'f': '지방(g)', 'sugar': '당류(g)', 'fiber': '식이섬유(g)', 'na': '나트륨(mg)'}
 
-COLS = {  # 내부키: 열 이름에 들어 있는 글자(앞에서부터 처음 맞는 열)
-    'name': ['식품명'], 'rep': ['대표식품명'], 'cat': ['식품대분류명', '대분류'], 'basis': ['영양성분함량기준량', '기준량'],
-    'kcal': ['에너지(kcal)', '에너지'], 'c': ['탄수화물(g)', '탄수화물'], 'p': ['단백질(g)', '단백질'], 'f': ['지방(g)', '지방'],
-    'sugar': ['당류(g)', '당류'], 'fiber': ['식이섬유(g)', '식이섬유'], 'na': ['나트륨(mg)', '나트륨'], 'kind': ['데이터구분명', 'DB구분', '구분명'],
+# 기본 음식 이름 → 식약처 묶음 이름(정확히 이 이름의 묶음이 있으면 그 값으로 덮어쓴다)
+BASIC_MATCH = {
+    '우유': '우유', '두유': '두유 (가공식품)', '바나나': '바나나 (생것)', '사과': '사과 (생것)', '배': '배 (생것)', '귤': '귤 온주밀감 (생것)',
+    '오렌지': '오렌지 (생것)', '딸기': '딸기 설향 (생것)', '블루베리': '블루베리 (생것)', '포도': '포도 캠벨얼리 (생것)', '수박': '수박 적육질 (생것)',
+    '참외': '참외 씨 포함 (생것)', '복숭아': '복숭아 백도 (생것)', '키위': '키위 그린 (생것)', '망고': '망고 (생것)', '파인애플': '파인애플 (생것)',
+    '단감': '감 단감 (생것)', '자몽': '자몽(그레이프프루트) (생것)', '체리': '체리 (생것)', '토마토': '토마토 (생것)', '방울토마토': '토마토 방울토마토 (생것)',
+    '아보카도': '아보카도 (생것)', '양배추': '양배추 (생것)', '브로콜리': '브로콜리 (생것)', '오이': '오이 개량종 (생것)', '당근': '당근 뿌리 (생것)',
+    '양상추': '양상추 (생것)', '시금치': '시금치 (생것)', '파프리카': '파프리카(착색단고추) 빨간색 (생것)', '삶은 달걀': '달걀 (삶은것)',
+    '아몬드': '아몬드 (볶은것)', '호두': '호두 (볶은것)', '땅콩': '땅콩 (볶은것)', '꿀': '꿀 잡화', '찐 고구마': '고구마 (찐것)',
+    '찐 감자': '감자 수미 (찐것)', '찐 옥수수': '옥수수 찰옥수수 (찐것)', '아메리카노': '아메리카노', '카페라떼': '카페 라떼', '바닐라 라떼': '바닐라 라떼',
+    '후라이드치킨': '후라이드 치킨', '양념치킨': '양념 치킨', '배추김치': '포기김치 (가공식품)', '크루아상': '크로와상',
 }
+SKIP_REPS = re.compile(r'^기타|이유식|해당없음|(식용|올리브|포도씨|해바라기|현미|대두|콩|들|참|향미|카놀라|옥수수)유$|기름$|^소스|소스류|드레싱|시럽|조미료|양념$')
 
 def read_rows(path):
     p = Path(path)
-    if p.suffix.lower() in ('.xlsx', '.xlsm'):
+    suf = p.suffix.lower()
+    if suf == '.xls':
+        import xlrd
+        sh = xlrd.open_workbook(p).sheet_by_index(0)
+        rows = [sh.row_values(i) for i in range(sh.nrows)]
+    elif suf in ('.xlsx', '.xlsm'):
         import openpyxl
-        wb = openpyxl.load_workbook(p, read_only=True, data_only=True)
-        ws = wb.worksheets[0]
-        it = ws.iter_rows(values_only=True)
-        header = [str(h or '').strip() for h in next(it)]
-        for r in it:
-            yield dict(zip(header, r))
+        rows = [list(r) for r in openpyxl.load_workbook(p, read_only=True, data_only=True).worksheets[0].iter_rows(values_only=True)]
     else:
         raw = p.read_bytes()
         for enc in ('utf-8-sig', 'cp949'):
             try: text = raw.decode(enc); break
             except UnicodeDecodeError: continue
-        yield from csv.DictReader(text.splitlines())
-
-def pick(row, key):
-    for want in COLS[key]:
-        for k in row:
-            if k and want in k:
-                return row[k]
-    return None
+        rows = list(csv.reader(text.splitlines()))
+    hi = next(i for i, r in enumerate(rows[:5]) if any(str(c).strip() == '식품명' for c in r))
+    header = [str(c).strip() for c in rows[hi]]
+    if len(rows) - hi - 1 >= 50000:
+        print(f'⚠️  {p.name}: {len(rows) - hi - 1}행 — 엑셀 내려받기 한도(50,000행)에서 잘렸을 수 있어요. CSV 전체 파일을 권장합니다.')
+    for r in rows[hi + 1:]:
+        yield dict(zip(header, r))
 
 def num(v):
-    if v is None: return 0.0
-    s = str(v).strip().replace(',', '')
-    if s in ('', '-', '—', 'tr', 'Tr'): return 0.0
+    # 빈 칸은 0이 아니라 '값 없음'(None) — 프랜차이즈 자료는 탄수/지방 칸이 빈 경우가 많아 0으로 두면 중앙값이 망가진다
+    s = str(v if v is not None else '').strip().replace(',', '')
     try: return float(s)
-    except ValueError: return 0.0
+    except ValueError: return None
 
-def basis_grams(v):
-    m = re.search(r'([\d.]+)\s*(g|ml|mL)', str(v or '100g'))
-    return float(m.group(1)) if m else 100.0
+def per100(row):
+    m = re.search(r'([\d.]+)', str(row.get('영양성분함량기준량') or '100'))
+    g = float(m.group(1)) if m else 100.0
+    k = 100.0 / g if g else 1.0
+    return {key: (None if num(row.get(col)) is None else num(row.get(col)) * k) for key, col in NUM_KEYS.items()}
 
-GI_RULES = [  # (키워드, GI)
-    (r'설탕|사탕|젤리|시럽|꿀|잼|탄산|콜라|사이다|이온', 70), (r'쌀|밥|떡|면|국수|빵|시리얼|감자|과자|스낵|케이크|도넛', 70),
-    (r'고구마|옥수수|호박', 60), (r'우유|요구르트|요거트|두유|치즈|유제품', 35), (r'과일|사과|배|귤|오렌지|딸기|포도|바나나|복숭아|키위', 45),
-    (r'콩|두부|견과|아몬드|땅콩|호두', 20), (r'채소|나물|버섯|해조|김치', 15),
+STATE = re.compile(r'것|추출|젓갈|해당없음|절임|분말|^건조|^냉동')
+REGION = re.compile(r'^(대표|평균|\d+월|부산|완도|통영|여수|제주|강원|경남|경북|전남|전북|충남|충북|인천|목포|포항|거제|군산|서해|동해|남해|국내산|수입산|양식|자연산)$')
+def raw_name(n):
+    parts = [x.strip() for x in str(n).split('_') if x.strip()]
+    parts = [x for x in parts if not REGION.match(x)]
+    if len(parts) >= 3 and parts[0].endswith('류'): parts = parts[1:]
+    parts = [x for x in parts if x not in ('육', '해당없음', '가식부')]
+    state = parts.pop() if len(parts) >= 2 and STATE.search(parts[-1]) else None
+    return ' '.join(parts) + (f' ({state})' if state else '')
+
+def franchise_name(n):
+    n = str(n).split('_', 1)[-1]
+    n = re.sub(r'\((?:R|L|S|M|XL|Tall|Grande|Venti|레귤러|라지|미디움|톨|그란데|벤티|ICED?|HOT|핫|아이스|[\d.]+ ?(?:oz|ml|g|조각|인분|개|입))\)', '', n, flags=re.I)
+    n = re.sub(r'(?:^|\s)(HOT|ICED?|핫|아이스)(?=\s|$)', ' ', n, flags=re.I)
+    return re.sub(r'\s+', ' ', n).strip()
+
+GI_RULES = [
+    (r'탄산|콜라|사이다|에이드|시럽|사탕|젤리|설탕|꿀|잼|스무디|주스', 65), (r'떡|쌀|밥|죽|면|국수|빵|베이글|피자|과자|스낵|케이크|도넛|와플|크로플|시리얼|감자', 70),
+    (r'고구마|옥수수|호박|바나나|망고|파인애플|수박', 60), (r'라떼|우유|요구르트|요거트|두유|치즈|아이스크림|쉐이크', 40),
+    (r'사과|배|귤|오렌지|딸기|포도|복숭아|키위|자두|감|체리|블루베리|과일', 40), (r'콩|두부|견과|아몬드|땅콩|호두', 20),
+    (r'채소|나물|버섯|해조|김치|샐러드|상추|배추|양배추|오이|토마토|시금치', 15),
 ]
 def est_gi(name, cat, c):
     if c < 2: return 0
-    s = f'{cat} {name}'
+    s = f'{name} {cat}'
     for pat, gi in GI_RULES:
         if re.search(pat, s): return gi
     return 50
-
-EMOJI = [(r'우유|요구르트|요거트|두유', '🥛'), (r'치즈', '🧀'), (r'과일|사과|배|귤|딸기|포도|바나나|복숭아', '🍎'), (r'채소|나물|버섯', '🥬'),
-         (r'육|고기|닭|돼지|소|햄|소시지', '🍖'), (r'어|수산|생선|새우|오징어|조개', '🐟'), (r'음료|주스|커피|차', '🥤'), (r'과자|스낵|빵|케이크', '🍪'),
-         (r'곡|쌀|밥|면', '🍚'), (r'콩|두부|견과', '🫘'), (r'주류|술|맥주|소주', '🍺')]
+EMOJI = [(r'커피|라떼|아메리카노|에스프레소|카푸치노|모카', '☕'), (r'차$|티$|차류', '🍵'), (r'우유|요구르트|두유|유제품', '🥛'), (r'치즈', '🧀'),
+         (r'피자', '🍕'), (r'버거', '🍔'), (r'치킨|닭', '🍗'), (r'빵|베이글|크로와상|스콘|바게트', '🥐'), (r'케이크|와플|크로플|마카롱|쿠키|과자|도넛', '🍰'),
+         (r'아이스크림|빙수', '🍨'), (r'주스|에이드|스무디|음료', '🥤'), (r'과일|사과|배|귤|딸기|포도|바나나|복숭아|감|키위', '🍎'),
+         (r'채소|나물|버섯|해조|김치|샐러드', '🥬'), (r'육|고기|햄|소시지|돼지|소', '🍖'), (r'어|수산|생선|새우|오징어|조개|게|전복', '🐟'),
+         (r'곡|쌀|밥|떡', '🍚'), (r'면|국수|파스타', '🍜'), (r'콩|두부|견과|땅콩|아몬드|호두', '🥜'), (r'달걀|계란', '🥚')]
 def emoji(name, cat):
-    s = f'{cat} {name}'
+    s = f'{name} {cat}'
     for pat, e in EMOJI:
         if re.search(pat, s): return e
     return '🍽'
 
 def existing_names():
-    names = set()
-    for f in ('data-foods.js', 'data-foods-basic.js'):
-        txt = (ROOT / 'public/js' / f).read_text(encoding='utf8')
-        names |= set(re.findall(r'"n":"([^"]+)"', txt)) | set(re.findall(r"\['([^']+)', '기본", txt))
+    txt = (ROOT / 'public/js/data-foods.js').read_text(encoding='utf8')
+    names = set(re.findall(r'"n":"([^"]+)"', txt))
+    basic = (ROOT / 'public/js/data-foods-basic.js').read_text(encoding='utf8')
+    names |= set(re.findall(r"^\s*\['([^']+)', '기본", basic, re.M))
     return names
 
 def main(paths):
-    raw_items, processed = [], {}
+    groups = defaultdict(lambda: {'cat': '', 'rows': [], 'brands': set(), 'kind': ''})
     for path in paths:
         for row in read_rows(path):
-            name = str(pick(row, 'name') or '').strip()
-            if not name: continue
-            g = basis_grams(pick(row, 'basis')) or 100.0
-            k = 100.0 / g
-            vals = {key: round(num(pick(row, key)) * k, 1) for key in ('kcal', 'c', 'p', 'f', 'sugar', 'fiber', 'na')}
-            if vals['kcal'] <= 0 and vals['c'] <= 0 and vals['p'] <= 0: continue
-            cat = str(pick(row, 'cat') or '').strip()
-            kind = str(pick(row, 'kind') or '') + ' ' + Path(path).name
-            rep = str(pick(row, 'rep') or '').strip()
-            if '가공' in kind and rep and rep not in ('-', '해당없음'):
-                processed.setdefault(rep, {'cat': cat, 'rows': []})['rows'].append(vals)
+            name = str(row.get('식품명') or '').strip()
+            kind = str(row.get('데이터구분명') or '')
+            if not name or '건강기능' in kind: continue
+            vals = per100(row)
+            if not vals['kcal'] or vals['kcal'] <= 0: continue
+            cat = str(row.get('식품대분류명') or '').strip()
+            origin = str(row.get('식품기원명') or '')
+            if '원재료' in kind:
+                key, gk = raw_name(name), 'raw'
+            elif '가공' in kind:
+                rep = str(row.get('대표식품명') or '').strip()
+                if rep and not SKIP_REPS.search(rep):
+                    g = groups[('procrep', f'{rep} (가공식품)')]; g['cat'] = cat; g['rows'].append(vals); g['kind'] = 'procrep'; g['brands'].add(row.get('업체명') or row.get('제조사명') or '')
+                key, gk = re.sub(r'\s+', ' ', name) + ' (가공식품)', 'procname'
+            elif '프랜차이즈' in origin:
+                key, gk = franchise_name(name), 'fr'
             else:
-                # 원재료성: "바나나, 생것" → "바나나 (생것)"
-                nm = re.sub(r'\s*,\s*', ' (', name, count=1) + (')' if ',' in name else '')
-                raw_items.append({'n': nm, 'cat': cat, **vals})
-    for rep, g in processed.items():
-        rows = g['rows']
-        med = {key: round(statistics.median(r[key] for r in rows), 1) for key in rows[0]}
-        raw_items.append({'n': rep, 'cat': g['cat'], **med})
+                key, gk = name.replace('_', ' '), 'dish'
+            g = groups[(gk, key)]
+            g['cat'] = cat; g['rows'].append(vals); g['kind'] = gk
+            g['brands'].add(str(row.get('업체명') or row.get('제조사명') or row.get('식품기원명') or ''))
 
-    seen, out = existing_names(), []
-    for it in raw_items:
-        if it['n'] in seen: continue
-        seen.add(it['n'])
-        out.append({'n': it['n'], 'cat': it['cat'] or '기타', 'e': emoji(it['n'], it['cat']), 'kcal': it['kcal'], 'c': it['c'], 'p': it['p'],
-                    'f': it['f'], 'sugar': it['sugar'], 'fiber': it['fiber'], 'na': it['na'], 'gi': est_gi(it['n'], it['cat'], it['c'])})
-    head = ('// 식약처 식품영양성분 DB(원재료성식품, 가공식품 대표식품명별 중앙값)에서 tools/build_foods.py로 생성.\n'
-            '// 값은 100g(ml) 기준. GI는 분류/이름 키워드 기반 추정치(참고용).\n')
-    OUT.write_text(head + 'const FOODS_EXTRA = ' + json.dumps(out, ensure_ascii=False, separators=(',', ':')) + ';\n', encoding='utf8')
-    print(f'{len(out)}개 저장 → {OUT}  ({OUT.stat().st_size // 1024}KB)')
+    seen, out, by_name = existing_names(), [], {}
+    order = {'raw': 0, 'dish': 1, 'fr': 2, 'procrep': 3, 'procname': 4}
+    for (gk, key), g in sorted(groups.items(), key=lambda kv: order[kv[0][0]]):
+        if gk == 'fr' and len(g['brands']) < 3: continue
+        if gk == 'procname' and len(g['rows']) < 5: continue
+        if gk == 'procrep' and len(g['rows']) < 3: continue
+        med = {}
+        for k in NUM_KEYS:
+            vs = [r[k] for r in g['rows'] if r[k] is not None]
+            med[k] = round(statistics.median(vs), 1) if vs else 0.0
+        # 탄수, 단백, 지방이 전부 비어 있으면 혈당 계산에 쓸 수 없어 뺀다
+        if not any(any(r[k] is not None for r in g['rows']) for k in ('c', 'p', 'f')): continue
+        # 프랜차이즈 자료는 지방을 0으로 적은 경우가 있다(후라이드 치킨 지방 0 등). 칼로리에서 탄수, 단백을 빼고
+        # 많이 남으면 그만큼을 지방으로 추정한다(1g = 9kcal)
+        rest = med['kcal'] - 4 * med['c'] - 4 * med['p']
+        if med['f'] == 0 and rest > max(20, 0.3 * med['kcal']): med['f'] = round(rest / 9, 1)
+        # 탄수 칸이 비어 0이 된 프랜차이즈 메뉴(빵, 피자 토핑 등)는 혈당 계산을 망가뜨려서 뺀다
+        if gk == 'fr' and med['c'] == 0 and med['kcal'] >= 100: continue
+        item = {'n': key, 'cat': g['cat'] or '기타', 'e': emoji(key, g['cat']), **med, 'gi': est_gi(key, g['cat'], med['c'])}
+        by_name.setdefault(key, item)
+        if key in seen: continue
+        seen.add(key); out.append(item)
+
+    official = {}
+    for basic, src in BASIC_MATCH.items():
+        it = by_name.get(src)
+        if it: official[basic] = {k: it[k] for k in list(NUM_KEYS) + ['gi']} | {'src': src}
+    missing = [b for b, s in BASIC_MATCH.items() if s not in by_name]
+    # 기본 음식에 값을 넘긴 항목은 검색 결과에 같은 음식이 두 번 나오지 않게 뺀다
+    used = {v['src'] for v in official.values()}
+    out = [o for o in out if o['n'] not in used]
+
+    head = ('// 식약처 식품영양성분 DB(음식, 원재료성식품, 가공식품)에서 tools/build_foods.py로 생성. 직접 고치지 말 것.\n'
+            '// 값은 100g(ml) 기준 중앙값. GI는 분류/이름 키워드 기반 추정치(참고용).\n')
+    OUT.write_text(head + 'const FOODS_EXTRA = ' + json.dumps(out, ensure_ascii=False, separators=(',', ':')) + ';\n'
+                   + '// 기본 음식(data-foods-basic.js) 중 식약처 값으로 덮어쓸 것\n'
+                   + 'const FOODS_BASIC_OFFICIAL = ' + json.dumps(official, ensure_ascii=False, separators=(',', ':')) + ';\n', encoding='utf8')
+    kinds = defaultdict(int)
+    for (gk, key), g in groups.items():
+        if key in {o['n'] for o in out}: kinds[gk] += 1
+    print(f'{len(out)}개 저장 → {OUT.name} ({OUT.stat().st_size // 1024}KB)', dict(kinds))
+    print(f'기본 음식 식약처 값 적용 {len(official)}개, 못 찾음: {missing}')
+    return out, official
 
 if __name__ == '__main__':
     if len(sys.argv) < 2: sys.exit(__doc__)

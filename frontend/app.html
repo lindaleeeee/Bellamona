@@ -2060,6 +2060,7 @@
   <script src="/js/data-workout-routines.js"></script>
   <script src="/js/data-stretches.js"></script>
   <script src="/js/data-recipes.js"></script>
+  <script src="/js/recipe-categories.js"></script>
   <script src="/js/data-foods.js"></script>
   <script src="/js/data-foods-basic.js"></script>
   <script src="/js/data-foods-extra.js"></script>
@@ -3412,8 +3413,14 @@
     let _allFoodsCache = null;
     function allFoodsDb() {
       if (_allFoodsCache) return _allFoodsCache;
+      // 기본 음식 중 식약처 값이 있는 것은 영양값만 식약처 값으로 바꾼다(GI, 이모지, 1회분은 기본 목록 것 유지)
+      const official = typeof FOODS_BASIC_OFFICIAL !== 'undefined' ? FOODS_BASIC_OFFICIAL : {};
+      const basic = (typeof BASIC_FOODS !== 'undefined' ? BASIC_FOODS : []).map(f => {
+        const o = official[f.n]; if (!o) return f;
+        return { ...f, kcal: o.kcal, c: o.c, p: o.p, f: o.f, sugar: o.sugar, fiber: o.fiber, na: o.na, src: '식약처' };
+      });
       _allFoodsCache = [
-        ...(typeof BASIC_FOODS !== 'undefined' ? BASIC_FOODS : []),
+        ...basic,
         ...(typeof FOODS_EXTRA !== 'undefined' ? FOODS_EXTRA : []),
         ...(typeof FOODS_DB !== 'undefined' ? FOODS_DB : []),
       ];
@@ -3462,7 +3469,7 @@
       document.getElementById('food-item-picker').style.display = 'block';
       document.getElementById('food-item-picker-emoji').textContent = f.e;
       document.getElementById('food-item-picker-name').textContent = f.n;
-      document.getElementById('food-item-picker-per100').textContent = `100g(ml) 기준 ${Math.round(f.kcal)}kcal · 탄수 ${f.c}g · 단백 ${f.p}g · 지방 ${f.f}g · GI ${f.gi}(추정)`;
+      document.getElementById('food-item-picker-per100').textContent = `100g(ml) 기준 ${Math.round(f.kcal)}kcal · 탄수 ${f.c}g · 단백 ${f.p}g · 지방 ${f.f}g · GI ${f.gi}(추정)${f.b && !f.src ? ' · 일반 참고값' : ' · 식약처'}`;
       document.getElementById('food-item-grams').value = f.u ? f.u[1] : 100;
       const chips = (f.u ? [[f.u[1], `${f.u[0]} ${f.u[1]}g`]] : []).concat([50, 100, 150, 200, 300].filter(g => !f.u || g !== f.u[1]).map(g => [g, `${g}g`]));
       document.getElementById('food-item-qty-chips').innerHTML = chips.map(([g, l]) =>
@@ -3568,9 +3575,9 @@
       const target = mealPlanForBucket(phaseGoalCal())[slotKey].kcal;
       const withCal = RCPS.filter(r => r.cal != null);
       const buckets = [
-        withCal.filter(r => r.tp !== '디저트' && r.tp !== '에피타이저'),
-        withCal.filter(r => r.tp === '에피타이저'),
-        withCal.filter(r => r.tp === '디저트'),
+        withCal.filter(r => r.tp !== '에피타이저' && r.tp !== '음료'),
+        withCal.filter(r => r.tp === '에피타이저' && !/디저트|간식/.test(r.tp0 || '')),
+        withCal.filter(r => r.tp === '에피타이저' && /디저트|간식/.test(r.tp0 || '')),
       ];
       return buckets
         .map(pool => pool.length ? pool.reduce((best, r) => Math.abs(r.cal - target) < Math.abs(best.cal - target) ? r : best, pool[0]) : null)
@@ -4268,23 +4275,22 @@
       { n: '닭가슴살 레몬허브볼', t: 10, tp: '양식', cal: 260, cost: 7000, img: '🌿', ingredients: ['닭가슴살 150g', '레몬 1개', '로즈마리 약간', '올리브오일 1큰술', '소금·후추'], steps: ['닭가슴살에 소금, 후추, 레몬즙을 발라 10분 재워요', '팬을 달궈 올리브오일을 두르고 구워요', '로즈마리를 올려 향을 입혀요', '얇게 썰어 샐러드 위에 올려요'], stepImg: STEP_IMG('chicken-lemon-herb-bowl', 4), cpgQ: '슬라이스 닭가슴살' },
       { n: '훈제연어 샐러드', t: 5, tp: '일식', cal: 200, cost: 9000, img: '🥗', ingredients: ['훈제연어 100g', '루꼴라 50g', '케이퍼 1큰술', '레몬즙 1큰술', '올리브오일 1큰술'], steps: ['루꼴라를 깨끗이 씻어 물기를 제거해요', '접시에 루꼴라를 깔아요', '훈제연어를 올리고 케이퍼를 뿌려요', '레몬즙과 올리브오일을 드레싱으로 뿌려요'], stepImg: STEP_IMG('smoked-salmon-salad', 4), cpgQ: '훈제연어 슬라이스' },
     ];
-    const RCPS = [...RCPS_CURATED, ...(typeof RCPS_IMPORTED !== 'undefined' ? RCPS_IMPORTED : [])];
+    const RCPS = [...RCPS_CURATED, ...(typeof RCPS_IMPORTED !== 'undefined' ? RCPS_IMPORTED : [])].map(r => typeof normalizeRecipe === 'function' ? normalizeRecipe(r) : r);
     // 조리시간 칩은 "N분 이내"(양수)와 "15분 이상"(음수로 표시해 방향을 반대로 준다) 두 방향이 섞여 있다.
     // 예전엔 셋 다 r.t > v면 제외하는 동일한 방향이라 "15분 이상"이 사실상 "15분 이내"처럼 동작했다.
     const CAL_BANDS = [
-      { key: 'lt100', label: '100kcal 미만', min: -Infinity, max: 100 },
-      { key: 'b100', label: '100-300kcal', min: 100, max: 300 },
-      { key: 'b300', label: '300-500kcal', min: 300, max: 500 },
-      { key: 'b500', label: '500-700kcal', min: 500, max: 700 },
-      { key: 'b700', label: '700-900kcal', min: 700, max: 900 },
-      { key: 'b900', label: '900-1100kcal', min: 900, max: 1100 },
-      { key: 'gte1100', label: '1100kcal+', min: 1100, max: Infinity },
+      { key: 'lt300', label: '300 미만', min: -Infinity, max: 300 },
+      { key: 'b300', label: '300-500', min: 300, max: 500 },
+      { key: 'b500', label: '500-700', min: 500, max: 700 },
+      { key: 'gte700', label: '700+', min: 700, max: Infinity },
     ];
     function rfil(el, k, v) { S.rFilters[k] = S.rFilters[k] === v ? null : v; document.querySelectorAll(`.chip[dfk="${k}"]`).forEach(c => { c.classList.remove('on'); }); el.setAttribute('dfk', k); if (S.rFilters[k]) el.classList.add('on'); else el.classList.remove('on'); renderRecipes(); }
     function renderRecipeCategoryChips() {
       const box = document.getElementById('rcp-category-chips'); if (!box) return;
-      const cats = [...new Set(RCPS.map(r => r.tp))].sort((a, b) => a.localeCompare(b, 'ko'));
-      box.innerHTML = cats.map(c => `<span class="chip" onclick="rfil(this,'type','${c}')">${c}</span>`).join('');
+      // 맛 태그 대신 음식 종류 8개만 (js/recipe-categories.js)
+      const present = new Set(RCPS.map(r => r.tp));
+      const cats = (typeof RECIPE_CATS !== 'undefined' ? RECIPE_CATS : [...present]).filter(c => present.has(c));
+      box.innerHTML = cats.map(c => `<span class="chip${S.rFilters.type === c ? ' on' : ''}" dfk="type" onclick="rfil(this,'type','${c}')">${typeof RECIPE_CAT_EMOJI !== 'undefined' ? RECIPE_CAT_EMOJI[c] + ' ' : ''}${c}</span>`).join('');
       const calBox = document.getElementById('rcp-cal-chips');
       if (calBox && !calBox.childElementCount) {
         calBox.innerHTML = CAL_BANDS.map(b => `<span class="chip" onclick="rfil(this,'cal','${b.key}')">${b.label}</span>`).join('');
