@@ -60,6 +60,14 @@ function mealGL(meal) {
   if (!withGi.length) return null;
   return _insR1(withGi.reduce((a, f) => a + f.c * f.gi / 100, 0));
 }
+// 내 연속혈당측정 기록이 있으면 식후 상승 폭(식후 최고 - 식전). 의료 판단이 아니라 "이 메뉴는 많이 오르는 편" 같은
+// 생활 습관 참고용으로만 쓴다(진단 용어나 기준치 표현은 쓰지 않음).
+function mealRise(m) {
+  const pre = Number(m.bg_pre), peak = Number(m.bg_1h);
+  return m.bg_pre != null && m.bg_1h != null && isFinite(pre) && isFinite(peak) && pre > 0 ? Math.round(peak - pre) : null;
+}
+function _riseLevel(r) { return r >= 60 ? '많이 오름' : r >= 30 ? '조금 오름' : '안정적'; }
+function _menuName(m) { return String(m.description || (m.foods && m.foods[0] && m.foods[0].n) || m.label || '식사').replace(/ 외 \d+개$/, ''); }
 function _glLevel(gl) { return gl >= 20 ? '높음' : gl >= 10 ? '중간' : '낮음'; }
 
 // ── 날짜별 요약 만들기 ──
@@ -140,8 +148,13 @@ function buildInsights(history, asOf, ctx = {}) {
       const d = showDelta && base.first != null ? Math.round(today.firstMeal - base.first) : null;
       push({ tier: 'daily', icon: '🕐', title: '첫 끼', value: _insHHMM(today.firstMeal), sub: d != null && Math.abs(d) >= 20 ? `평소보다 ${Math.abs(d) >= 60 ? _insR1(Math.abs(d) / 60) + '시간' : Math.abs(d) + '분'} ${d > 0 ? '늦게' : '일찍'}` : '첫 끼 기록', delta: d != null && Math.abs(d) >= 20 ? (d > 0 ? 'down' : 'up') : null });
     }
+    const rises = today.meals.map(m => ({ m, r: mealRise(m) })).filter(x => x.r != null).sort((a, b) => b.r - a.r);
     const gls = today.meals.map(m => ({ m, gl: mealGL(m) })).filter(x => x.gl != null).sort((a, b) => b.gl - a.gl);
-    if (gls.length) {
+    if (rises.length) {
+      const t = rises[0];
+      push({ tier: 'daily', icon: '📈', title: '식후 반응 큰 끼니', value: t.m.label || '식사', sub: `${_menuName(t.m)} · ${_riseLevel(t.r)}`, delta: t.r >= 60 ? 'down' : null });
+      if (rises.length >= 2) { const b = rises[rises.length - 1]; push({ tier: 'daily', icon: '🫶', title: '편안했던 끼니', value: b.m.label || '식사', sub: `${_menuName(b.m)} · ${_riseLevel(b.r)}`, delta: b.r < 30 ? 'up' : null }); }
+    } else if (gls.length) {
       push({ tier: 'daily', icon: '📈', title: '혈당 부담 큰 끼니', value: gls[0].m.label || '식사', sub: `GL ${gls[0].gl} · ${_glLevel(gls[0].gl)} (추정)`, delta: gls[0].gl >= 20 ? 'down' : null });
     } else {
       const big = today.meals.filter(m => typeof m.kcal === 'number').sort((a, b) => b.kcal - a.kcal)[0];
@@ -190,7 +203,20 @@ function buildInsights(history, asOf, ctx = {}) {
 
   // ─── 7일: 주간 ───
   if (unlocked('weekly')) {
-    // 혈당 부담 TOP3 음식 (음식 단위 기록 + 추정 GI 기준)
+    // 내 기록(식후 반응)이 있으면: 많이 오른 메뉴 / 안정적이었던 메뉴
+    const byMenu = {};
+    // 술, 견과 같은 간식은 "편안한 메뉴"로 추천하면 안 되니 끼니(아침, 점심, 저녁)만 본다
+    const MAIN = /^(아침|점심|저녁)$/, DRINK = /맥주|소주|와인|막걸리|하이볼|술/;
+    win.forEach(x => x.meals.forEach(m => { const r = mealRise(m); if (r == null || DRINK.test(_menuName(m))) return; const k = _menuName(m); (byMenu[k] = byMenu[k] || { rs: [], main: false }).rs.push(r); if (MAIN.test(m.label || '')) byMenu[k].main = true; }));
+    const menus = Object.entries(byMenu).map(([n, v]) => ({ n, avg: Math.round(_insAvg(v.rs)), cnt: v.rs.length, main: v.main }));
+    const hasRise = menus.length >= 3;
+    if (hasRise) {
+      const hi = menus.filter(x => x.avg >= 45).sort((a, b) => b.avg - a.avg).slice(0, 3);
+      const lo = menus.filter(x => x.avg < 30 && x.main).sort((a, b) => a.avg - b.avg).slice(0, 3);
+      if (hi.length) push({ tier: 'weekly', icon: '⚠️', title: '먹고 나서 많이 오른 메뉴', list: hi.map(x => `${x.n} · ${_riseLevel(x.avg)}${x.cnt > 1 ? ` (${x.cnt}번)` : ''}`), sub: '밥 양 줄이기, 채소 먼저, 식후 10분 걷기', wide: true, rule: { icon: '🍚', text: `${_josa(hi[0].n, '은', '는')} 많이 오르는 편 → 밥 양 줄이고 먹은 뒤 10분 걷기` } });
+      if (lo.length) push({ tier: 'weekly', icon: '🥗', title: '내 몸에 편안했던 메뉴', list: lo.map(x => `${x.n} · ${_riseLevel(x.avg)}`), sub: '바쁜 날 고르기 좋은 메뉴', wide: true, rule: { icon: '🥗', text: `${lo[0].n}처럼 단백질, 채소 많은 메뉴가 잘 맞음` } });
+    }
+    // 혈당 부담 TOP3 음식 (음식 단위 기록 + 추정 GI 기준, 내 기록이 없을 때)
     const foodGL = {};
     win.forEach(x => x.meals.forEach(m => (m.foods || []).forEach(f => {
       if (typeof f.c !== 'number' || typeof f.gi !== 'number' || !f.n) return;
@@ -199,7 +225,7 @@ function buildInsights(history, asOf, ctx = {}) {
       foodGL[k].sum += gl; foodGL[k].cnt++;
     })));
     const top = Object.values(foodGL).map(f => ({ ...f, gl: _insR1(f.sum / f.cnt) })).filter(f => f.gl >= 5).sort((a, b) => b.gl - a.gl).slice(0, 3);
-    if (top.length) push({ tier: 'weekly', icon: '🍰', title: '혈당 부담 큰 음식 TOP ' + top.length, list: top.map(f => `${f.e} ${f.n} · GL ${f.gl}`), sub: '먹은 양 기준 추정치', wide: true, rule: top[0].gl >= 15 ? { icon: '🍰', text: `${_josa(top[0].n, '은', '는')} 양을 줄이거나 단백질과 같이 먹기` } : null });
+    if (top.length && !hasRise) push({ tier: 'weekly', icon: '🍰', title: '혈당 부담 큰 음식 TOP ' + top.length, list: top.map(f => `${f.e} ${f.n} · GL ${f.gl}`), sub: '먹은 양 기준 추정치', wide: true, rule: top[0].gl >= 15 ? { icon: '🍰', text: `${_josa(top[0].n, '은', '는')} 양을 줄이거나 단백질과 같이 먹기` } : null });
 
     // 평일 vs 주말 순섭취
     const wk = win.filter(x => x.net != null);
@@ -271,6 +297,28 @@ function buildInsights(history, asOf, ctx = {}) {
         push({ tier: 'pattern', icon: '⭐', title: '루틴 잘 된 날의 공통점', value: best.f.fmt(best.a), sub: `다른 날은 ${best.f.fmt(best.b)}`, n: best.n, conf: _insConf(best.n), rule: { icon: best.f.icon, text: best.f.rule(best.a) } });
       }
     }
+    // 같은 메뉴끼리 비교: 메뉴마다 평소 오름 폭 대비 비율로 바꿔서(메뉴 차이를 지우고) 식후에 걸은 끼니 vs 안 걸은 끼니
+    const mainMeals = [];
+    win.forEach(x => x.meals.forEach(m => {
+      const r = mealRise(m), t = _insMin(m.time);
+      if (r == null || t == null || !/^(점심|저녁)$/.test(m.label || '')) return;
+      const moved = x.workouts.some(w => { const wt = _insMin(w.logged_time); return wt != null && wt >= t && wt - t <= 90; });
+      mainMeals.push({ k: _menuName(m), r, moved, sleep: x.sleep ? x.sleep.hours : null });
+    }));
+    const menuAvg = {};
+    mainMeals.forEach(o => { (menuAvg[o.k] = menuAvg[o.k] || []).push(o.r); });
+    const rel = mainMeals.filter(o => menuAvg[o.k].length >= 2 && _insAvg(menuAvg[o.k]) > 5).map(o => ({ ...o, q: o.r / _insAvg(menuAvg[o.k]) }));
+    const cmpMv = _compare(rel.filter(o => o.moved).map(o => o.q), rel.filter(o => !o.moved).map(o => o.q));
+    if (cmpMv && cmpMv.a < cmpMv.b) {
+      const pct = Math.round((1 - cmpMv.a / cmpMv.b) * 100);
+      if (pct >= 10) push({ tier: 'pattern', icon: '🚶', title: '먹고 나서 걸은 날', value: `오름 폭 −${pct}%`, sub: '같은 메뉴를 먹고 90분 안에 움직였을 때', n: cmpMv.n, conf: _insConf(cmpMv.n), delta: 'up', rule: { icon: '🚶', text: `같은 메뉴도 먹고 걸으면 ${pct}% 덜 오름 → 식후 10~20분 걷기` } });
+    }
+    // 잠 못 잔 날의 식후 반응(같은 메뉴 기준)
+    const cmpSl = _compare(rel.filter(o => o.sleep != null && o.sleep < 6.5).map(o => o.q), rel.filter(o => o.sleep != null && o.sleep >= 7).map(o => o.q));
+    if (cmpSl && cmpSl.a > cmpSl.b) {
+      const pct = Math.round((cmpSl.a / cmpSl.b - 1) * 100);
+      if (pct >= 8) push({ tier: 'pattern', icon: '🛌', title: '잠 못 잔 날 식사', value: `오름 폭 +${pct}%`, sub: '같은 메뉴, 6.5시간 미만 잔 날 vs 7시간 이상', n: cmpSl.n, conf: _insConf(cmpSl.n), delta: 'down', rule: { icon: '🛌', text: `덜 잔 날은 같은 걸 먹어도 ${pct}% 더 오름 → 그런 날은 가벼운 메뉴로` } });
+    }
     // 첫 끼 시간 규칙성
     const fm = win.map(x => x.firstMeal).filter(v => v != null);
     const sd = _insStd(fm);
@@ -313,7 +361,8 @@ function buildInsights(history, asOf, ctx = {}) {
   const rules = unlocked('monthly') ? cards.filter(c => c.rule).sort((a, b) => (b.n || 0) - (a.n || 0)).slice(0, 5).map(c => ({ ...c.rule, conf: c.conf || 'hyp' })) : [];
   const learned = cards.filter(c => c.tier !== 'daily').length;
 
-  return { asOf, recordedDays, tier: tierIdx >= 0 ? INSIGHT_TIERS[tierIdx] : null, next, daysToNext: next ? next.min - recordedDays : 0, cards, rules, learned, missing };
+  const hasGlucose = win.some(x => x.meals.some(m => mealRise(m) != null));
+  return { asOf, recordedDays, tier: tierIdx >= 0 ? INSIGHT_TIERS[tierIdx] : null, next, daysToNext: next ? next.min - recordedDays : 0, cards, rules, learned, missing, hasGlucose };
 }
 
 // 이번 날짜 인사이트를 Gemini에 넘길 짧은 사실 목록(AI가 숫자를 지어내지 않게 계산값만 넘긴다)
@@ -346,6 +395,7 @@ function renderInsightsHtml(r) {
     ${r.next ? `<div class="ins-prog"><div class="ins-prog-f" style="width:${pct}%"></div></div><div class="ins-prog-t">${r.next.icon} <b>${r.next.label}</b>까지 ${r.daysToNext}일 더 기록하면 열려요</div>` : `<div class="ins-prog-t">🌙 모든 리포트가 열렸어요</div>`}
   </div>`;
   let html = head;
+  const foot = r.hasGlucose ? `<div class="ins-foot">식후 반응은 내가 기록한 혈당 측정값을 메뉴별로 정리한 생활 습관 참고용이에요. 의료적 판단이나 진단이 아니에요.</div>` : '';
   INSIGHT_TIERS.forEach((t, i) => {
     const cs = r.cards.filter(c => c.tier === t.id);
     if (i <= tierIdx || t.id === 'daily') {
@@ -366,7 +416,7 @@ function renderInsightsHtml(r) {
       if (teasers.length) html += `<div class="ins-sec locked"><div class="ins-sec-t">🔒 ${t.label} <span>${t.min}일</span></div><div class="ins-grid">${teasers.map(x => `<div class="ins-card lock"><div class="ins-top"><span class="ins-ic">❔</span><span class="ins-t">${_insEsc(x)}</span></div><div class="ins-v blur">00.0</div></div>`).join('')}</div></div>`;
     }
   });
-  return `<div class="ins-wrap">${html}</div>`;
+  return `<div class="ins-wrap">${html}${foot}</div>`;
 }
 
 // 마이페이지 등에 붙이는 한 줄 진행 표시

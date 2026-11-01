@@ -1068,6 +1068,7 @@
     .ins-sec.locked .ins-card { opacity: .55 }
     .ins-quick-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px }
     .ins-quick { border: 1.5px dashed var(--bdr); background: transparent; color: var(--sky2); font-weight: 800; font-size: 11px; border-radius: 99px; padding: 6px 11px; cursor: pointer; font-family: inherit }
+    .ins-foot { font-size: 9px; color: var(--muted); font-weight: 600; line-height: 1.5; margin: -4px 4px 10px }
     .ins-rules { display: flex; flex-direction: column; gap: 6px }
     .ins-rule { display: flex; gap: 8px; align-items: flex-start; background: var(--card); border: 1.5px solid var(--bdr); border-radius: 12px; padding: 9px 11px; font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.45 }
     .ins-rule em { margin-left: auto; font-style: normal; font-size: 9px; color: var(--muted); white-space: nowrap }
@@ -2053,6 +2054,7 @@
   </script>
   <script src="/js/sync.js"></script>
   <script src="/js/insights.js"></script>
+  <script src="/js/demo-seed.js"></script>
   <script src="/js/data-cheat-foods.js"></script>
   <script src="/js/data-meal-plans.js"></script>
   <script src="/js/data-exercises.js"></script>
@@ -3932,7 +3934,7 @@
 
       const mealsHtml = day.meals.filter(m => m.description).map(m => {
         return `<div style="padding:6px 0;border-bottom:1px solid var(--bdr);font-size:12px">
-      <div style="color:var(--text);font-weight:600">${m.label}${m.time ? ' · ' + String(m.time).slice(0, 5) : ''}${m.kcal != null ? ` <span style="color:var(--sky2);font-weight:800">· ${m.kcal}kcal</span>` : ''}</div>
+      <div style="color:var(--text);font-weight:600">${m.label}${m.time ? ' · ' + String(m.time).slice(0, 5) : ''}${m.kcal != null ? ` <span style="color:var(--sky2);font-weight:800">· ${m.kcal}kcal</span>` : ''}${typeof mealRise === 'function' && mealRise(m) != null ? (r => ` <span style="font-size:10px;font-weight:800;border-radius:99px;padding:1px 7px;background:${r >= 60 ? 'rgba(255,167,38,.15)' : r >= 30 ? 'var(--card2)' : 'rgba(102,187,106,.15)'};color:${r >= 60 ? 'var(--warn)' : r >= 30 ? 'var(--muted)' : 'var(--ok)'}">${r >= 60 ? '📈 많이 오름' : r >= 30 ? '조금 오름' : '🫶 안정적'}</span>`)(mealRise(m)) : ''}</div>
       <div style="color:var(--muted);margin-top:2px">${m.description}</div>
     </div>`;
       }).join('') || `<div style="font-size:12px;color:var(--muted);padding:6px 0">식사 기록 없음</div>`;
@@ -4074,7 +4076,7 @@
     function buildDayReportPayload(dateStr, day) {
       return {
         date: dateStr,
-        meals: (day.meals || []).filter(m => m.description).map(m => ({ label: m.label, time: m.time, description: m.description })),
+        meals: (day.meals || []).filter(m => m.description).map(m => ({ label: m.label, time: m.time, description: m.description, ...(typeof mealRise === 'function' && mealRise(m) != null ? { 식후반응: _riseLevel(mealRise(m)) } : {}) })),
         workouts: (day.workouts || []).filter(w => w.intensity).map(w => ({ time: w.logged_time, intensity: w.intensity, duration_min: w.duration_min, exercise_type: w.exercise_type, body_part: w.body_part, routine_name: w.routine_name })),
         recentWorkouts: S.workoutLogs.slice(-7),
         sleepThisWeek: S.sleepLogs.slice(-7),
