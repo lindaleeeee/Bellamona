@@ -466,6 +466,13 @@ async function _route(method, url, rawBody) {
       return _resp(200, { success: true });
     }
 
+    // 오늘의 칼로리 점수를 친구에게 공유(점수만, 섭취/소비 숫자는 올리지 않음)
+    if (method === 'POST' && path === '/api/user/score') {
+      const sc = body.score == null ? null : Math.max(0, Math.min(100, Math.round(Number(body.score))));
+      await _userRef().set({ today_score: { date: _DATE_RE.test(body.date || '') ? body.date : today, score: sc } }, { merge: true });
+      return _resp(200, { success: true });
+    }
+
     if (method === 'GET' && path === '/api/user/friends') {
       const fsnap = await _sub('friends').get();
       const list = await Promise.all(fsnap.docs.map(async d => {
@@ -482,6 +489,7 @@ async function _route(method, url, rawBody) {
             id: fid, name: u.data().name, avatar: u.data().avatar || '🦋',
             todayChecks: c.exists ? (c.data().checks || null) : null,
             streakDays: _computeStreak(new Set(recent.docs.map(x => x.id))).streakDays,
+            todayScore: (u.data().today_score && u.data().today_score.date === today) ? u.data().today_score.score : null,
             _t: d.data().created_at || 0
           };
         } catch (e) { return null; } // 상대가 탈퇴해서 더 이상 볼 수 없는 경우

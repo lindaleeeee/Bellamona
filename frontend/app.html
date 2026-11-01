@@ -1068,6 +1068,25 @@
     .ins-sec.locked .ins-card { opacity: .55 }
     .ins-quick-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px }
     .ins-quick { border: 1.5px dashed var(--bdr); background: transparent; color: var(--sky2); font-weight: 800; font-size: 11px; border-radius: 99px; padding: 6px 11px; cursor: pointer; font-family: inherit }
+    .ks-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 8px; text-align: center; border: 1.5px solid var(--bdr); border-radius: 12px; overflow: hidden }
+    .ks-table th { font-size: 10px; color: var(--muted); font-weight: 800; padding: 7px 4px; background: var(--card2) }
+    .ks-table td { font-size: 15px; color: var(--text); font-weight: 800; padding: 9px 4px; border-top: 1.5px solid var(--bdr) }
+    .ks-table td.ks-score { color: var(--lav2); font-size: 18px }
+    .ks-sub { display: flex; justify-content: center; gap: 14px; font-size: 11px; color: var(--muted); font-weight: 700; margin-top: 8px }
+    .ks-sub b { color: var(--text) }
+    .ks-badge { text-align: center; font-size: 11px; font-weight: 800; color: var(--lav2); margin-top: 6px }
+    .ks-board { display: flex; flex-direction: column; gap: 6px; margin-top: 12px }
+    .ks-row { display: flex; align-items: center; gap: 7px; padding: 7px 9px; border-radius: 12px; background: var(--card2) }
+    .ks-row.me { border: 1.5px solid var(--lav2) }
+    .ks-rank { width: 20px; text-align: center; font-size: 13px; font-weight: 800; color: var(--muted) }
+    .ks-av { font-size: 17px }
+    .ks-name { flex: 1; min-width: 0; font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+    .ks-bar { width: 70px; height: 6px; border-radius: 99px; background: var(--sub); overflow: hidden }
+    .ks-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--sky2), var(--lav2)) }
+    .ks-pt { width: 48px; text-align: right; font-size: 12px; font-weight: 800; color: var(--lav2) }
+    .ks-empty { font-size: 11px; color: var(--muted); font-weight: 600; text-align: center; padding: 4px 0 }
+    .ks-slides { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory }
+    .ks-slide { width: 86%; flex-shrink: 0; scroll-snap-align: center; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.08) }
     .ins-foot { font-size: 9px; color: var(--muted); font-weight: 600; line-height: 1.5; margin: -4px 4px 10px }
     .ins-rules { display: flex; flex-direction: column; gap: 6px }
     .ins-rule { display: flex; gap: 8px; align-items: flex-start; background: var(--card); border: 1.5px solid var(--bdr); border-radius: 12px; padding: 9px 11px; font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.45 }
@@ -1302,17 +1321,12 @@
                 <div style="font-size:15px;font-weight:800;color:var(--text)" id="h-ring-pct">0%</div>
               </div>
             </div>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:700;color:var(--text)">오늘 저속노화 달성률</div>
-              <div style="font-size:11px;color:var(--muted);margin:3px 0 8px;font-weight:500">루틴 <span
-                  id="h-done-cnt">0</span> / <span id="h-total-cnt">16</span> 완료</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:700;color:var(--text)">오늘의 칼로리 점수 <span style="font-size:11px;font-weight:800;color:var(--lav2)" id="h-kscore-badge"></span></div>
+              <div style="font-size:11px;color:var(--muted);margin:3px 0 8px;font-weight:500" id="h-kscore-sub">식사를 기록하면 점수가 나와요</div>
               <div style="display:flex;gap:5px;flex-wrap:wrap">
-                <span
-                  style="font-size:10px;background:var(--ins-bg);color:var(--ins);padding:2px 8px;border-radius:99px;font-weight:700"
-                  id="h-ins-badge">식사 0%</span>
-                <span
-                  style="font-size:10px;background:var(--gro-bg);color:var(--gro);padding:2px 8px;border-radius:99px;font-weight:700"
-                  id="h-gro-badge">운동 0%</span>
+                <span style="font-size:10px;background:var(--ins-bg);color:var(--ins);padding:2px 8px;border-radius:99px;font-weight:700" id="h-kscore-in">🍽 섭취 0</span>
+                <span style="font-size:10px;background:var(--gro-bg);color:var(--gro);padding:2px 8px;border-radius:99px;font-weight:700" id="h-kscore-out">🔥 소비 0</span>
               </div>
             </div>
           </div>
@@ -1573,20 +1587,10 @@
           </div>
 
           <div class="card" style="margin-bottom:10px">
-            <div class="cap">하루 달성률 · 친구 비교</div>
-            <div style="display:flex;flex-direction:column;gap:8px">
-              <div style="display:flex;align-items:center;gap:8px"><span id="prof-avatar-mini"
-                  style="font-size:16px">🦋</span>
-                <div style="flex:1">
-                  <div style="font-size:12px;font-weight:700;color:var(--text)" id="prof-me-name">혜림님 (나)</div>
-                  <div class="bar-t" style="height:4px;margin-top:3px">
-                    <div class="bar-f" id="prof-me-bar"
-                      style="width:0%;background:linear-gradient(90deg,var(--sky2),var(--lav2))"></div>
-                  </div>
-                </div><span style="font-size:12px;font-weight:800;color:var(--sky2)" id="prof-me-pct">0%</span>
-              </div>
-              <div id="prof-friends-list"></div>
-            </div>
+            <div class="cap">🏆 오늘의 칼로리 점수판</div>
+            <div id="prof-scoreboard"></div>
+            <span id="prof-avatar-mini" style="display:none"></span><span id="prof-me-name" style="display:none"></span>
+            <div id="prof-friends-list" style="display:none"></div>
           </div>
           <div class="card" onclick="openMod('mod-cheat')"
             style="cursor:pointer;background:linear-gradient(135deg,rgba(244,143,177,.08),rgba(255,213,79,.06));border-color:rgba(244,143,177,.3);margin-bottom:10px">
@@ -1811,6 +1815,18 @@
       </div>
     </div>
 
+    <div class="mov" id="mod-scorecard">
+      <div class="msh">
+        <div class="mh"></div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">📸 점수 카드</div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:10px">옆으로 넘겨서 2장 확인 · 친구에게는 점수만 보여요</div>
+        <div id="scorecard-slides" class="ks-slides"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-o" style="flex:1" onclick="saveScoreCards()">💾 이미지 저장</button>
+          <button class="btn btn-p" style="flex:1" onclick="shareScoreCards()">📤 공유하기</button>
+        </div>
+      </div>
+    </div>
     <div class="mov" id="mod-friends">
       <div class="msh">
         <div class="mh"></div>
@@ -2055,6 +2071,7 @@
   <script src="/js/sync.js"></script>
   <script src="/js/insights.js"></script>
   <script src="/js/demo-seed.js"></script>
+  <script src="/js/score-card.js"></script>
   <script src="/js/data-cheat-foods.js"></script>
   <script src="/js/data-meal-plans.js"></script>
   <script src="/js/data-exercises.js"></script>
@@ -2440,8 +2457,10 @@
       const todayIntakeGoal = phaseGoalCal(); const todayIntakePhase = getCycleInfo();
       setTxt('h-intake-kcal', todayIntakeKcal.toLocaleString()); setTxt('h-intake-goal', todayIntakeGoal.toLocaleString());
       setTxt('h-intake-phase', PHASE_CAL_RATIO[todayIntakePhase.id] !== 1 ? `${todayIntakePhase.name} ${PHASE_CAL_RATIO[todayIntakePhase.id] > 1 ? '+' : ''}${Math.round((PHASE_CAL_RATIO[todayIntakePhase.id] - 1) * 100)}%` : '');
-      const ring = document.getElementById('h-ring'); const op = overallPct(); if (ring) { const circ = 2 * Math.PI * 29; ring.setAttribute('stroke-dasharray', `${Math.min(op / 100 * circ, circ)} ${circ}`); }
-      setTxt('h-ring-pct', op + '%');
+      const op = overallPct();
+      // 홈 링은 "오늘의 칼로리 점수"(js/score-card.js). 저속노화 달성률은 캘린더/월간 화면에서 계속 쓴다.
+      if (typeof renderKcalScoreHome === 'function') renderKcalScoreHome();
+      if (typeof renderScoreBoard === 'function') renderScoreBoard();
       const allRts = Object.values(S.routines).flat(); setTxt('h-done-cnt', allRts.filter(r => S.checks[r.id]).length); setTxt('h-total-cnt', allRts.length);
       setTxt('hc-oxy-label', hormoneScreenLabel());
       ['ins', 'gro', 'cor', 'oxy'].forEach((k, i) => { const hids = ['insulin', 'growth', 'cortisol', 'oxytocin']; const p = hormonePct(hids[i]); setTxt('hc-' + k, p + '%'); const bar = document.getElementById('bar-' + k); if (bar) bar.style.width = p + '%'; const b = document.getElementById('h-' + k + '-badge'); if (b) b.textContent = { ins: '식사', gro: '운동', cor: '마음', oxy: hormoneScreenLabel() }[k] + ' ' + p + '%'; });
@@ -4473,6 +4492,7 @@
     </div>`;
     }
     function renderFriendsCompare() {
+      if (typeof renderScoreBoard === 'function') renderScoreBoard(); // 친구 점수가 새로 오면 점수판도 다시 그린다
       const box = document.getElementById('prof-friends-list'); if (!box) return;
       box.innerHTML = S.friends.length
         ? S.friends.map((f, i) => friendRowHtml(f, i)).join('')
@@ -4484,7 +4504,7 @@
         ? S.friends.map(f => `<div class="card2" style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">${f.avatar || '🦋'}</span>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:700;color:var(--text)">${f.name || '친구'}</div>
-          <div style="font-size:11px;color:var(--muted);font-weight:500">오늘 ${overallPctForChecks(f.todayChecks || {})}% · 🔥${f.streakDays || 0}일</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:500">오늘 ${f.todayScore != null ? f.todayScore + '점' : '기록 전'} · 🔥${f.streakDays || 0}일</div>
         </div><span style="font-size:11px;color:var(--sky2);font-weight:700">연결됨</span>
       </div>`).join('')
         : `<div style="font-size:12px;color:var(--muted);font-weight:500;text-align:center;padding:10px 0">아직 연동된 친구가 없어요</div>`;
