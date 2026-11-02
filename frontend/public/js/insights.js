@@ -251,14 +251,17 @@ function buildInsights(history, asOf, ctx = {}) {
       push({ tier: 'weekly', icon: '😊', title: '7시간 이상 잔 날 기분', value: `긍정 ${pg}%`, sub: `덜 잔 날은 ${pb}%`, n, conf: _insConf(n), delta: pg > pb ? 'up' : pg < pb ? 'down' : null, rule: pg - pb >= 20 ? { icon: '😴', text: `7시간 이상 잔 날 기분 좋은 날이 ${pg - pb}%p 많음 → 수면부터 지키기` } : null });
     }
     // 이번 주 vs 지난주 루틴
-    const thisW = win.filter(x => x.date > _insAddDays(asOf, -7) && x.routine != null).map(x => x.routine);
-    const lastW = win.filter(x => x.date <= _insAddDays(asOf, -7) && x.date > _insAddDays(asOf, -14) && x.routine != null).map(x => x.routine);
+    // 한 주는 월요일 시작: 이번 주 = 이번 주 월요일 ~ 오늘, 지난주 = 지난 월~일
+    const dow = (new Date(asOf + 'T00:00:00Z').getUTCDay() + 6) % 7; // 월=0
+    const weekStart = _insAddDays(asOf, -dow);
+    const thisW = win.filter(x => x.date >= weekStart && x.routine != null).map(x => x.routine);
+    const lastW = win.filter(x => x.date < weekStart && x.date >= _insAddDays(weekStart, -7) && x.routine != null).map(x => x.routine);
     if (thisW.length >= 2 && lastW.length >= 2) {
       const d = Math.round(_insAvg(thisW) - _insAvg(lastW));
       push({ tier: 'weekly', icon: '📊', title: '지난주 대비 루틴', value: _insSigned(d, '점'), sub: `이번 주 ${Math.round(_insAvg(thisW))}점 · 지난주 ${Math.round(_insAvg(lastW))}점`, delta: d > 0 ? 'up' : d < 0 ? 'down' : null });
     }
-    const wkDays = dates.filter(d => d > _insAddDays(asOf, -7)).length;
-    push({ tier: 'weekly', icon: '🗓', title: '이번 주 기록', value: `${wkDays}/7일`, sub: wkDays >= 5 ? '꾸준해요' : '기록할수록 정확해져요' });
+    const wkDays = dates.filter(d => d >= weekStart).length;
+    push({ tier: 'weekly', icon: '🗓', title: '이번 주 기록(월요일부터)', value: `${wkDays}/${dow + 1}일`, sub: wkDays >= dow + 1 ? '하루도 안 빠졌어요' : wkDays >= 5 ? '꾸준해요' : '기록할수록 정확해져요' });
   }
 
   // ─── 14일: 나의 패턴 ───
