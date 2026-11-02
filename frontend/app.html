@@ -2240,11 +2240,30 @@
     // (예: 금요일에 다 체크한 상태가 로컬에 저장돼 있으면, 토요일 아침 서버가 "오늘 체크"로 빈 값을
     //  내려줘도 merge라서 금요일 값이 안 지워지고 그대로 남아 토요일도 다 한 걸로 보였던 버그의 원인)
     // 날짜가 바뀌면 S.checks를 비우고 나서 그날의 서버 값을 새로 채운다.
+    // 날짜가 바뀌면 오늘 기록(루틴 체크, 식사 칸)을 비운다. 어제 마지막 식사 시각은 공복 타이머용으로만 남긴다.
+    function emptyMealSlots() {
+      return (typeof S_DEFAULTS !== 'undefined' && S_DEFAULTS.meals ? JSON.parse(JSON.stringify(S_DEFAULTS.meals)) : [
+        { id: 0, label: '아침', time: '07:30', text: '', kcal: null },
+        { id: 1, label: '점심', time: '12:30', text: '', kcal: null },
+        { id: 2, label: '저녁', time: '18:45', text: '', kcal: null },
+      ]).map(m => Object.assign(m, { text: '', kcal: null, foods: [] }));
+    }
     function ensureFreshDay() {
       const t = todayISOLocal();
       if (S.checksDate !== t) {
+        const prevDate = S.checksDate;
+        const last = (S.meals || []).filter(m => m.text && m.time).map(m => m.time).sort().pop();
+        if (prevDate && last) {
+          const [hh, mm] = last.split(':').map(Number);
+          const d = new Date(prevDate + 'T00:00:00'); d.setHours(hh, mm, 0, 0);
+          if (!S.lastMealAt || d.getTime() > S.lastMealAt) S.lastMealAt = d.getTime();
+        }
         S.checks = {};
+        S.meals = emptyMealSlots();
+        S.nextMealId = S.meals.length;
+        S.activeMealId = null;
         S.checksDate = t;
+        if (typeof saveState === 'function') saveState();
       }
     }
 
@@ -2417,11 +2436,16 @@
     // 오늘 하루 저/중/고강도 운동을 여러 번 기록할 수 있으므로(식사 기록과 동일한 리스트 구조) 모두 합산한다.
     function todayWorkoutEntries() { const t = todayISOLocal(); return S.workoutLogs.filter(w => w.date === t); }
     // 마지막 식사 이후 경과 시간(공복 시간) — 인슐린 화면 "공복 타이머" 카드에서 쓴다.
-    function fastingHours() {
+    // 공복 시간: 오늘 식사가 있으면 오늘 마지막 식사부터, 없으면 어제(이전 날) 마지막 식사부터 잰다.
+    function lastMealDate() {
       const lastMealTime = S.meals.filter(m => m.text).map(m => m.time).sort().pop();
-      if (!lastMealTime) return null;
-      const [hh, mm] = lastMealTime.split(':').map(Number); const now = new Date(); const last = new Date(); last.setHours(hh, mm, 0, 0); if (last > now) last.setDate(last.getDate() - 1);
-      return Math.round((now - last) / 3600000 * 10) / 10;
+      if (lastMealTime) { const [hh, mm] = lastMealTime.split(':').map(Number); const d = new Date(); d.setHours(hh, mm, 0, 0); if (d > new Date()) d.setDate(d.getDate() - 1); return d; }
+      return S.lastMealAt ? new Date(S.lastMealAt) : null;
+    }
+    function fastingHours() {
+      const last = lastMealDate();
+      if (!last) return null;
+      return Math.round((Date.now() - last.getTime()) / 3600000 * 10) / 10;
     }
     function todayWorkoutKcal() { return todayWorkoutEntries().reduce((a, w) => a + exerciseKcal(w.intensity, w.durationMin, w.met), 0); }
     function totalBurned() { return S.baseBurned + todayWorkoutKcal(); }
@@ -2780,7 +2804,8 @@
     function currentCyclePhase() { return getCycleInfo().id; }
 
     function renderInsulin() {
-      const lastMealTime = S.meals.filter(m => m.text).map(m => m.time).sort().pop();
+      const lm = lastMealDate();
+      const lastMealTime = lm ? `${lm.toDateString() === new Date().toDateString() ? '' : '어제 '}${String(lm.getHours()).padStart(2, '0')}:${String(lm.getMinutes()).padStart(2, '0')}` : '';
       const fastHours = fastingHours() || 0;
       const mHtml = S.meals.map((m, mi) => {
         const hasEntry = !!m.text;

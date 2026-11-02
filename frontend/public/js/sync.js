@@ -700,6 +700,8 @@ async function restoreFromServer() {
       S.diaries = d.diaries.slice().reverse().map(x => ({ date: (x.written_date + '').slice(0, 10), d: fmtDateShort(x.written_date), t: x.content }));
     }
 
+    // 서버의 meals는 "오늘" 기록만이다. 오늘 기록이 없으면 이 기기에 남은 지난 날 식사를 보여주면 안 되므로 빈 칸으로.
+    if (!(d.meals && d.meals.length) && typeof emptyMealSlots === 'function') { S.meals = emptyMealSlots(); S.nextMealId = S.meals.length; }
     if (d.meals && d.meals.length) {
       S.meals = d.meals.map((row, i) => ({
         id: i,
