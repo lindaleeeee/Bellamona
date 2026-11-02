@@ -3621,9 +3621,9 @@
       const target = mealPlanForBucket(phaseGoalCal())[slotKey].kcal;
       const withCal = RCPS.filter(r => r.cal != null);
       const buckets = [
-        withCal.filter(r => r.tp !== '에피타이저' && r.tp !== '음료'),
-        withCal.filter(r => r.tp === '에피타이저' && !/디저트|간식/.test(r.tp0 || '')),
-        withCal.filter(r => r.tp === '에피타이저' && /디저트|간식/.test(r.tp0 || '')),
+        withCal.filter(r => r.tp !== '에피타이저' && r.tp !== '디저트' && r.tp !== '음료'),
+        withCal.filter(r => r.tp === '에피타이저'),
+        withCal.filter(r => r.tp === '디저트'),
       ];
       return buckets
         .map(pool => pool.length ? pool.reduce((best, r) => Math.abs(r.cal - target) < Math.abs(best.cal - target) ? r : best, pool[0]) : null)

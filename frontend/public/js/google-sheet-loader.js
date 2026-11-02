@@ -15,7 +15,7 @@
     //   F 카테고리 · G 음식이름 · H 시간 · I 가격 · J 맛 · K 주재료 · L 부재료 · M 양념 · N 순서 · O 팁 · P 칼로리
     const GVIZ_QUERY = 'select F,G,H,I,J,K,L,M,N,O,P where G is not null';
     const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&tq=${encodeURIComponent(GVIZ_QUERY)}`;
-    const CACHE_KEY = 'bellamona_sheet_recipes_v4'; // 시트/쿼리/중복 규칙을 바꾸면 이전 캐시를 쓰지 않도록 키를 올린다
+    const CACHE_KEY = 'bellamona_sheet_recipes_v5'; // 시트/쿼리/중복 규칙을 바꾸면 이전 캐시를 쓰지 않도록 키를 올린다
     const CACHE_TTL = 1000 * 60 * 10;             // 10분 캐시
 
     /* ─── 카테고리 → 이모지 ─── */
