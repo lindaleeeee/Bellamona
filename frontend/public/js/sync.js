@@ -43,6 +43,7 @@ if (FB) {
   FB.auth.onAuthStateChanged(u => {
     _authUser = u;
     if (u) { try { localStorage.setItem('bellamona_token', '1'); } catch (e) { } } // 소개 페이지의 "앱 열기" 버튼 표시용
+    if (typeof _gaSetUser === 'function') _gaSetUser(u ? u.uid : null);
     _resolveAuthReady(u);
   });
 } else {
@@ -54,10 +55,38 @@ function apiUrl(path) { return path; }
 
 function fetchApi(url, options = {}) {
   // 세션이 없으면(로그아웃 상태) 앱 화면에 남지 않고 로그인 화면으로 보낸다(app.html의 onSessionExpired).
-  return _route((options.method || 'GET').toUpperCase(), url, options.body).then(res => {
+  const method = (options.method || 'GET').toUpperCase();
+  return _route(method, url, options.body).then(res => {
     if ((res.status === 401 || res.status === 403) && typeof onSessionExpired === "function") onSessionExpired();
+    if (res.ok && method !== 'GET') _trackWrite(method, String(url).split('?')[0], options.body);
     return res;
   });
+}
+
+// ── 구글 애널리틱스(GA4) 이벤트: 기록이 저장될 때마다 "무엇을 기록했는지"만 보낸다(내용, 숫자, 이름은 보내지 않음) ──
+function gaTrack(name, params) {
+  try { if (typeof window !== 'undefined' && window.gtag && /^G-[A-Z0-9]+$/.test(window.GA_ID || '')) window.gtag('event', name, params || {}); } catch (e) { }
+}
+const _GA_WRITE_EVENTS = {
+  '/api/data/meals': 'log_meal', '/api/data/workouts': 'log_workout', '/api/data/sleep': 'log_sleep',
+  '/api/data/diaries': 'log_diary', '/api/data/weights': 'log_weight', '/api/data/periods': 'log_period',
+  '/api/data/checks': 'log_routine', '/api/data/profiles': 'save_profile', '/api/report': 'generate_report',
+  '/api/user/friends': 'add_friend', '/api/data/saved-total/spend': 'use_cheat_day',
+};
+function _trackWrite(method, path, rawBody) {
+  if (method !== 'POST') return;
+  const name = _GA_WRITE_EVENTS[path]; if (!name) return;
+  let b = {}; try { b = rawBody ? JSON.parse(rawBody) : {}; } catch (e) { }
+  const date = b.eaten_date || b.performed_date || b.log_date || b.written_date || b.logged_date || b.check_date || null;
+  const params = {};
+  if (date) params.backfill = date < todayISO() ? 'yes' : 'no'; // 지난 날짜 소급 기록인지
+  if (name === 'log_meal' && b.label) params.meal_label = b.label;
+  if (name === 'log_workout' && b.intensity) params.intensity = b.intensity;
+  gaTrack(name, params);
+}
+function _gaSetUser(uid) {
+  // 사용자 구분용으로 Firebase UID만 보낸다(이메일, 이름 같은 개인정보는 보내지 않음)
+  try { if (window.gtag && /^G-[A-Z0-9]+$/.test(window.GA_ID || '')) window.gtag('set', { user_id: uid || null }); } catch (e) { }
 }
 
 function _resp(status, body) {
@@ -592,6 +621,9 @@ async function doGoogleLogin() {
   try {
     const cred = await FB.auth.signInWithPopup(provider);
     _authUser = cred.user;
+    _gaSetUser(cred.user.uid);
+    const isNew = !!(cred.additionalUserInfo && cred.additionalUserInfo.isNewUser);
+    gaTrack(isNew ? 'sign_up' : 'login', { method: 'Google' });
     await _ensureUserDoc(cred.user);
   } catch (e) {
     if (e && (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request')) return;

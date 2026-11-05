@@ -175,6 +175,7 @@ function drawBoardCard() {
 
 let _scoreCardBlobs = [];
 async function openScoreCards() {
+  if (typeof gaTrack === 'function') gaTrack('open_score_card');
   const canvases = [drawMyScoreCard(), drawBoardCard()];
   const box = document.getElementById('scorecard-slides');
   if (box) box.innerHTML = canvases.map((cv, i) => `<img src="${cv.toDataURL('image/png')}" alt="공유 카드 ${i + 1}" class="ks-slide"/>`).join('');
@@ -186,11 +187,12 @@ async function shareScoreCards() {
   const files = _scoreCardBlobs.filter(Boolean).map((b, i) => new File([b], `bellamona-score-${i + 1}.png`, { type: 'image/png' }));
   const text = k.score == null ? '오늘 칼로리 점수 같이 비교해요! bellamona.net' : `오늘 내 칼로리 점수 ${k.score}점! 너는 몇 점이야? bellamona.net`;
   try {
-    if (navigator.canShare && navigator.canShare({ files })) { await navigator.share({ files, text, title: '오늘의 칼로리 점수' }); return; }
+    if (navigator.canShare && navigator.canShare({ files })) { await navigator.share({ files, text, title: '오늘의 칼로리 점수' }); if (typeof gaTrack === 'function') gaTrack('share', { method: 'share_sheet', content_type: 'score_card' }); return; }
   } catch (e) { if (e && e.name === 'AbortError') return; }
   saveScoreCards();
 }
 function saveScoreCards() {
+  if (typeof gaTrack === 'function') gaTrack('share', { method: 'download', content_type: 'score_card' });
   _scoreCardBlobs.filter(Boolean).forEach((b, i) => {
     const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `bellamona-score-${i + 1}.png`;
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
