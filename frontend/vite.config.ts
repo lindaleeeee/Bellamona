@@ -43,6 +43,7 @@ export default defineConfig({
             input: {
                 main: 'index.html',
                 app: 'app.html',
+                admin: 'admin.html',
             },
         },
     },

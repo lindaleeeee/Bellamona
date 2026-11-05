@@ -44,6 +44,7 @@ if (FB) {
     _authUser = u;
     if (u) { try { localStorage.setItem('bellamona_token', '1'); } catch (e) { } } // 소개 페이지의 "앱 열기" 버튼 표시용
     if (typeof _gaSetUser === 'function') _gaSetUser(u ? u.uid : null);
+    if (u) _touchAccount(u);
     _resolveAuthReady(u);
   });
 } else {
@@ -83,6 +84,21 @@ function _trackWrite(method, path, rawBody) {
   if (name === 'log_meal' && b.label) params.meal_label = b.label;
   if (name === 'log_workout' && b.intensity) params.intensity = b.intensity;
   gaTrack(name, params);
+}
+// 관리자 화면(/admin)용: 이메일과 마지막 접속일을 본인만(+관리자) 읽는 private/account에 남긴다.
+// users/{uid} 문서는 친구도 읽을 수 있어서 이메일은 거기에 두지 않는다. 하루 한 번만 쓴다.
+function _touchAccount(u) {
+  try {
+    const today = todayISO();
+    const key = 'bellamona_seen_' + u.uid;
+    if (localStorage.getItem(key) === today) return;
+    FB.db.collection('users').doc(u.uid).collection('private').doc('account').set({
+      email: u.email || null,
+      last_seen: today,
+      last_seen_at: Date.now(),
+      signup_at: u.metadata && u.metadata.creationTime ? Date.parse(u.metadata.creationTime) : null
+    }, { merge: true }).then(() => { try { localStorage.setItem(key, today); } catch (e) { } }).catch(() => { });
+  } catch (e) { }
 }
 function _gaSetUser(uid) {
   // 사용자 구분용으로 Firebase UID만 보낸다(이메일, 이름 같은 개인정보는 보내지 않음)
@@ -553,7 +569,7 @@ async function _route(method, url, rawBody) {
       const code = uSnap.exists ? uSnap.data().friend_code : null;
       const fSnap = await _sub('friends').get();
       await Promise.all(fSnap.docs.map(d => _sub('friends', d.id).doc(me).delete().catch(() => { })));
-      for (const c of ['meals', 'workouts', 'sleep_logs', 'routine_checks', 'weights', 'periods', 'diaries', 'reports', 'profile', 'friends']) {
+      for (const c of ['meals', 'workouts', 'sleep_logs', 'routine_checks', 'weights', 'periods', 'diaries', 'reports', 'profile', 'friends', 'private']) {
         await _deleteCollection(_sub(c));
       }
       if (code) await FB.db.collection('friendCodes').doc(code).delete().catch(() => { });

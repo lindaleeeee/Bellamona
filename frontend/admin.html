@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>벨라모나 관리자</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --bg: #faf8f7; --card: #ffffff; --ink: #2b2326; --quiet: #7a6e72; --line: #ece6e4;
+      --accent: #b4537a; --accent-soft: #f6e6ee; --good: #2f8f5b; --dot-off: #ece6e4;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif; }
+    main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    .sub { color: var(--quiet); margin: 0 0 20px; font-size: 13px; }
+    .bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+    .bar .me { color: var(--quiet); font-size: 13px; margin-right: auto; }
+    button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+    .card .n { font-size: 26px; font-weight: 700; }
+    .card .l { color: var(--quiet); font-size: 12.5px; }
+    .tablewrap { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 980px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { font-size: 12px; color: var(--quiet); font-weight: 600; background: #fcfbfa; position: sticky; top: 0; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr:last-child td { border-bottom: 0; }
+    .name { font-weight: 600; }
+    .email { color: var(--quiet); font-size: 12px; }
+    .badge { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); margin-left: 4px; }
+    .zero { color: #c9bfc2; }
+    .dots { display: inline-flex; gap: 3px; }
+    .dots i { width: 10px; height: 10px; border-radius: 3px; background: var(--dot-off); display: inline-block; }
+    .dots i.on { background: var(--accent); }
+    .note { color: var(--quiet); font-size: 12.5px; margin-top: 12px; }
+    .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; max-width: 720px; }
+    .panel ol { padding-left: 20px; }
+    textarea { width: 100%; height: 220px; font: 12px/1.45 ui-monospace, Menlo, monospace; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: #fcfbfa; }
+    .err { color: #b3261e; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>벨라모나 관리자</h1>
+    <p class="sub">가입자별 사용 현황입니다. 기록 내용은 보이지 않고 개수와 날짜만 보여 줍니다.</p>
+    <div id="root">불러오는 중…</div>
+  </main>
+
+  <script>
+    window.FIREBASE_CONFIG = {
+      apiKey: "%VITE_FIREBASE_API_KEY%",
+      authDomain: "%VITE_FIREBASE_AUTH_DOMAIN%",
+      projectId: "%VITE_FIREBASE_PROJECT_ID%",
+      appId: "%VITE_FIREBASE_APP_ID%"
+    };
+  </script>
+  <script type="module">
+    import RULES_TEMPLATE from './firestore.rules?raw';
+
+    const $root = document.getElementById('root');
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const pad = n => String(n).padStart(2, '0');
+    const isoLocal = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const addDays = (iso, n) => { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return isoLocal(d); };
+    const fmtDate = v => { if (!v) return '—'; const d = typeof v === 'number' ? new Date(v) : new Date(String(v) + 'T00:00:00'); return isNaN(d) ? '—' : `${d.getMonth() + 1}/${d.getDate()}`; };
+    const TODAY = isoLocal(new Date());
+    const STRIP_DAYS = 14;
+
+    const cfg = window.FIREBASE_CONFIG;
+    if (!cfg.apiKey || cfg.apiKey.startsWith('%')) {
+      $root.innerHTML = '<p class="err">Firebase 설정값이 비어 있습니다. Vercel 환경변수(VITE_FIREBASE_*)를 확인하세요.</p>';
+      throw new Error('no firebase config');
+    }
+    firebase.initializeApp(cfg);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // 컬렉션 이름 → 날짜 칸. 날짜가 없으면 문서 id(YYYY-MM-DD)를 쓴다.
+    const ACTIVITY = {
+      meals: 'eaten_date', workouts: 'performed_date', sleep_logs: 'log_date', diaries: 'written_date',
+      routine_checks: 'check_date', weights: 'logged_date', reports: null,
+    };
+
+    function showLogin() {
+      $root.innerHTML = `<div class="panel"><p>관리자 구글 계정으로 로그인해 주세요.</p><button class="primary" id="login">구글로 로그인</button></div>`;
+      document.getElementById('login').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => alert('로그인 실패: ' + e.message));
+    }
+
+    function showNeedRules(user) {
+      const rules = RULES_TEMPLATE.replace("'ADMIN_EMAIL'", `'${user.email}'`);
+      $root.innerHTML = `
+        <div class="panel">
+          <p><b>${esc(user.email)}</b> 계정은 아직 관리자로 등록되어 있지 않아요.</p>
+          <ol>
+            <li>아래 <b>규칙 복사</b>를 누릅니다. (이 계정 이메일이 이미 들어가 있어요)</li>
+            <li><a href="https://console.firebase.google.com/project/${esc(cfg.projectId)}/firestore/rules" target="_blank" rel="noopener">Firebase 콘솔 → Firestore Database → 규칙</a>을 엽니다.</li>
+            <li>기존 내용을 모두 지우고 붙여넣은 뒤 <b>게시</b>를 누릅니다.</li>
+            <li>1분쯤 뒤 이 화면을 새로고침합니다.</li>
+          </ol>
+          <p class="note">이 규칙은 관리자에게 <b>읽기만</b> 허용합니다. 다른 사용자의 기록을 고치거나 지울 수는 없어요.</p>
+          <p><button class="primary" id="copy">규칙 복사</button> <button id="out">다른 계정으로 로그인</button></p>
+          <textarea readonly id="rules">${esc(rules)}</textarea>
+        </div>`;
+      document.getElementById('copy').onclick = async () => {
+        const ta = document.getElementById('rules');
+        try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand('copy'); }
+        document.getElementById('copy').textContent = '복사됨';
+      };
+      document.getElementById('out').onclick = () => auth.signOut();
+    }
+
+    async function loadUser(doc) {
+      const ref = doc.ref;
+      const u = doc.data();
+      const out = { uid: doc.id, name: u.name || '(이름 없음)', created: u.created_at || null, counts: {}, days: new Set(), friends: 0, email: null, lastSeen: null, signup: null };
+      await Promise.all([
+        ...Object.entries(ACTIVITY).map(async ([col, field]) => {
+          const snap = await ref.collection(col).get();
+          let n = 0;
+          snap.forEach(d => {
+            const x = d.data();
+            if (x.seed) return; // 테스트용 가짜 기록(?demo=seed)은 빼고 센다
+            if (col === 'routine_checks' && !Object.values(x.checks || {}).some(Boolean)) return;
+            n++;
+            const date = (field && x[field]) || d.id;
+            if (/^\d{4}-\d{2}-\d{2}$/.test(date)) out.days.add(date);
+          });
+          out.counts[col] = n;
+        }),
+        ref.collection('friends').get().then(s => { out.friends = s.size; }),
+        ref.collection('private').doc('account').get().then(s => {
+          if (!s.exists) return;
+          const a = s.data();
+          out.email = a.email || null; out.lastSeen = a.last_seen || null; out.signup = a.signup_at || null;
+        }),
+      ]);
+      out.signup = out.signup || out.created;
+      const sorted = [...out.days].sort();
+      out.lastRecord = sorted.at(-1) || null;
+      out.activeDays = sorted.length;
+      return out;
+    }
+
+    function render(rows, me) {
+      const since7 = addDays(TODAY, -6);
+      const total = rows.length;
+      const recorded = rows.filter(r => r.activeDays > 0).length;
+      const active7 = rows.filter(r => r.lastRecord && r.lastRecord >= since7).length;
+      const three = rows.filter(r => r.activeDays >= 3).length;
+      const strip = Array.from({ length: STRIP_DAYS }, (_, i) => addDays(TODAY, i - STRIP_DAYS + 1));
+      const cell = n => n ? n : '<span class="zero">0</span>';
+
+      const body = rows.map(r => `
+        <tr>
+          <td><span class="name">${esc(r.name)}</span>${r.uid === me.uid ? '<span class="badge">나</span>' : ''}<div class="email">${esc(r.email || '이메일은 다음 접속 때 표시')}</div></td>
+          <td>${fmtDate(r.signup)}</td>
+          <td>${r.lastSeen ? fmtDate(r.lastSeen) : '<span class="zero">—</span>'}</td>
+          <td>${r.lastRecord ? fmtDate(r.lastRecord) : '<span class="zero">기록 없음</span>'}</td>
+          <td class="num">${cell(r.activeDays)}</td>
+          <td><span class="dots">${strip.map(d => `<i class="${r.days.has(d) ? 'on' : ''}" title="${d}"></i>`).join('')}</span></td>
+          <td class="num">${cell(r.counts.meals)}</td>
+          <td class="num">${cell(r.counts.workouts)}</td>
+          <td class="num">${cell(r.counts.sleep_logs)}</td>
+          <td class="num">${cell(r.counts.diaries)}</td>
+          <td class="num">${cell(r.counts.routine_checks)}</td>
+          <td class="num">${cell(r.counts.weights)}</td>
+          <td class="num">${cell(r.counts.reports)}</td>
+          <td class="num">${cell(r.friends)}</td>
+        </tr>`).join('');
+
+      $root.innerHTML = `
+        <div class="bar">
+          <span class="me">${esc(me.email)} 로그인 · ${TODAY} 기준</span>
+          <button id="csv">CSV로 받기</button>
+          <button id="reload">새로고침</button>
+          <button id="out">로그아웃</button>
+        </div>
+        <div class="cards">
+          <div class="card"><div class="n">${total}</div><div class="l">가입자</div></div>
+          <div class="card"><div class="n">${recorded}</div><div class="l">한 번이라도 기록한 사람</div></div>
+          <div class="card"><div class="n">${three}</div><div class="l">3일 이상 기록한 사람</div></div>
+          <div class="card"><div class="n">${active7}</div><div class="l">최근 7일 안에 기록한 사람</div></div>
+        </div>
+        <div class="tablewrap"><table>
+          <thead><tr>
+            <th>이름</th><th>가입일</th><th>마지막 접속</th><th>마지막 기록</th><th class="num">기록한 날</th>
+            <th>최근 ${STRIP_DAYS}일 (오른쪽이 오늘)</th>
+            <th class="num">식사</th><th class="num">운동</th><th class="num">수면</th><th class="num">일기</th><th class="num">루틴</th><th class="num">체중</th><th class="num">AI 리포트</th><th class="num">친구</th>
+          </tr></thead>
+          <tbody>${body || '<tr><td colspan="14">아직 가입자가 없어요.</td></tr>'}</tbody>
+        </table></div>
+        <p class="note">기록한 날 = 식사, 운동, 수면, 일기, 루틴, 체중, AI 리포트 중 하나라도 있는 날짜 수입니다. 지난 날짜를 나중에 채운 기록도 그 날짜로 셉니다. 테스트용 가짜 기록은 뺐습니다.<br>
+        마지막 접속과 이메일은 이 기능을 넣은 뒤 그 사람이 앱에 한 번 더 들어와야 채워집니다.</p>`;
+
+      document.getElementById('reload').onclick = () => load(me);
+      document.getElementById('out').onclick = () => auth.signOut();
+      document.getElementById('csv').onclick = () => {
+        const head = ['이름', '이메일', 'UID', '가입일', '마지막 접속', '마지막 기록', '기록한 날', '식사', '운동', '수면', '일기', '루틴', '체중', 'AI 리포트', '친구'];
+        const lines = rows.map(r => [r.name, r.email || '', r.uid, r.signup ? isoLocal(new Date(r.signup)) : '', r.lastSeen || '', r.lastRecord || '', r.activeDays,
+          r.counts.meals, r.counts.workouts, r.counts.sleep_logs, r.counts.diaries, r.counts.routine_checks, r.counts.weights, r.counts.reports, r.friends]);
+        const csv = [head, ...lines].map(l => l.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+        a.download = `bellamona-users-${TODAY}.csv`;
+        a.click();
+      };
+    }
+
+    async function load(user) {
+      $root.textContent = '가입자 기록을 불러오는 중…';
+      try {
+        const snap = await db.collection('users').get();
+        const rows = await Promise.all(snap.docs.map(loadUser));
+        rows.sort((a, b) => (b.lastRecord || '').localeCompare(a.lastRecord || '') || (b.signup || 0) - (a.signup || 0));
+        render(rows, user);
+      } catch (e) {
+        if (e && e.code === 'permission-denied') return showNeedRules(user);
+        console.error(e);
+        $root.innerHTML = `<p class="err">불러오지 못했어요: ${esc(e && e.message)}</p>`;
+      }
+    }
+
+    auth.onAuthStateChanged(u => { if (!u) showLogin(); else load(u); });
+  </script>
+</body>
+</html>
