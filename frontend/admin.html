@@ -94,7 +94,7 @@
     }
 
     function showNeedRules(user, stage) {
-      const rules = RULES_TEMPLATE.replace("'ADMIN_EMAIL'", `'${user.email}'`);
+      const rules = RULES_TEMPLATE.replace("in ['ADMIN_EMAIL']", `in ['${user.email}']`);
       $root.innerHTML = `
         <div class="panel">
           <p><b>${esc(user.email)}</b> 계정은 아직 관리자로 등록되어 있지 않아요.</p>

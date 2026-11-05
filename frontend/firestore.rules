@@ -4,7 +4,7 @@ rules_version = '2';
 // Firebase 콘솔 → Firestore Database → 규칙 탭에 이 내용을 통째로 붙여 넣고 "게시"를 누른다.
 //
 // 원칙: 내 기록은 나만 읽고 쓴다. 친구는 내 이름/아이콘과 루틴 체크(달성률, 연속 기록일)만 볼 수 있다.
-// 관리자 계정은 읽기만 가능하다. 'ADMIN_EMAIL' 자리에 관리자 구글 이메일을 넣는다(bellamona.net/admin 화면에서 채워진 규칙을 복사할 수 있음).
+// 관리자 계정은 읽기만 가능하다. ADMIN_EMAIL 자리에 관리자 구글 이메일을 넣는다(bellamona.net/admin 화면에서 채워진 규칙을 복사할 수 있음).
 
 service cloud.firestore {
   match /databases/{database}/documents {
