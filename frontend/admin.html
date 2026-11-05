@@ -93,7 +93,7 @@
       document.getElementById('login').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => alert('로그인 실패: ' + e.message));
     }
 
-    function showNeedRules(user) {
+    function showNeedRules(user, stage) {
       const rules = RULES_TEMPLATE.replace("'ADMIN_EMAIL'", `'${user.email}'`);
       $root.innerHTML = `
         <div class="panel">
@@ -105,6 +105,7 @@
             <li>1분쯤 뒤 이 화면을 새로고침합니다.</li>
           </ol>
           <p class="note">이 규칙은 관리자에게 <b>읽기만</b> 허용합니다. 다른 사용자의 기록을 고치거나 지울 수는 없어요.</p>
+          <p class="note">규칙을 게시했는데도 이 화면이 계속 나오면: 규칙 탭 위쪽에 방금 게시한 시각이 보이는지, 규칙 안 이메일이 <b>${esc(user.email)}</b>와 똑같은지 확인해 주세요. (막힌 곳: ${esc(stage || '-')})</p>
           <p><button class="primary" id="copy">규칙 복사</button> <button id="out">다른 계정으로 로그인</button></p>
           <textarea readonly id="rules">${esc(rules)}</textarea>
         </div>`;
@@ -216,14 +217,15 @@
     async function load(user) {
       $root.textContent = '가입자 기록을 불러오는 중…';
       try {
-        const snap = await db.collection('users').get();
-        const rows = await Promise.all(snap.docs.map(loadUser));
+        let stage = '가입자 목록(users)';
+        const snap = await db.collection('users').get().catch(e => { e.stage = stage; throw e; });
+        const rows = await Promise.all(snap.docs.map(d => loadUser(d).catch(e => { e.stage = `${d.id}의 기록`; throw e; })));
         rows.sort((a, b) => (b.lastRecord || '').localeCompare(a.lastRecord || '') || (b.signup || 0) - (a.signup || 0));
         render(rows, user);
       } catch (e) {
-        if (e && e.code === 'permission-denied') return showNeedRules(user);
         console.error(e);
-        $root.innerHTML = `<p class="err">불러오지 못했어요: ${esc(e && e.message)}</p>`;
+        if (e && e.code === 'permission-denied') return showNeedRules(user, e.stage);
+        $root.innerHTML = `<p class="err">불러오지 못했어요 (${esc(e && e.stage)}): ${esc(e && (e.code || e.message))}</p>`;
       }
     }
 
