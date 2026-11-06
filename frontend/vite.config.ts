@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { defineConfig, type Plugin, type ResolvedConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+// @ts-ignore — 순수 JS 빌드 스크립트
+import { buildRecipePages } from './tools/build_recipe_pages.mjs';
 
 // 주소 구조:  /            → index.html (소개 페이지, 로그인 불필요)
 //            앱 주소들     → app.html   (SPA. 화면 전환/로그인 가드는 app.html 안에서 처리)
@@ -32,6 +34,9 @@ function bellamonaRoutes(): Plugin {
             const src = resolve(config.root, config.build.outDir, 'app.html');
             if (!existsSync(src)) throw new Error('dist/app.html을 찾지 못했습니다');
             for (const route of APP_ROUTES) copyFileSync(src, resolve(config.root, config.build.outDir, `${route.slice(1)}.html`));
+            // 로그인 없이 열리는 레시피 공개 페이지(/recipe, /recipe/r-xxxx)와 sitemap.xml, robots.txt
+            const n = buildRecipePages(config.root, resolve(config.root, config.build.outDir));
+            console.log(`[recipe pages] ${n}개 생성`);
         },
     };
 }

@@ -120,7 +120,7 @@
     async function loadUser(doc) {
       const ref = doc.ref;
       const u = doc.data();
-      const out = { uid: doc.id, name: u.name || '(이름 없음)', created: u.created_at || null, counts: {}, days: new Set(), friends: 0, email: null, lastSeen: null, signup: null };
+      const out = { uid: doc.id, name: u.name || '(이름 없음)', guest: !!u.is_guest, merged: !!u.merged_at, created: u.created_at || null, counts: {}, days: new Set(), friends: 0, email: null, lastSeen: null, signup: null };
       await Promise.all([
         ...Object.entries(ACTIVITY).map(async ([col, field]) => {
           const snap = await ref.collection(col).get();
@@ -152,6 +152,7 @@
     function render(rows, me) {
       const since7 = addDays(TODAY, -6);
       const total = rows.length;
+      const guests = rows.filter(r => r.guest && !r.merged).length;
       const recorded = rows.filter(r => r.activeDays > 0).length;
       const active7 = rows.filter(r => r.lastRecord && r.lastRecord >= since7).length;
       const three = rows.filter(r => r.activeDays >= 3).length;
@@ -160,7 +161,7 @@
 
       const body = rows.map(r => `
         <tr>
-          <td><span class="name">${esc(r.name)}</span>${r.uid === me.uid ? '<span class="badge">나</span>' : ''}<div class="email">${esc(r.email || '이메일은 다음 접속 때 표시')}</div></td>
+          <td><span class="name">${esc(r.name)}</span>${r.uid === me.uid ? '<span class="badge">나</span>' : ''}${r.guest ? `<span class="badge" style="background:#fff3dc;color:#a8701a">${r.merged ? '게스트 → 기존 계정으로 옮김' : '게스트'}</span>` : ''}<div class="email">${esc(r.email || (r.guest ? '로그인 없이 사용 중' : '이메일은 다음 접속 때 표시'))}</div></td>
           <td>${fmtDate(r.signup)}</td>
           <td>${r.lastSeen ? fmtDate(r.lastSeen) : '<span class="zero">—</span>'}</td>
           <td>${r.lastRecord ? fmtDate(r.lastRecord) : '<span class="zero">기록 없음</span>'}</td>
@@ -184,7 +185,7 @@
           <button id="out">로그아웃</button>
         </div>
         <div class="cards">
-          <div class="card"><div class="n">${total}</div><div class="l">가입자</div></div>
+          <div class="card"><div class="n">${total}</div><div class="l">가입자${guests ? ` (게스트 ${guests}명 포함)` : ''}</div></div>
           <div class="card"><div class="n">${recorded}</div><div class="l">한 번이라도 기록한 사람</div></div>
           <div class="card"><div class="n">${three}</div><div class="l">3일 이상 기록한 사람</div></div>
           <div class="card"><div class="n">${active7}</div><div class="l">최근 7일 안에 기록한 사람</div></div>

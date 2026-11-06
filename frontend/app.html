@@ -1178,6 +1178,9 @@
             </svg>
             Google로 계속하기
           </button>
+          <button onclick="doGuestStart()"
+            style="display:block;margin:12px auto 0;background:none;border:0;font:inherit;font-size:14px;font-weight:700;color:var(--lav2);text-decoration:underline;text-underline-offset:3px;cursor:pointer">로그인 없이 먼저 써 보기</button>
+          <div style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.5">기록은 이 기기에 남고, 나중에 구글 계정으로 옮길 수 있어요</div>
           <div style="margin-top:14px;font-size:12px;color:var(--muted)">개인정보는 안전하게 보호됩니다</div>
         </div>
       </div>
@@ -1263,7 +1266,11 @@
 
       <!-- ════ HOME ════ -->
       <div class="scr" id="s-home">
-        <div style="padding:14px 14px 10px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr)">
+        <div class="guest-banner" style="display:none;flex-shrink:0;margin:10px 14px 0;padding:10px 12px;border-radius:14px;background:#fff7e6;border:1px solid #f3d9a4;font-size:12.5px;line-height:1.5;color:var(--text);align-items:center;gap:10px">
+          <span class="guest-banner-text" style="flex:1">게스트로 쓰는 중이에요. 기록은 이 기기에만 저장돼요.</span>
+          <button onclick="doGuestSave()" style="flex-shrink:0;border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:12px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--sky2),var(--lav2));cursor:pointer">구글 계정으로 저장</button>
+        </div>
+                <div style="padding:14px 14px 10px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr)">
           <div style="display:flex;justify-content:space-between;align-items:flex-start">
             <div>
               <div class="cap" style="margin-bottom:2px">TODAY</div>
@@ -1542,6 +1549,10 @@
       <div class="scr" id="s-profile">
         <div style="padding:14px 14px 8px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr)">
           <div class="serif" style="font-size:20px;font-weight:700;color:var(--text)">마이페이지</div>
+        </div>
+        <div class="guest-banner" style="display:none;flex-shrink:0;margin:10px 14px 0;padding:10px 12px;border-radius:14px;background:#fff7e6;border:1px solid #f3d9a4;font-size:12.5px;line-height:1.5;color:var(--text);align-items:center;gap:10px">
+          <span class="guest-banner-text" style="flex:1">게스트로 쓰는 중이에요. 기록은 이 기기에만 저장돼요.</span>
+          <button onclick="doGuestSave()" style="flex-shrink:0;border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:12px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--sky2),var(--lav2));cursor:pointer">구글 계정으로 저장</button>
         </div>
         <div class="sc" style="padding-top:10px">
           <div style="text-align:center;margin-bottom:16px">
@@ -2374,6 +2385,17 @@
         applyRoute(parsePath(location.pathname));
       } finally { _skipPush = false; }
     });
+    // 게스트(로그인 없이 쓰는 중)일 때만 홈, 마이페이지 위에 "구글 계정으로 저장" 안내를 보인다.
+    function renderGuestBanner() {
+      const guest = typeof isGuest === 'function' && isGuest();
+      const days = Number(S.totalLoggedDays || 0);
+      const text = days >= 2 ? `벌써 ${days}일째 기록 중이에요! 구글 계정으로 저장하면 기록을 잃어버리지 않고 다른 기기에서도 볼 수 있어요.`
+        : '게스트로 쓰는 중이에요. 기록은 이 기기에만 저장되니, 계속 쓰려면 구글 계정으로 저장해 주세요.';
+      document.querySelectorAll('.guest-banner').forEach(b => {
+        b.style.display = guest ? 'flex' : 'none';
+        const t = b.querySelector('.guest-banner-text'); if (t) t.textContent = text;
+      });
+    }
     // 세션이 끝난 뒤(401) 앱 화면에 그대로 남지 않도록 로그인 화면으로 보낸다. sync.js의 fetchApi가 호출한다.
     function onSessionExpired() {
       if (!_authed) return;
@@ -2391,6 +2413,7 @@
       document.querySelectorAll('.scr').forEach(s => s.classList.remove('on')); const el = document.getElementById(id); if (el) el.classList.add('on');
       // 로그인/온보딩 화면에는 하단 탭(홈·대시보드·레시피·마이페이지)을 숨긴다
       const navEl = document.getElementById('nav'); if (navEl) navEl.style.display = (id === 's-login' || id === 's-onboard' || id === 's-boot') ? 'none' : '';
+      if (id === 's-home' || id === 's-profile') renderGuestBanner();
       // popstate로 온 이동은 주소가 이미 맞다. 다만 가드가 다른 화면으로 돌려보낸 경우엔 주소도 고친다.
       if (!_skipPush || redirected) _syncUrl(id);
       const navMap = { 's-home': 'nav-home', 's-dash': 'nav-dash', 's-diet': 'nav-diet', 's-profile': 'nav-profile' };

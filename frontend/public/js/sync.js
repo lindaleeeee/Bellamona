@@ -245,7 +245,8 @@ async function _ensureUserDoc(user) {
         if ((await tx.get(cref)).exists) throw new Error('code_taken');
         tx.set(cref, { uid: user.uid });
         tx.set(ref, {
-          name: cur.name || user.displayName || '사용자',
+          name: cur.name || user.displayName || (user.isAnonymous ? '게스트' : '사용자'),
+          is_guest: !!user.isAnonymous,
           avatar: cur.avatar || user.photoURL || '',
           friend_code: code,
           created_at: Date.now()
@@ -655,6 +656,149 @@ async function doGoogleLogin() {
   if (!ok) alert('로그인 확인에 실패했습니다. 다시 시도해주세요.');
 }
 
+// ── 게스트(로그인 없이 써 보기) ─────────────────────────────────────
+// Firebase 익명 로그인으로 임시 계정을 만든다. 기록은 로그인 사용자와 똑같이 Firestore(users/{uid})에 저장된다.
+// 나중에 "구글 계정으로 저장"을 누르면:
+//   ① 처음 쓰는 구글 계정 → 임시 계정에 구글을 연결(linkWithPopup). uid가 그대로라 기록이 그대로 이어진다.
+//   ② 이미 벨라모나에 가입된 구글 계정 → 그 계정으로 로그인한 뒤 게스트 기록을 복사한다.
+//      기존 계정에 이미 있는 기록(같은 날짜의 같은 끼니, 수면, 일기, 프로필 등)은 절대 덮어쓰지 않고, 없는 것만 채운다.
+//      복사하기 전에 게스트 기록을 이 기기(localStorage)에 백업해 두고, 복사가 끝나야 지운다(중간에 끊기면 다음 접속 때 이어서 복사).
+function isGuest() { return !!(_authUser && _authUser.isAnonymous); }
+
+async function doGuestStart() {
+  if (!FB) { alert('설정이 아직 완료되지 않았어요. 잠시 후 다시 시도해주세요.'); return; }
+  try {
+    const cred = await FB.auth.signInAnonymously();
+    _authUser = cred.user;
+    _gaSetUser(cred.user.uid);
+    gaTrack('guest_start', {});
+    await _ensureUserDoc(cred.user);
+  } catch (e) {
+    console.error('[doGuestStart]', e);
+    alert(e && e.code === 'auth/operation-not-allowed'
+      ? '지금은 둘러보기를 쓸 수 없어요. 구글로 시작해 주세요.'
+      : '시작하지 못했어요. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+  const ok = await restoreFromServer();
+  if (!ok) alert('시작하지 못했어요. 다시 시도해주세요.');
+}
+
+// 게스트 기록 중 옮길 컬렉션과 "같은 기록"을 판단하는 기준(이미 있으면 건너뜀)
+const _GUEST_COPY = {
+  meals: 'id', sleep_logs: 'id', routine_checks: 'id', diaries: 'id', reports: 'id', profile: 'id',
+  workouts: 'id', weights: 'logged_date', periods: 'start_date',
+};
+async function _readGuestDocs(uid) {
+  const out = {};
+  for (const col of Object.keys(_GUEST_COPY)) {
+    const snap = await _sub(col, uid).get();
+    out[col] = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+  }
+  return out;
+}
+async function _copyGuestDocs(backup) {
+  const me = _uid();
+  let copied = 0, skipped = 0;
+  for (const col of Object.keys(_GUEST_COPY)) {
+    const rows = (backup.docs && backup.docs[col]) || [];
+    if (!rows.length) continue;
+    const key = _GUEST_COPY[col];
+    const existing = await _sub(col, me).get();
+    const have = new Set(existing.docs.map(d => key === 'id' ? d.id : d.data()[key]));
+    const toWrite = rows.filter(r => {
+      if (r.data && r.data.seed) return false; // 테스트용 가짜 기록은 옮기지 않는다
+      const k = key === 'id' ? r.id : r.data[key];
+      if (k != null && have.has(k)) { skipped++; return false; }
+      return true;
+    });
+    for (let i = 0; i < toWrite.length; i += 400) {
+      const batch = FB.db.batch();
+      // 바로 위에서 기존 계정에 없는 것만 골랐으므로 여기서 쓰는 문서는 모두 새 문서다
+      toWrite.slice(i, i + 400).forEach(r => batch.set(_sub(col, me).doc(r.id), Object.assign({}, r.data, { from_guest: backup.guestUid }), { merge: false }));
+      await batch.commit();
+      copied += Math.min(400, toWrite.length - i);
+    }
+  }
+  return { copied, skipped };
+}
+async function _resumeGuestMerge() {
+  let raw = null;
+  try { raw = localStorage.getItem('bellamona_guest_merge'); } catch (e) { }
+  if (!raw || !_authUser || _authUser.isAnonymous) return;
+  let backup;
+  try { backup = JSON.parse(raw); } catch (e) { localStorage.removeItem('bellamona_guest_merge'); return; }
+  if (!backup || backup.guestUid === _uid()) { localStorage.removeItem('bellamona_guest_merge'); return; }
+  if (backup.targetUid && backup.targetUid !== _uid()) return; // 다른 계정으로 로그인한 상태면 손대지 않는다
+  try {
+    const r = await _copyGuestDocs(backup);
+    localStorage.removeItem('bellamona_guest_merge');
+    gaTrack('guest_merged', { copied: r.copied, skipped: r.skipped });
+    return r;
+  } catch (e) { console.error('[guest merge]', e); } // 백업은 남겨 두고 다음 접속 때 다시 시도
+}
+
+async function doGuestSave() {
+  if (!isGuest()) return;
+  const guest = _authUser;
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  try {
+    // ① 처음 쓰는 구글 계정: 지금 계정에 연결 → uid 그대로, 기록 그대로
+    const cred = await guest.linkWithPopup(provider);
+    const u = cred.user;
+    const prof = (cred.additionalUserInfo && cred.additionalUserInfo.profile) || {};
+    const gInfo = (u.providerData || []).find(p => p && p.providerId === 'google.com') || {};
+    const name = u.displayName || gInfo.displayName || prof.name || null;
+    const photo = u.photoURL || gInfo.photoURL || prof.picture || null;
+    if (name && !u.displayName) await u.updateProfile({ displayName: name, photoURL: photo }).catch(() => { });
+    _authUser = u;
+    await _userRef(u.uid).set(Object.assign({ is_guest: false }, name ? { name } : {}), { merge: true });
+    try { localStorage.removeItem('bellamona_seen_' + u.uid); } catch (e) { }
+    _touchAccount(u);
+    gaTrack('sign_up', { method: 'Google', from: 'guest' });
+    alert('구글 계정으로 저장했어요. 이제 다른 기기에서도 같은 기록을 볼 수 있어요.');
+    await restoreFromServer();
+    return;
+  } catch (e) {
+    if (e && (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request')) return;
+    if (e && e.code === 'auth/popup-blocked') { alert('팝업이 차단됐어요. 브라우저에서 팝업을 허용한 뒤 다시 눌러 주세요.'); return; }
+    if (!(e && (e.code === 'auth/credential-already-in-use' || e.code === 'auth/email-already-in-use'))) {
+      console.error('[doGuestSave link]', e);
+      alert('저장하지 못했어요. 다시 시도해주세요. (기록은 그대로 남아 있어요)');
+      return;
+    }
+    // ② 이미 가입된 구글 계정
+    const credential = e.credential || (firebase.auth.GoogleAuthProvider.credentialFromError && firebase.auth.GoogleAuthProvider.credentialFromError(e));
+    if (!confirm('이 구글 계정은 이미 벨라모나에 가입되어 있어요.\n그 계정으로 로그인하고, 게스트로 남긴 기록 중 그 계정에 없는 것만 옮길게요.\n(이미 있는 기록은 덮어쓰지 않아요)\n\n계속할까요?')) return;
+    let docs;
+    try { docs = await _readGuestDocs(guest.uid); }
+    catch (e2) { console.error('[guest read]', e2); alert('게스트 기록을 읽지 못해 중단했어요. 기록은 그대로 남아 있어요.'); return; }
+    const backup = { guestUid: guest.uid, savedAt: Date.now(), docs };
+    try { localStorage.setItem('bellamona_guest_merge', JSON.stringify(backup)); }
+    catch (e3) { alert('이 기기에 백업할 공간이 부족해 중단했어요. 기록은 그대로 남아 있어요.'); return; }
+    await _userRef(guest.uid).set({ merged_at: Date.now() }, { merge: true }).catch(() => { });
+    try {
+      const signed = credential ? await FB.auth.signInWithCredential(credential) : await FB.auth.signInWithPopup(provider);
+      _authUser = signed.user;
+      _gaSetUser(signed.user.uid);
+      backup.targetUid = signed.user.uid;
+      try { localStorage.setItem('bellamona_guest_merge', JSON.stringify(backup)); } catch (e4) { }
+      await _ensureUserDoc(signed.user);
+    } catch (e5) {
+      console.error('[guest signin]', e5);
+      localStorage.removeItem('bellamona_guest_merge');
+      if (FB.auth.currentUser && FB.auth.currentUser.uid === guest.uid) await _userRef(guest.uid).set({ merged_at: null }, { merge: true }).catch(() => { });
+      alert('로그인하지 못했어요. 게스트 기록은 그대로 남아 있어요.');
+      return;
+    }
+    const r = await _resumeGuestMerge();
+    alert(r ? `기존 계정으로 로그인했어요. 게스트 기록 ${r.copied}개를 옮겼어요.${r.skipped ? `\n(이미 있던 ${r.skipped}개는 그대로 두었어요)` : ''}`
+      : '기존 계정으로 로그인했어요. 기록 옮기기는 다음 접속 때 자동으로 이어서 할게요.');
+    await restoreFromServer();
+  }
+}
+
 // ── 로그아웃 / 회원 탈퇴 ──────────────────────────────────────
 function _clearLocalAuth() {
   localStorage.removeItem('bellamona_token');
@@ -662,6 +806,7 @@ function _clearLocalAuth() {
 }
 
 async function doLogout() {
+  if (isGuest() && !confirm('게스트로 쓰는 중이에요. 로그아웃하면 지금까지의 기록을 다시 볼 수 없어요.\n기록을 남기려면 취소를 누르고 "구글 계정으로 저장"을 먼저 해 주세요.\n\n그래도 로그아웃할까요?')) return;
   try {
     await fetchApi(apiUrl('/api/auth/logout'), { method: 'POST', credentials: 'include' });
   } catch (e) {
@@ -692,6 +837,7 @@ async function doWithdraw() {
 // ── 로그인 후 / 새로고침 시 저장된 정보 복원 ──────────────────────
 async function restoreFromServer() {
   try {
+    await _resumeGuestMerge();
     const res = await fetchApi(apiUrl('/api/data'), { credentials: 'include' });
     if (!res.ok) return false; // 로그인 안 된 상태 - 로그인 화면 유지
 
@@ -824,6 +970,7 @@ async function loadFriends() {
   } catch (e) { console.error('[loadFriends]', e); }
 }
 async function addFriendByCode(code) {
+  if (isGuest()) return { ok: false, message: '친구 추가는 구글 계정으로 저장한 뒤에 할 수 있어요 (마이페이지 → 구글 계정으로 저장)' };
   try {
     const res = await fetchApi(apiUrl('/api/user/friends'), {
       method: 'POST', credentials: 'include',
