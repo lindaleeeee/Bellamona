@@ -1140,6 +1140,13 @@
       <div class="scr on" id="s-boot" style="justify-content:center;align-items:center;background:var(--bg)">
         <div class="serif" style="font-size:26px;font-weight:700;color:var(--text)">Bellamona</div>
         <div style="font-size:12px;color:var(--muted);margin-top:8px;font-weight:600">불러오는 중...</div>
+        <div id="boot-slow" style="display:none;margin-top:18px;text-align:center;padding:0 28px">
+          <div style="font-size:12.5px;color:var(--muted);line-height:1.6">불러오는 데 시간이 오래 걸리고 있어요.<br>인터넷 연결을 확인하고 다시 시도해 주세요.</div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+            <button onclick="location.reload()" style="border:0;border-radius:999px;padding:8px 16px;font:inherit;font-size:13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--sky2),var(--lav2));cursor:pointer">다시 시도</button>
+          </div>
+          <div id="boot-err" style="margin-top:10px;font-size:11px;color:var(--muted);word-break:break-all"></div>
+        </div>
       </div>
 
       <!-- ════ GOOGLE LOGIN ════ -->
@@ -4648,12 +4655,20 @@
 
     // 부팅: 저장된 세션이 유효하면 주소가 가리키는 화면(없으면 홈)으로, 아니면 로그인 화면으로.
     // 세션 확인이 끝나기 전에는 부팅 화면만 보인다(로그인 안 한 채 앱 화면이 잠깐이라도 보이지 않게).
+    // 부팅이 멈춘 것처럼 보이지 않게: 12초가 지나도 화면이 안 바뀌면 안내와 다시 시도 버튼, 오류 내용을 보여 준다.
+    window.addEventListener('error', e => { const b = document.getElementById('boot-err'); if (b && !b.textContent) b.textContent = (e && e.message) || ''; });
+    window.addEventListener('unhandledrejection', e => { const b = document.getElementById('boot-err'); if (b && !b.textContent) b.textContent = String((e && e.reason && (e.reason.code || e.reason.message)) || ''); });
+    setTimeout(() => {
+      const boot = document.getElementById('s-boot');
+      if (boot && boot.classList.contains('on')) document.getElementById('boot-slow').style.display = 'block';
+    }, 12000);
     (async function boot() {
       const t = parsePath(location.pathname);
       _pendingRoute = t && !(t.type === 'screen' && (t.id === 's-login' || t.id === 's-onboard')) ? t : null;
       let ok = false;
-      try { ok = typeof restoreFromServer === 'function' && await restoreFromServer(); } catch (e) { }
+      try { ok = typeof restoreFromServer === 'function' && await restoreFromServer(); } catch (e) { console.error('[boot]', e); }
       if (!ok) go('s-login');
+      else if (document.getElementById('s-boot').classList.contains('on')) go('s-home'); // 복구는 됐는데 화면이 안 바뀐 경우
     })();
   </script>
 </body>

@@ -43,8 +43,8 @@ if (FB) {
   FB.auth.onAuthStateChanged(u => {
     _authUser = u;
     if (u) { try { localStorage.setItem('bellamona_token', '1'); } catch (e) { } } // 소개 페이지의 "앱 열기" 버튼 표시용
-    if (typeof _gaSetUser === 'function') _gaSetUser(u ? u.uid : null);
-    if (u) _touchAccount(u);
+    try { if (typeof _gaSetUser === 'function') _gaSetUser(u ? u.uid : null); } catch (e) { }
+    try { if (u) _touchAccount(u); } catch (e) { }
     _resolveAuthReady(u);
   });
 } else {
@@ -837,7 +837,7 @@ async function doWithdraw() {
 // ── 로그인 후 / 새로고침 시 저장된 정보 복원 ──────────────────────
 async function restoreFromServer() {
   try {
-    await _resumeGuestMerge();
+    await Promise.race([_resumeGuestMerge().catch(() => { }), new Promise(r => setTimeout(r, 8000))]);
     const res = await fetchApi(apiUrl('/api/data'), { credentials: 'include' });
     if (!res.ok) return false; // 로그인 안 된 상태 - 로그인 화면 유지
 
