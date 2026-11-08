@@ -13,13 +13,14 @@ import vm from 'node:vm';
 
 const SITE = 'https://bellamona.net';
 
+let iconHtml = (r, px) => r.img || '🍽️';
 let coupangLinkFor = () => 'https://link.coupang.com/a/cmjENT';
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function fnv(str) { let h = 0x811c9dc5; for (const ch of str) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(36).padStart(7, '0'); }
 
 export function loadRecipes(root) {
   const ctx = vm.createContext({ console });
-  vm.runInContext(readFileSync(resolve(root, 'public/js/recipe-categories.js'), 'utf8') + ';this.RECIPE_CATS=RECIPE_CATS;this.RECIPE_CAT_EMOJI=RECIPE_CAT_EMOJI;this.normalizeRecipe=normalizeRecipe;', ctx);
+  vm.runInContext(readFileSync(resolve(root, 'public/js/recipe-categories.js'), 'utf8') + ';this.RECIPE_CATS=RECIPE_CATS;this.RECIPE_CAT_EMOJI=RECIPE_CAT_EMOJI;this.normalizeRecipe=normalizeRecipe;this.recipeIconHtml=recipeIconHtml;', ctx);
   vm.runInContext(readFileSync(resolve(root, 'public/js/data-recipes.js'), 'utf8') + ';this.RCPS_IMPORTED=RCPS_IMPORTED;', ctx);
   vm.runInContext(readFileSync(resolve(root, 'public/js/coupang-links.js'), 'utf8') + ';this.coupangLinkFor=coupangLinkFor;', ctx);
   coupangLinkFor = ctx.coupangLinkFor;
@@ -42,6 +43,7 @@ export function loadRecipes(root) {
     while (used.has(slug)) slug = 'r-' + fnv(r.n) + '-' + i++;
     used.add(slug); r.slug = slug;
   }
+  iconHtml = ctx.recipeIconHtml;
   return { recipes: list, cats: [...ctx.RECIPE_CATS], catEmoji: { ...ctx.RECIPE_CAT_EMOJI } };
 }
 
@@ -108,7 +110,7 @@ function recipePage(r, related, catEmoji) {
   const body = `
 <p class="disclose">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
 <div class="crumb"><a href="/recipe">레시피</a> › <a href="/recipe#${encodeURIComponent(r.tp)}">${esc(r.tp)}</a></div>
-<div class="hero">${esc(r.img || catEmoji[r.tp] || '🍽️')}</div>
+<div class="hero">${iconHtml(r, 56)}</div>
 <span class="tag">${esc(r.tp)}</span>
 <h1>${esc(r.n)}</h1>
 <div class="badges"><span>⏱ ${esc(r.t)}분</span>${r.cost ? `<span>💰 약 ${Number(r.cost).toLocaleString('ko-KR')}원</span>` : ''}${r.cal != null ? `<span>🔥 약 ${esc(r.cal)}kcal (추정)</span>` : ''}</div>
@@ -129,7 +131,7 @@ ${r.tip ? `<h2>팁</h2><div class="tip">${esc(r.tip)}</div>` : ''}
   <a class="btn" href="/login">벨라모나에 기록하기</a>
 </div>
 
-${related.length ? `<h2>${esc(r.tp)} 레시피 더 보기</h2><div class="rel">${related.map(x => `<a href="/recipe/${x.slug}"><span class="e">${esc(x.img || '🍽️')}</span><span>${esc(x.n)}</span></a>`).join('')}</div>` : ''}`;
+${related.length ? `<h2>${esc(r.tp)} 레시피 더 보기</h2><div class="rel">${related.map(x => `<a href="/recipe/${x.slug}"><span class="e">${iconHtml(x, 24)}</span><span>${esc(x.n)}</span></a>`).join('')}</div>` : ''}`;
   const jsonLd = {
     '@context': 'https://schema.org', '@type': 'Recipe', name: r.n, recipeCategory: r.tp,
     totalTime: `PT${Number(r.t) || 0}M`, recipeIngredient: r.ingredients,
@@ -147,9 +149,9 @@ function listPage(recipes, cats, catEmoji) {
 <h1>건강하게 먹는 레시피 ${recipes.length.toLocaleString('ko-KR')}가지</h1>
 <p class="note" style="font-size:14px">로그인 없이 볼 수 있어요. 재료 옆 링크로 장보기까지 한 번에.</p>
 <input class="search" id="q" type="search" placeholder="메뉴나 재료로 찾기 (예: 닭가슴살, 두부, 샐러드)" autocomplete="off" />
-<div class="chips">${present.map(c => `<a href="#${encodeURIComponent(c)}">${esc(catEmoji[c] || '')} ${esc(c)} ${byCat[c].length}</a>`).join('')}</div>
-${present.map(c => `<section data-cat><h2 id="${esc(c)}">${esc(catEmoji[c] || '')} ${esc(c)}</h2><div class="grid">
-${byCat[c].map(r => `<a class="item" href="/recipe/${r.slug}" data-k="${esc((r.n + ' ' + r.ingredients.join(' ')).toLowerCase())}"><span class="e">${esc(r.img || '🍽️')}</span><span><span class="t">${esc(r.n)}</span><br><span class="m">${esc(r.t)}분${r.cal != null ? ` · 약 ${esc(r.cal)}kcal` : ''}</span></span></a>`).join('\n')}
+<div class="chips">${present.map(c => `<a href="#${encodeURIComponent(c)}">${esc(c)} ${byCat[c].length}</a>`).join('')}</div>
+${present.map(c => `<section data-cat><h2 id="${esc(c)}">${esc(c)}</h2><div class="grid">
+${byCat[c].map(r => `<a class="item" href="/recipe/${r.slug}" data-k="${esc((r.n + ' ' + r.ingredients.join(' ')).toLowerCase())}"><span class="e">${iconHtml(r, 24)}</span><span><span class="t">${esc(r.n)}</span><br><span class="m">${esc(r.t)}분${r.cal != null ? ` · 약 ${esc(r.cal)}kcal` : ''}</span></span></a>`).join('\n')}
 </div></section>`).join('\n')}
 <p id="none" class="note" hidden>찾는 레시피가 없어요.</p>
 <div class="cta"><p><b>먹은 걸 기록하면, 내 몸의 패턴이 보여요</b></p><a class="btn" href="/login">벨라모나 시작하기</a></div>

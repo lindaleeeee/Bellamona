@@ -3687,7 +3687,7 @@
       if (!suggestions.length) { wrap.style.display = 'none'; return; }
       wrap.style.display = 'block';
       list.innerHTML = suggestions.map(r => `<div onclick="showRecipeDetail(${RCPS.indexOf(r)})" style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--card2);border:1.5px solid var(--bdr);border-radius:10px;cursor:pointer">
-        <span style="font-size:20px">${r.img}</span>
+        ${typeof recipeIconHtml === 'function' ? recipeIconHtml(r, 20) : r.img}
         <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">${r.n}</div><div style="font-size:10px;color:var(--muted);font-weight:600">${r.tp}</div></div>
         <span style="font-size:11px;font-weight:800;color:var(--sky2)">${r.cal}kcal</span>
       </div>`).join('');
@@ -4406,7 +4406,7 @@
       // 맛 태그 대신 음식 종류 8개만 (js/recipe-categories.js)
       const present = new Set(RCPS.map(r => r.tp));
       const cats = (typeof RECIPE_CATS !== 'undefined' ? RECIPE_CATS : [...present]).filter(c => present.has(c));
-      box.innerHTML = cats.map(c => `<span class="chip${S.rFilters.type === c ? ' on' : ''}" dfk="type" onclick="rfil(this,'type','${c}')">${typeof RECIPE_CAT_EMOJI !== 'undefined' ? RECIPE_CAT_EMOJI[c] + ' ' : ''}${c}</span>`).join('');
+      box.innerHTML = cats.map(c => `<span class="chip${S.rFilters.type === c ? ' on' : ''}" dfk="type" onclick="rfil(this,'type','${c}')">${c}</span>`).join('');
       const calBox = document.getElementById('rcp-cal-chips');
       if (calBox && !calBox.childElementCount) {
         calBox.innerHTML = CAL_BANDS.map(b => `<span class="chip" onclick="rfil(this,'cal','${b.key}')">${b.label}</span>`).join('');
@@ -4436,7 +4436,7 @@
       const costLabel = c => `~${(c / 1000).toFixed(0)}천원`;
       const cardsHtml = shown.map(r => `<div class="recipe-card" onclick="showRecipeDetail(${RCPS.indexOf(r)})">
     <div style="display:flex;align-items:center;gap:12px">
-      <span style="font-size:32px">${r.img}</span>
+      ${typeof recipeIconHtml === 'function' ? recipeIconHtml(r, 32) : r.img}
       <div style="flex:1">
         <div style="font-size:10px;color:var(--sky2);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${r.tp}</div>
         <div style="font-size:14px;font-weight:700;color:var(--text)">${r.n}</div>
@@ -4468,7 +4468,7 @@
       const r = RCPS[idx];
       document.getElementById('recipe-detail-body').innerHTML = `
     <div style="text-align:center;margin-bottom:18px;font-family:'Nunito',sans-serif">
-      <div style="width:84px;height:84px;border-radius:50%;background:#fff3df;border:2px dashed #e8b978;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 12px">${r.img}</div>
+      <div style="width:84px;height:84px;border-radius:50%;background:#fff3df;border:2px dashed #e8b978;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 12px">${typeof recipeIconHtml === 'function' ? recipeIconHtml(r, 42) : r.img}</div>
       <span class="rcpd-tag">${r.tp}</span>
       <div class="rcpd-title" style="display:block;font-family:'Nunito',sans-serif">${r.n}</div>
       <div class="rcpd-badges">
