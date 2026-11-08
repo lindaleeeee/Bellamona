@@ -4477,6 +4477,7 @@
         ${r.cal != null ? `<span class="rcpd-badge">🔥 ${r.cal}kcal</span>` : ''}
       </div>
     </div>
+    <div style="font-size:11px;color:#8a7aa8;background:#f3eeff;border-radius:8px;padding:6px 10px;margin:-6px 0 14px;text-align:center;line-height:1.45;font-weight:600">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
     <div class="rcpd-section" style="font-family:'Nunito',sans-serif">
       <span class="rcpd-sec-label">★ 재료</span>
       ${r.ingredients.map(ing => `<div class="rcpd-ing-row" onclick="buyIngredientOnCoupang('${ing.replace(/'/g, "\\'")}')"> 
@@ -4498,7 +4499,6 @@
       <span class="rcpd-tip-label">💡 TIP</span>
       <div class="rcpd-tip-text">${r.tip}</div>
     </div>` : ''}
-    <div style="font-size:9px;color:#aaa;text-align:center;margin:8px 0 4px;font-weight:500">*이 게시물은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
     <button class="rcpd-close" onclick="closeMod('mod-recipe-detail')">닫기</button>`;
       openMod('mod-recipe-detail');
     }

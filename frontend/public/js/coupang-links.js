@@ -63,6 +63,65 @@ const COUPANG_LINKS = {
   '새우': 'https://link.coupang.com/a/ivHCMz4kUL',
   '아보카도': 'https://link.coupang.com/a/ivHGXk7lcW',
   '표고버섯': 'https://link.coupang.com/a/ivHHO6QBky',
+  // 61~120순위 (가지, 케첩은 링크가 들깨가루, 미림과 같아서 확인 전까지 기본 링크)
+  '후추': 'https://link.coupang.com/a/ivJGvDkd8m',
+  '소금': 'https://link.coupang.com/a/ivJIJDJ6pE',
+  '견과류': 'https://link.coupang.com/a/ivJK80DWdU',
+  '설탕': 'https://link.coupang.com/a/ivJNq8VThs',
+  '밥': 'https://link.coupang.com/a/ivJOImb6rc',
+  '현미밥': 'https://link.coupang.com/a/ivJPHX1L7A',
+  '크래미': 'https://link.coupang.com/a/ivJQB8PLbw',
+  '참치캔': 'https://link.coupang.com/a/ivJRJFlgwC',
+  '발사믹 식초': 'https://link.coupang.com/a/ivJTo10uLk',
+  '홀그레인 머스타드': 'https://link.coupang.com/a/ivJUrqDHJk',
+  '초코칩': 'https://link.coupang.com/a/ivJVP6aZb2',
+  '다크 초콜릿': 'https://link.coupang.com/a/ivJXe2nsJg',
+  '또띠아': 'https://link.coupang.com/a/ivJXYOmDuu',
+  '된장': 'https://link.coupang.com/a/ivJY4zSXTM',
+  '참치액': 'https://link.coupang.com/a/ivJ0ddmZQy',
+  '상추': 'https://link.coupang.com/a/ivJ2XK17V6',
+  '식빵': 'https://link.coupang.com/a/ivKfBUsu72',
+  '스리라차': 'https://link.coupang.com/a/ivKgI9rQlM',
+  '감자': 'https://link.coupang.com/a/ivKhsVztmK',
+  '라이스페이퍼': 'https://link.coupang.com/a/ivKiCLV7ls',
+  '코코넛 오일': 'https://link.coupang.com/a/ivKlLVpZxk',
+  '블루베리': 'https://link.coupang.com/a/ivKoyBWmaG',
+  '에리스리톨': 'https://link.coupang.com/a/ivKtuw78vY',
+  '생크림': 'https://link.coupang.com/a/ivKsGuSpEG',
+  '숙주': 'https://link.coupang.com/a/ivKunPMUFg',
+  '슬라이스 치즈': 'https://link.coupang.com/a/ivKvPXqH9g',
+  '딸기': 'https://link.coupang.com/a/ivKxZr844a',
+  '어묵': 'https://link.coupang.com/a/ivKySru8m4',
+  '파스타면': 'https://link.coupang.com/a/ivKzRyv1sy',
+  '통밀빵': 'https://link.coupang.com/a/ivKAUtX5hc',
+  '두부면': 'https://link.coupang.com/a/ivKB3dmcEe',
+  '김치': 'https://link.coupang.com/a/ivKCTSLYIe',
+  '알배추': 'https://link.coupang.com/a/ivKH2QKSfA',
+  '브로콜리': 'https://link.coupang.com/a/ivKIYhKTWC',
+  '들깨가루': 'https://link.coupang.com/a/ivKKEOkzHU',
+  '사과': 'https://link.coupang.com/a/ivKMfXNwCO',
+  '미림': 'https://link.coupang.com/a/ivKM159Ths',
+  '생강가루': 'https://link.coupang.com/a/ivKPI7J7wO',
+  '단무지': 'https://link.coupang.com/a/ivKSFTy9p6',
+  '육수 코인': 'https://link.coupang.com/a/ivKTKxTw1k',
+  '카카오닙스': 'https://link.coupang.com/a/ivKVg0KyoC',
+  '민트잎': 'https://link.coupang.com/a/ivKV9jyqt2',
+  '아몬드': 'https://link.coupang.com/a/ivKXFCQ03o',
+  '콩나물': 'https://link.coupang.com/a/ivKYTgH6KO',
+  '병아리콩': 'https://link.coupang.com/a/ivK2cgsGf6',
+  '단호박': 'https://link.coupang.com/a/ivK2XpMuVU',
+  '쌀': 'https://link.coupang.com/a/ivK4gEbhOC',
+  '찹쌀가루': 'https://link.coupang.com/a/ivK5pnvefY',
+  '베이컨': 'https://link.coupang.com/a/ivK6DEurgO',
+  '코코넛 가루': 'https://link.coupang.com/a/ivK7uPcgzA',
+  '훈제오리': 'https://link.coupang.com/a/ivK8ypn6RM',
+  '다진 소고기': 'https://link.coupang.com/a/ivK9gkULhk',
+  '부추': 'https://link.coupang.com/a/ivLacUaal2',
+  '체다치즈': 'https://link.coupang.com/a/ivLbnOVitE',
+  '통밀가루': 'https://link.coupang.com/a/ivLcHrYE2u',
+  '치아씨드': 'https://link.coupang.com/a/ivLdtsMyKy',
+  '무순': 'https://link.coupang.com/a/ivLea726NM',
+  '다시마': 'https://link.coupang.com/a/ivLe23FIvQ',
 };
 // 같은 재료의 다른 이름
 const COUPANG_ALIAS = {
@@ -74,7 +133,7 @@ const COUPANG_ALIAS = {
   '김밥김': '김', '카카오 파우더': '코코아 파우더', '꿀 또는 메이플 시럽': '꿀',
   // 아래는 61순위 이후 링크가 들어오면 바로 연결되도록 미리 묶어 둔 이름
   '후추 톡톡': '후추', '참치': '참치캔', '초콜릿 칩': '초코칩', '스리라차 소스': '스리라차', '통밀식빵': '통밀빵',
-  '통밀 또띠아': '또띠아', '맛살': '크래미', '발사믹 드레싱': '발사믹 식초', '멸치 다시마 육수': '육수 코인',
+  '통밀 또띠아': '또띠아', '맛살': '크래미', '발사믹 드레싱': '발사믹 식초', '멸치 다시마 육수': '육수 코인', '사과식초': '식초', '사과 식초': '식초', '애사비 식초': '식초', '애사비': '식초',
 };
 const _CP_UNIT_RE = /\s*(g|kg|ml|cc|L|리터|큰술|작은술|스푼|컵|공기|모|통|개|알|쪽|톨|줄|장|봉|팩|인분|조각|덩이|마리|대|자루|줌|캔|병|약간|조금|정도|이상|이하)\s*$/;
 function coupangIngredientName(line) {
@@ -85,7 +144,7 @@ function coupangIngredientName(line) {
   return s || String(line || '').trim();
 }
 // 재료 줄 → 파트너스 링크. ① 이름 그대로 ② 다른 이름 ③ 이름 안에 든 재료 중 가장 긴 것(두 글자 이상만, "김치"가 "김"으로 가지 않게)
-const _CP_NO_PARTIAL = /새우젓|아보카도오일|두부면|발사믹/;
+const _CP_NO_PARTIAL = /새우젓|아보카도오일|오이고추|딸기잼|토마토페이스트|마늘소스/;
 const _CP_KEYS = Object.keys(COUPANG_LINKS).filter(k => k.length >= 2).sort((a, b) => b.length - a.length);
 function coupangLinkFor(line) {
   const n = coupangIngredientName(line);

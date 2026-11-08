@@ -65,6 +65,7 @@ ol.steps{padding-left:22px;margin:0}ol.steps li{margin:0 0 10px}
 .tip{background:var(--card2);border-radius:12px;padding:12px 14px;font-size:15px}
 .cta{margin:28px 0;text-align:center;background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:22px 18px}.cta p{margin:0 0 12px}
 .note{font-size:12px;color:var(--muted)}
+.disclose{margin:0 0 14px;padding:8px 12px;border-radius:10px;background:var(--card2);color:var(--lav2);font-size:13px;font-weight:700}
 .rel{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .rel a,.item{display:flex;gap:10px;align-items:center;background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;text-decoration:none}
 .item .t{font-weight:700;font-size:15px;line-height:1.35}.item .m{font-size:12px;color:var(--muted)}.item .e{font-size:24px}
@@ -105,6 +106,7 @@ ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(
 function recipePage(r, related, catEmoji) {
   const desc = `${r.n} 레시피. ${r.t}분, 재료 ${r.ingredients.length}가지${r.cal != null ? `, 약 ${r.cal}kcal(추정)` : ''}. ${r.ingredients.slice(0, 5).join(', ')}`;
   const body = `
+<p class="disclose">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
 <div class="crumb"><a href="/recipe">레시피</a> › <a href="/recipe#${encodeURIComponent(r.tp)}">${esc(r.tp)}</a></div>
 <div class="hero">${esc(r.img || catEmoji[r.tp] || '🍽️')}</div>
 <span class="tag">${esc(r.tp)}</span>
@@ -115,7 +117,6 @@ function recipePage(r, related, catEmoji) {
 <div class="card"><ul class="ing">
 ${r.ingredients.map(i => `<li><span>${esc(i)}</span><a href="${esc(coupangLinkFor(i))}" target="_blank" rel="sponsored nofollow noopener">쿠팡에서 보기</a></li>`).join('\n')}
 </ul></div>
-<p class="note">이 게시물은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
 
 <h2>만드는 법</h2>
 <div class="card"><ol class="steps">
