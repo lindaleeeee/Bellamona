@@ -12,22 +12,17 @@ import { resolve } from 'node:path';
 import vm from 'node:vm';
 
 const SITE = 'https://bellamona.net';
-const COUPANG = 'https://link.coupang.com/a/cmjENT?q=';
-const ING_UNIT_RE = /\s*(g|kg|ml|cc|L|리터|큰술|작은술|스푼|컵|공기|모|통|개|알|쪽|톨|줄|장|봉|팩|인분|조각|덩이|마리|대|자루|줌|캔|병|약간|조금|정도|이상|이하)\s*$/;
 
+let coupangLinkFor = () => 'https://link.coupang.com/a/cmjENT';
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function fnv(str) { let h = 0x811c9dc5; for (const ch of str) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(36).padStart(7, '0'); }
-function ingredientQuery(line) {
-  let s = line.replace(/\([^)]*\)/g, '').trim();
-  s = s.replace(/\d+\s*\/\s*\d+|\d+(\.\d+)?/g, '').trim();
-  s = s.replace(ING_UNIT_RE, '').trim();
-  return s || line.trim();
-}
 
 export function loadRecipes(root) {
   const ctx = vm.createContext({ console });
   vm.runInContext(readFileSync(resolve(root, 'public/js/recipe-categories.js'), 'utf8') + ';this.RECIPE_CATS=RECIPE_CATS;this.RECIPE_CAT_EMOJI=RECIPE_CAT_EMOJI;this.normalizeRecipe=normalizeRecipe;', ctx);
   vm.runInContext(readFileSync(resolve(root, 'public/js/data-recipes.js'), 'utf8') + ';this.RCPS_IMPORTED=RCPS_IMPORTED;', ctx);
+  vm.runInContext(readFileSync(resolve(root, 'public/js/coupang-links.js'), 'utf8') + ';this.coupangLinkFor=coupangLinkFor;', ctx);
+  coupangLinkFor = ctx.coupangLinkFor;
   const app = readFileSync(resolve(root, 'app.html'), 'utf8');
   const m = app.match(/const RCPS_CURATED = (\[[\s\S]*?\n\s*\]);/);
   const curated = m ? vm.runInContext(`(() => { const STEP_IMG = () => []; return ${m[1]}; })()`, ctx) : [];
@@ -118,7 +113,7 @@ function recipePage(r, related, catEmoji) {
 
 <h2>재료</h2>
 <div class="card"><ul class="ing">
-${r.ingredients.map(i => `<li><span>${esc(i)}</span><a href="${COUPANG}${encodeURIComponent(ingredientQuery(i))}" target="_blank" rel="sponsored nofollow noopener">쿠팡에서 보기</a></li>`).join('\n')}
+${r.ingredients.map(i => `<li><span>${esc(i)}</span><a href="${esc(coupangLinkFor(i))}" target="_blank" rel="sponsored nofollow noopener">쿠팡에서 보기</a></li>`).join('\n')}
 </ul></div>
 <p class="note">이 게시물은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
 

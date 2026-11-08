@@ -2115,6 +2115,7 @@
   <script src="/js/data-stretches.js"></script>
   <script src="/js/data-recipes.js"></script>
   <script src="/js/recipe-categories.js"></script>
+  <script src="/js/coupang-links.js"></script>
   <script src="/js/data-foods.js"></script>
   <script src="/js/data-foods-basic.js"></script>
   <script src="/js/data-foods-extra.js"></script>
@@ -4461,7 +4462,7 @@
       return s || line.trim();
     }
     function buyIngredientOnCoupang(line) {
-      window.open(`https://link.coupang.com/a/cmjENT?q=${encodeURIComponent(ingredientSearchQuery(line))}`, '_blank');
+      window.open(typeof coupangLinkFor === 'function' ? coupangLinkFor(line) : 'https://link.coupang.com/a/cmjENT', '_blank');
     }
     function showRecipeDetail(idx) {
       const r = RCPS[idx];
