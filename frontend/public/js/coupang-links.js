@@ -63,7 +63,7 @@ const COUPANG_LINKS = {
   '새우': 'https://link.coupang.com/a/ivHCMz4kUL',
   '아보카도': 'https://link.coupang.com/a/ivHGXk7lcW',
   '표고버섯': 'https://link.coupang.com/a/ivHHO6QBky',
-  // 61~120순위 (가지, 케첩은 링크가 들깨가루, 미림과 같아서 확인 전까지 기본 링크)
+  // 61~120순위
   '후추': 'https://link.coupang.com/a/ivJGvDkd8m',
   '소금': 'https://link.coupang.com/a/ivJIJDJ6pE',
   '견과류': 'https://link.coupang.com/a/ivJK80DWdU',
@@ -98,9 +98,11 @@ const COUPANG_LINKS = {
   '김치': 'https://link.coupang.com/a/ivKCTSLYIe',
   '알배추': 'https://link.coupang.com/a/ivKH2QKSfA',
   '브로콜리': 'https://link.coupang.com/a/ivKIYhKTWC',
-  '들깨가루': 'https://link.coupang.com/a/ivKKEOkzHU',
+  '들깨가루': 'https://link.coupang.com/a/ivMdOmlKrQ',
+  '가지': 'https://link.coupang.com/a/ivMfaudZtY',
   '사과': 'https://link.coupang.com/a/ivKMfXNwCO',
-  '미림': 'https://link.coupang.com/a/ivKM159Ths',
+  '미림': 'https://link.coupang.com/a/ivMf3Jf9R6',
+  '케첩': 'https://link.coupang.com/a/ivMgUHG3Eq',
   '생강가루': 'https://link.coupang.com/a/ivKPI7J7wO',
   '단무지': 'https://link.coupang.com/a/ivKSFTy9p6',
   '육수 코인': 'https://link.coupang.com/a/ivKTKxTw1k',
