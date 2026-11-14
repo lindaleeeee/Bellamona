@@ -36,15 +36,23 @@ function todayKcalScore() {
 // ── 홈(대시보드) 링 카드 ──
 function renderKcalScoreHome() {
   const k = todayKcalScore();
-  const ring = document.getElementById('h-ring');
-  if (ring) { const circ = 2 * Math.PI * 29; ring.setAttribute('stroke-dasharray', `${Math.min((k.score || 0) / 100 * circ, circ)} ${circ}`); }
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  set('h-ring-pct', k.score == null ? '–' : String(k.score));
+  // 오늘 남은 칼로리 = 목표 - 먹은 것 + 운동으로 쓴 것
+  const remain = Math.round(k.goal - k.intake + k.burn);
+  const over = remain < 0;
+  set('h-remain', Math.abs(remain).toLocaleString());
+  set('h-remain-unit', over ? 'kcal 초과' : 'kcal');
+  const num = document.getElementById('h-remain'); if (num) num.parentElement.classList.toggle('over', over);
+  const bar = document.getElementById('h-hero-bar');
+  if (bar) { const cap = Math.max(k.goal + k.burn, 1); bar.style.width = Math.min(100, Math.round(k.intake / cap * 100)) + '%'; bar.classList.toggle('over', over); }
+  set('h-eaten', k.intake.toLocaleString());
+  set('h-burn2', k.burn.toLocaleString());
+  set('h-goal2', k.goal.toLocaleString());
   const b = kcalScoreBadge(k.score);
-  set('h-kscore-badge', `${b.e} ${b.t}`);
-  set('h-kscore-sub', k.score == null ? `오늘 목표 ${k.goal.toLocaleString()}kcal · 식사를 기록하면 점수가 나와요` : kcalGapText(k.net, k.goal));
-  set('h-kscore-in', `🍽 섭취 ${k.intake.toLocaleString()}`);
-  set('h-kscore-out', `🔥 소비 ${k.burn.toLocaleString()}`);
+  // 아직 덜 먹은 낮 시간에는 낮은 점수에 "내일 다시 도전" 같은 말을 붙이지 않는다(저녁까지 먹으면 올라간다)
+  const early = remain > 0 && new Date().getHours() < 20;
+  set('h-score-line', k.score == null ? '첫 끼를 기록하면 오늘의 칼로리 점수가 나와요'
+    : early ? `지금 칼로리 점수 ${k.score}점 · 남은 끼니를 기록하면 올라가요` : `칼로리 점수 ${k.score}점 · ${b.t}`);
   publishMyScore(k);
 }
 
