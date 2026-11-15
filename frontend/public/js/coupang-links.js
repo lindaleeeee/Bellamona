@@ -152,7 +152,8 @@ function coupangLinkFor(line) {
   const n = coupangIngredientName(line);
   const key = COUPANG_LINKS[n] ? n : COUPANG_ALIAS[n];
   if (key && COUPANG_LINKS[key]) return COUPANG_LINKS[key];
-  const compact = n.replace(/\s+/g, '');
+  // '달걀 지단', '달걀물'처럼 달걀이 들어간 이름도 계란 링크로 보낸다
+  const compact = n.replace(/\s+/g, '').replace(/달걀/g, '계란');
   if (_CP_NO_PARTIAL.test(compact)) return COUPANG_DEFAULT_LINK; // 이름에 재료가 들어 있어도 다른 상품인 경우
   const hit = _CP_KEYS.find(k => compact.includes(k.replace(/\s+/g, '')));
   return hit ? COUPANG_LINKS[hit] : COUPANG_DEFAULT_LINK;
