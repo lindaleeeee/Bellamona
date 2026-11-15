@@ -77,7 +77,8 @@ function _ingParse(line) {
     const per = /방울토마토|대추토마토|체리/.test(name) ? 15 : /깻잎|김$|김밥김|마른김/.test(name) ? 2 : /상추|양상추|배추잎/.test(name) ? 10 : /메추리알/.test(name) ? 10 : null;
     if (per) grams = (m[2] ? Number(m[1]) / Number(m[2]) : Number(m[1])) * per;
   }
-  return { name, grams };
+  const qty = m ? (m[2] ? Number(m[1]) / Number(m[2]) : Number(m[1])) : null;
+  return { name, grams, qty, unit: m && m[3] ? m[3] : '' };
 }
 function _ingEmoji(name) { for (const [re, e] of _ING_EMOJI) if (re.test(name)) return e; return null; }
 function recipeMainIngredient(r) {

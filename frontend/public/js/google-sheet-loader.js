@@ -12,10 +12,11 @@
     const GID = 0;                          // 시트1
     // 시트 전체(채널명·영상링크 등 30,000행)를 받으면 응답이 약 19MB라, 앱이 쓰는 컬럼(F~P)과 음식이름이 있는 행만 요청한다
     // (약 10MB, gzip 전송 약 2MB). 컬럼을 추가/이동했다면 아래 SELECT의 열 문자를 함께 바꿔야 한다.
-    //   F 카테고리 · G 음식이름 · H 시간 · I 가격 · J 맛 · K 주재료 · L 부재료 · M 양념 · N 순서 · O 팁 · P 칼로리
-    const GVIZ_QUERY = 'select F,G,H,I,J,K,L,M,N,O,P where G is not null';
+    //   B 채널명 · C 영상링크 · F 카테고리 · G 음식이름 · H 시간 · I 가격 · J 맛 · K 주재료 · L 부재료 · M 양념 · N 순서 · O 팁 · P 칼로리
+    // (B, C는 레시피 상세의 영상 썸네일과 출처 표시에 쓴다)
+    const GVIZ_QUERY = 'select B,C,F,G,H,I,J,K,L,M,N,O,P where G is not null';
     const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&tq=${encodeURIComponent(GVIZ_QUERY)}`;
-    const CACHE_KEY = 'bellamona_sheet_recipes_v6'; // 시트/쿼리/중복 규칙을 바꾸면 이전 캐시를 쓰지 않도록 키를 올린다
+    const CACHE_KEY = 'bellamona_sheet_recipes_v7'; // 시트/쿼리/중복 규칙을 바꾸면 이전 캐시를 쓰지 않도록 키를 올린다
     const CACHE_TTL = 1000 * 60 * 10;             // 10분 캐시
 
     /* ─── 카테고리 → 이모지 ─── */
@@ -49,6 +50,9 @@
             steps: findCol(headers, '순서', '만드는'),
             tip: findCol(headers, '팁', 'tip'),
             cal: findCol(headers, '칼로리', 'kcal'),
+            // 헤더 이름이 없으면 SELECT 순서(B=0, C=1)로 찾는다
+            channel: (i => i >= 0 ? i : 0)(findCol(headers, '채널')),
+            url: (i => i >= 0 ? i : 1)(findCol(headers, '링크', 'url', '영상', 'youtube')),
         };
     }
 
@@ -110,6 +114,9 @@
             tip: v(cm.tip) || '',
             cpgQ: cpgQuery(mainText),
         };
+        // 유튜브 영상 id와 채널명(상세 화면 썸네일, 출처 표시용)
+        const vid = (v(cm.url).match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/) || [])[1];
+        if (vid) { r.vid = vid; r.ch = v(cm.channel).slice(0, 40); }
         // 시트 카테고리 칸의 맛 태그 등을 8개 음식 종류로 통일(js/recipe-categories.js)
         if (typeof normalizeRecipe === 'function') normalizeRecipe(r); // 카테고리 통일 + 주재료 아이콘
         return r;
