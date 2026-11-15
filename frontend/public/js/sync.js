@@ -877,6 +877,7 @@ async function restoreFromServer() {
       // 체형(어깨, 골반 기울기) 분석 결과. 사진은 저장하지 않고 각도 숫자만 남긴다.
       if (d.profile.posture !== undefined) S.posture = d.profile.posture || null;
       if (d.profile.posture_skipped !== undefined) S.postureSkipped = !!d.profile.posture_skipped;
+      if (Array.isArray(d.profile.fav_foods)) S.favFoods = d.profile.fav_foods;
       // 세이브(치팅) 칼로리는 서버가 로그인/새로고침마다 전날까지 정산해서 내려주는 값이 항상 정답이라
       // 로컬 값과 병합하지 않고 그대로 덮어쓴다.
       S.savedTotal = Number(d.profile.saved_total_kcal || 0);
@@ -1022,6 +1023,14 @@ async function savePostureRow() {
     if (!FB || !_authUser) return;
     await _sub('profile').doc('main').set({ posture: S.posture || null, posture_skipped: !!S.postureSkipped }, { merge: true });
   } catch (e) { console.error('[savePostureRow]', e); }
+}
+
+// 자주 먹는 음식(이름과 1인분 칼로리) 목록. 프로필 문서에 함께 둔다.
+async function saveFavFoodsRow() {
+  try {
+    if (!FB || !_authUser) return;
+    await _sub('profile').doc('main').set({ fav_foods: (S.favFoods || []).slice(0, 20) }, { merge: true });
+  } catch (e) { console.error('[saveFavFoodsRow]', e); }
 }
 
 function saveWeightRow(entry) {

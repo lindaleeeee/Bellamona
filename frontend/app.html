@@ -1310,6 +1310,187 @@
     .rcpd-hero.icon { position: relative; }
     .rcpd-hero { cursor: default; }
     .rcpd-ai { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.5); color: #fff; font-size: 10.5px; padding: 3px 7px; border-radius: 6px; }
+
+    /* ── 새 기록 흐름: 체크인, 새 홈, 리포트, 마이 (2026-11) ── */
+    #mod-checkin .msh, #mod-ci-report .msh { max-height: 100%; height: 100%; border-radius: 0; border-top: 0; padding: 8px 20px 0; display: flex; flex-direction: column; background: var(--bg); }
+    #ci-body, #ci-report-body { display: flex; flex-direction: column; gap: 14px; min-height: 100%; }
+    .ci-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: var(--accent-ink); }
+    .ci-x { width: 44px; height: 44px; border: 0; background: transparent; color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .ci-h { margin: 0 0 4px; font-size: 24px; line-height: 1.35; font-weight: 800; color: var(--text); }
+    .ci-q { font-size: 14px; font-weight: 700; color: var(--text); margin-top: 6px; }
+    .ci-q-s { font-size: 13px; color: var(--muted); }
+    .ci-row { display: flex; gap: 8px; }
+    .ci-row > * { flex: 1; }
+    .ci-row5 { gap: 6px; }
+    .ci-row5 .ci-chip { font-size: 12.5px; padding: 0 2px; }
+    .ci-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ci-col { display: flex; flex-direction: column; gap: 10px; }
+    .ci-chip { min-height: 48px; border-radius: 14px; border: 1.5px solid var(--bdr); background: var(--surf); color: var(--text); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .ci-pill { min-height: 42px; border-radius: 21px; padding: 0 16px; flex: 0 0 auto; }
+    .ci-chip.on, .ci-opt.on { border-color: var(--accent-ink); background: var(--accent-weak); color: var(--accent-ink); }
+    .ci-opt { min-height: 64px; border-radius: 16px; border: 1.5px solid var(--bdr); background: var(--surf); color: var(--text); text-align: left; padding: 12px 18px; display: flex; flex-direction: column; justify-content: center; gap: 3px; font: inherit; cursor: pointer; }
+    .ci-opt b { font-size: 16px; font-weight: 800; }
+    .ci-opt small { font-size: 13px; color: var(--muted); }
+    .ci-opt1 { min-height: 56px; }
+    .ci-in { height: 48px; border-radius: 14px; border: 1.5px solid var(--bdr); background: var(--surf); padding: 0 14px; font: inherit; font-size: 15px; color: var(--text); outline: none; width: 100%; box-sizing: border-box; }
+    .ci-in:focus, .ci-ta:focus { border-color: var(--accent); }
+    .ci-ta { min-height: 110px; border-radius: 14px; border: 1.5px solid var(--bdr); background: var(--surf); padding: 12px 14px; font: inherit; font-size: 15px; line-height: 1.6; color: var(--text); outline: none; resize: none; width: 100%; box-sizing: border-box; }
+    .ci-diary-l { font-size: 15px; }
+    .ci-hint { font-size: 12px; color: var(--muted); }
+    .ci-hint-a { color: var(--accent-ink); font-weight: 700; min-height: 0; }
+    .ci-hint-a:empty { display: none; }
+    .ci-sug { background: var(--surf); border: 1px solid var(--bdr); border-radius: 14px; overflow: hidden; }
+    .ci-sug button { width: 100%; min-height: 46px; border: 0; border-bottom: 1px solid var(--sub); background: var(--surf); display: flex; justify-content: space-between; align-items: center; padding: 0 14px; font: inherit; font-size: 14px; color: var(--text); cursor: pointer; }
+    .ci-sug button:last-child { border-bottom: 0; }
+    .ci-sug small, .my-fav-r small { color: var(--muted); font-size: 11.5px; }
+    .ci-sug b { color: var(--accent-ink); }
+    .ci-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); min-height: 36px; }
+    .ci-check input { width: 18px; height: 18px; accent-color: var(--accent-ink); }
+    .ci-foot { position: sticky; bottom: 0; margin-top: auto; padding: 12px 0 calc(20px + env(safe-area-inset-bottom)); background: var(--bg); }
+    .ci-submit { height: 56px; font-size: 16px; }
+    .ci-submit:disabled { background: #cfc6dd !important; cursor: default; }
+    #ci-toast { position: absolute; top: 60px; left: 16px; right: 16px; z-index: 1000; background: var(--surf); border-radius: 20px; box-shadow: 0 14px 40px rgba(60, 30, 120, .22); padding: 18px 18px 16px; display: none; flex-direction: column; gap: 10px; pointer-events: none; }
+    #ci-toast.show { display: flex; animation: ciPop 3s ease-out both; }
+    #ci-toast .ci-t1 { font-size: 16px; font-weight: 800; color: var(--text); }
+    #ci-toast .ci-t1 b { color: var(--accent-ink); }
+    #ci-toast .ci-t2 { font-size: 13px; color: var(--muted); }
+    #ci-toast .ci-bar { height: 10px; border-radius: 5px; background: var(--sub); overflow: hidden; }
+    #ci-toast .ci-bar div { height: 100%; border-radius: 5px; background: var(--accent-ink); animation: ciFill 1.1s ease-out .25s both; }
+    .ci-spark { position: absolute; fill: #b79cf0; animation: ciTwinkle 1.2s ease-out both; }
+    .ci-spark.s1 { width: 18px; height: 18px; top: -6px; left: 18px; animation-delay: .1s; }
+    .ci-spark.s2 { width: 14px; height: 14px; top: 10px; right: 22px; fill: var(--accent-ink); animation-delay: .35s; }
+    .ci-spark.s3 { width: 11px; height: 11px; bottom: 8px; right: 52px; fill: #d4c2f7; animation-delay: .6s; }
+    @keyframes ciPop { 0% { transform: translateY(-14px) scale(.96); opacity: 0 } 10% { transform: none; opacity: 1 } 86% { transform: none; opacity: 1 } 100% { transform: translateY(-8px); opacity: 0 } }
+    @keyframes ciFill { from { width: var(--from) } }
+    @keyframes ciTwinkle { 0%, 100% { transform: scale(.3) rotate(0deg); opacity: 0 } 45% { transform: scale(1.15) rotate(25deg); opacity: 1 } }
+    #ci-banner { position: absolute; top: 60px; left: 12px; right: 12px; z-index: 990; border: 0; border-radius: 18px; background: rgba(255, 255, 255, .97); box-shadow: 0 10px 30px rgba(40, 24, 80, .18); padding: 14px 16px; display: none; gap: 12px; align-items: center; text-align: left; font: inherit; color: var(--text); cursor: pointer; }
+    #ci-banner.show { display: flex; animation: ciSlide .35s ease-out; }
+    @keyframes ciSlide { from { transform: translateY(-120%) } to { transform: none } }
+    .ci-bn-ic { width: 38px; height: 38px; border-radius: 10px; background: var(--accent-ink); color: #fff; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ci-bn-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .ci-bn-tx small { font-size: 12px; color: var(--muted); }
+    .ci-bn-tx b { font-size: 15px; }
+    .ci-bn-tx span { font-size: 13px; color: var(--muted); }
+    .nh-prog { display: flex; gap: 16px; align-items: center; }
+    .nh-ring { width: 88px; height: 88px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--sub); }
+    .nh-ring > span { width: 70px; height: 70px; border-radius: 50%; background: var(--surf); display: flex; align-items: center; justify-content: center; font-size: 21px; font-weight: 800; color: var(--accent-ink); }
+    .nh-pt { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .nh-pt b { font-size: 15px; font-weight: 800; color: var(--text); }
+    .nh-pt span { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .nh-pt button, .nh-two button em { font-style: normal; }
+    .nh-btn { align-self: flex-start; min-height: 36px; border: 0; border-radius: 10px; background: var(--accent-weak); color: var(--accent-ink); font: inherit; font-size: 13px; font-weight: 700; padding: 0 12px; cursor: pointer; }
+    .nh-sc-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+    .nh-sc-top b { font-size: 15px; font-weight: 800; color: var(--text); }
+    .nh-sc-top span { font-size: 22px; font-weight: 800; color: var(--accent-ink); }
+    .nh-sc-top small { font-size: 13px; color: var(--muted); font-weight: 500; }
+    #nh-score-items { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    #nh-score-items > div { display: flex; flex-direction: column; gap: 4px; }
+    #nh-score-items span { font-size: 12px; color: var(--muted); }
+    #nh-score-items b { font-size: 12.5px; font-weight: 700; color: var(--text); }
+    .nh-mbar { height: 6px; border-radius: 3px; background: var(--sub); overflow: hidden; }
+    .nh-mbar i { display: block; height: 100%; border-radius: 3px; background: var(--accent-ink); }
+    .nh-sec { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+    .nh-sec > .sec-title { margin: 4px 0 0; }
+    #nh-stats { display: flex; gap: 8px; }
+    .nh-stat { flex: 1; background: var(--surf); border: 1px solid var(--bdr); border-radius: 14px; padding: 12px; }
+    .nh-stat span { display: block; font-size: 12px; color: var(--muted); }
+    .nh-stat b { display: block; font-size: 15px; font-weight: 800; color: var(--text); margin-top: 3px; }
+    #nh-cards { display: flex; flex-direction: column; gap: 10px; }
+    .nh-card { width: 100%; border: 1.5px solid var(--bdr); border-radius: 18px; background: var(--surf); padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; text-align: left; font: inherit; color: var(--text); cursor: pointer; }
+    .nh-card.anim { animation: ciUp .45s ease-out both; }
+    .nh-card.new { border-color: #cbb8ef; }
+    @keyframes ciUp { from { transform: translateY(14px); opacity: 0 } to { transform: none; opacity: 1 } }
+    .nh-ck { width: 36px; height: 36px; border-radius: 12px; background: var(--accent-weak); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .nh-cb { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .nh-cb small { font-size: 12px; color: var(--muted); }
+    .nh-cb b { font-size: 15.5px; font-weight: 800; }
+    .nh-cb span { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nh-card em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--accent-ink); background: var(--accent-weak); border-radius: 8px; padding: 4px 8px; flex-shrink: 0; }
+    #nh-nextcard { border: 1.5px dashed #d8cfe8; border-radius: 18px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; color: var(--muted); }
+    .nh-bell { width: 36px; height: 36px; border-radius: 12px; background: var(--card2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .nh-nt { flex: 1; font-size: 13.5px; line-height: 1.5; }
+    #nh-nextcard button { min-height: 36px; border: 0; border-radius: 10px; background: var(--accent-ink); color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; padding: 0 12px; cursor: pointer; flex-shrink: 0; }
+    .nh-two { display: flex; gap: 10px; margin-bottom: 14px; }
+    .nh-two button { flex: 1; background: var(--surf); border: 1px solid var(--bdr); border-radius: 16px; padding: 14px; text-align: left; font: inherit; cursor: pointer; color: var(--text); }
+    .nh-two small { display: block; font-size: 12px; color: var(--muted); }
+    .nh-two b { display: block; font-size: 14px; font-weight: 700; margin-top: 4px; }
+    .cr-head { display: flex; justify-content: space-between; align-items: center; padding-top: 6px; }
+    .cr-head b { font-size: 22px; font-weight: 800; color: var(--text); }
+    .cr-tabs { display: flex; gap: 6px; background: var(--card2); border-radius: 12px; padding: 4px; }
+    .cr-tabs button { flex: 1; min-height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .cr-tabs button.on { background: var(--surf); color: var(--text); }
+    .cr-hero { background: var(--accent-ink); color: #fff; border-radius: 20px; padding: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .cr-hero small { display: block; font-size: 13px; opacity: .9; margin-bottom: 6px; }
+    .cr-hero b { font-size: 17px; font-weight: 800; line-height: 1.45; }
+    .cr-score { text-align: center; flex-shrink: 0; }
+    .cr-score b { display: block; font-size: 34px; line-height: 1; }
+    .cr-score small { margin: 4px 0 0; font-size: 12px; }
+    .cr-card { background: var(--surf); border: 1px solid var(--bdr); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .cr-tag { font-size: 12px; font-weight: 800; color: var(--accent-ink); letter-spacing: .5px; }
+    .cr-t { font-size: 14px; font-weight: 800; color: var(--text); }
+    .cr-k { font-size: 13px; font-weight: 700; color: var(--muted); margin-top: 4px; }
+    .cr-ka { color: var(--accent-ink); margin-top: 0; }
+    .cr-v { font-size: 15.5px; font-weight: 700; line-height: 1.55; color: var(--text); }
+    .cr-line { height: 1px; background: var(--sub); margin: 4px 0; }
+    .cr-note { font-size: 12px; color: var(--accent-ink); font-weight: 700; }
+    .cr-note2 { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .cr-sr { display: flex; align-items: center; gap: 10px; }
+    .cr-sr span { width: 50px; font-size: 13px; color: var(--muted); }
+    .cr-sr .nh-mbar { flex: 1; height: 8px; }
+    .cr-sr b { width: 62px; text-align: right; font-size: 13px; color: var(--text); }
+    .cr-rows { gap: 0; padding: 4px 16px; }
+    .cr-rows > div { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--sub); font-size: 14px; }
+    .cr-rows > div:last-child { border-bottom: 0; }
+    .cr-rows span { color: var(--muted); flex-shrink: 0; }
+    .cr-rows b { text-align: right; color: var(--text); font-weight: 700; }
+    .cr-rows small { display: block; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+    .cr-lock { align-items: center; text-align: center; padding: 24px 16px; gap: 10px; }
+    .cr-lock b { font-size: 17px; color: var(--text); }
+    .cr-lock small { font-size: 13px; color: var(--muted); }
+    .cr-lock-ic { width: 52px; height: 52px; border-radius: 50%; background: var(--accent-weak); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; }
+    .cr-dots { display: flex; gap: 6px; }
+    .cr-dots i { width: 30px; height: 30px; border-radius: 50%; background: var(--card2); color: var(--muted); font-style: normal; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .cr-dots i.on { background: var(--accent-ink); color: #fff; }
+    .cr-qi { display: flex; gap: 10px; align-items: center; min-height: 36px; font-size: 14px; font-weight: 700; color: var(--text); }
+    .cr-qi i { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-weak); color: var(--accent-ink); font-style: normal; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .cr-cmp { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+    .cr-cmp span { width: 72px; color: var(--muted); font-size: 13px; }
+    .cr-cmp b { flex: 1; color: var(--text); }
+    .cr-cmp small { font-size: 12px; font-weight: 500; color: var(--muted); }
+    .cr-cmp em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--muted); background: var(--card2); border-radius: 8px; padding: 4px 8px; }
+    .cr-cmp em.good { color: #2f7d4f; background: #e6f4ea; }
+    #mod-ci-report .msh > div:last-child { padding-bottom: 32px; }
+    .my-ci { margin-bottom: 10px; }
+    #my-action { background: var(--accent-weak); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .my-a-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .my-a-top b { font-size: 13px; font-weight: 800; color: var(--accent-ink); }
+    .my-a-top small { font-size: 11px; color: var(--muted); }
+    .my-a-v { font-size: 16px; font-weight: 800; line-height: 1.5; color: var(--text); }
+    .my-a-empty { font-size: 14px; font-weight: 600; color: var(--muted); }
+    .my-a-why { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    #my-fav, #my-skip { background: var(--surf); border: 1px solid var(--bdr); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+    .my-fav-l { font-size: 12px; color: var(--muted); }
+    #my-fav-res:not(:empty) { border: 1px solid var(--bdr); border-radius: 12px; overflow: hidden; }
+    .my-fav-r { min-height: 46px; border-bottom: 1px solid var(--sub); display: flex; align-items: center; gap: 10px; padding: 0 6px 0 14px; font-size: 14px; color: var(--text); }
+    .my-fav-r:last-child { border-bottom: 0; }
+    .my-fav-r span { flex: 1; min-width: 0; }
+    .my-fav-r b { font-size: 13px; color: var(--accent-ink); }
+    .my-fav-r button { min-height: 36px; border: 0; border-radius: 10px; background: var(--accent-ink); color: #fff; font: inherit; font-size: 12px; font-weight: 700; padding: 0 12px; cursor: pointer; }
+    .my-fav-i { min-height: 46px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--sub); font-size: 14px; color: var(--text); }
+    .my-fav-i span { flex: 1; font-weight: 700; }
+    .my-fav-i small { color: var(--muted); font-size: 13px; }
+    .my-fav-i button { width: 40px; height: 40px; border: 0; background: transparent; color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .my-skip-i { background: var(--bg); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.6; color: var(--text); white-space: pre-line; }
+    .my-skip-i small { font-size: 12px; color: var(--muted); }
+    .my-empty { font-size: 13px; color: var(--muted); }
+    .my-fav-g { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; font-weight: 700; color: var(--text); }
+    .my-fav-g small { font-weight: 500; color: var(--muted); font-size: 12px; }
+    .rf-g { margin-bottom: 10px; }
+    .rf-l { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+    .rf-row { display: flex; gap: 6px; overflow-x: auto; margin: 0 -14px; padding: 0 14px 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .rf-row::-webkit-scrollbar { display: none; }
+    .rf-row .chip { flex-shrink: 0; white-space: nowrap; font: inherit; }
+    .rf-clear { border: 0; background: transparent; color: var(--accent-ink); font: inherit; font-size: 12px; font-weight: 700; padding: 4px 0; cursor: pointer; }
   </style>
 </head>
 
@@ -1482,13 +1663,48 @@
         <div class="home-head">
           <div>
             <div class="home-date" id="h-date"></div>
-            <div class="home-greet" id="h-greet">오늘 뭐 드셨어요?</div>
+            <div class="home-greet" id="h-greet">오늘도 가볍게 시작해요</div>
           </div>
-          <button class="home-wt" onclick="openWtModal()" aria-label="몸무게 기록">
-            <span>몸무게</span><b id="h-wt">-</b>
-          </button>
         </div>
-        <div class="sc" style="padding-top:12px">
+        <div class="sc" style="padding-top:12px" id="nh-root">
+          <!-- 오늘의 내 몸 보고서 -->
+          <section class="card nh-prog">
+            <div class="nh-ring" id="nh-ring"><span id="nh-pct">0%</span></div>
+            <div class="nh-pt">
+              <b>오늘의 내 몸 보고서</b>
+              <span id="nh-next">아침에 앱을 열면 잘 잤는지 물어볼게요.</span>
+              <button type="button" class="nh-btn" onclick="openCiReport('day')">리포트 보기</button>
+            </div>
+          </section>
+          <!-- 오늘의 목표 달성률 -->
+          <section class="card">
+            <div class="nh-sc-top"><b>오늘의 목표 달성률</b><span><span id="nh-score">0</span><small> / 100점</small></span></div>
+            <div id="nh-score-items"></div>
+          </section>
+          <!-- 오늘 쌓인 기록 -->
+          <section class="nh-sec">
+            <div class="sec-title">오늘 쌓인 기록</div>
+            <div id="nh-stats"></div>
+            <div id="nh-cards"></div>
+            <div id="nh-nextcard"></div>
+          </section>
+          <div class="nh-two">
+            <button type="button" onclick="navTo(document.getElementById('nav-profile'),'s-profile');setTimeout(()=>document.getElementById('prof-scoreboard')?.scrollIntoView({behavior:'smooth',block:'center'}),200)"><small>친구랑 비교</small><b>점수판 보기</b></button>
+            <button type="button" onclick="openMod('mod-cheat')"><small>치팅데이 칼로리</small><b id="nh-cheat">0kcal</b></button>
+          </div>
+          <!-- 다른 기록 -->
+          <section class="card">
+            <div class="sec-title">직접 기록하기</div>
+            <div class="quick-grid">
+              <button class="quick" onclick="goH('growth')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>운동</span><small id="hq-gro">기록하기</small></button>
+              <button class="quick" onclick="goH('cortisol')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>수면·일기</span><small id="hq-cor">기록하기</small></button>
+              <button class="quick" onclick="goH('oxytocin')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg><span id="hq-oxy-label">영양제</span><small id="hq-oxy">기록하기</small></button>
+              <button class="quick" onclick="openWtModal()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.9 1.5L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.9-2.5L19.4 9.5A2 2 0 0 0 17.5 8Z"/></svg><span>체중</span><small id="hq-wt">기록하기</small></button>
+            </div>
+          </section>
+
+          <!-- 예전 홈 요소: 다른 코드가 참조하는 id를 그대로 두기 위해 숨겨서 남겨 둔다 -->
+          <div style="display:none" aria-hidden="true">
           <!-- 오늘 남은 칼로리 -->
           <section class="card hero">
             <div class="hero-label">오늘 남은 칼로리</div>
@@ -1508,27 +1724,7 @@
             <div id="h-meal-list"></div>
           </section>
 
-          <!-- 다른 기록 -->
-          <section class="card">
-            <div class="sec-title">다른 기록</div>
-            <div class="quick-grid">
-              <button class="quick" onclick="goH('growth')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>운동</span><small id="hq-gro">기록하기</small></button>
-              <button class="quick" onclick="goH('cortisol')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>수면·일기</span><small id="hq-cor">기록하기</small></button>
-              <button class="quick" onclick="goH('oxytocin')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg><span id="hq-oxy-label">영양제</span><small id="hq-oxy">기록하기</small></button>
-              <button class="quick" onclick="openWtModal()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.9 1.5L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.9-2.5L19.4 9.5A2 2 0 0 0 17.5 8Z"/></svg><span>체중</span><small id="hq-wt">기록하기</small></button>
-            </div>
-          </section>
-
-          <!-- 몸무게 -->
-          <section class="card">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
-              <div class="sec-title" style="margin:0">몸무게 변화</div>
-              <span class="muted-sm" id="h-wt-remain"></span>
-            </div>
-            <div id="wt-mini-chart" style="width:100%;height:84px;position:relative;overflow:hidden">
-              <svg id="wt-svg" width="100%" height="100%" preserveAspectRatio="none"></svg>
-            </div>
-          </section>
+          </div>
         </div>
       </div>
 
@@ -1624,6 +1820,16 @@
               </div>
             </div>
           </div>
+          <!-- 몸무게 -->
+          <section class="card">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+              <div class="sec-title" style="margin:0">몸무게 변화</div>
+              <span class="muted-sm" id="h-wt-remain"></span>
+            </div>
+            <div id="wt-mini-chart" style="width:100%;height:84px;position:relative;overflow:hidden">
+              <svg id="wt-svg" width="100%" height="100%" preserveAspectRatio="none"></svg>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -1650,25 +1856,7 @@
           <div class="serif" style="font-size:20px;font-weight:700;color:var(--text)">레시피</div>
         </div>
         <div class="sc" style="padding-top:10px">
-          <div style="margin-bottom:10px">
-            <div class="cap" style="margin-bottom:5px">조리 시간</div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap">
-              <span class="chip" onclick="rfil(this,'time',5)">5분</span><span class="chip"
-                onclick="rfil(this,'time',10)">10분</span><span class="chip" onclick="rfil(this,'time',-15)">15분
-                이상</span>
-            </div>
-            <div class="cap" style="margin-bottom:5px;margin-top:10px">칼로리</div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap" id="rcp-cal-chips"></div>
-            <div class="cap" style="margin-bottom:5px;margin-top:10px">카테고리</div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap" id="rcp-category-chips"></div>
-            <div class="cap" style="margin-bottom:5px;margin-top:10px">비용</div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap">
-              <span class="chip" onclick="rfil(this,'cost',2000)">~2천원</span><span class="chip"
-                onclick="rfil(this,'cost',3000)">~3천원</span><span class="chip"
-                onclick="rfil(this,'cost',4000)">~4천원</span><span class="chip"
-                onclick="rfil(this,'cost',99999)">4천원+</span>
-            </div>
-          </div>
+          <div id="rcp-filters"></div>
           <div style="font-size:10px;color:#999;padding:4px 2px 8px;line-height:1.4;font-weight:500">*이 게시물은 쿠팡 파트너스 활동의
             일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
           <div id="rcp-grid"></div>
@@ -1701,6 +1889,9 @@
               Aging Lv.- · -</div>
           </div>
 
+          <div id="my-action"></div>
+          <div id="my-fav"></div>
+          <div id="my-skip"></div>
           <button class="card posture-entry" onclick="openPostureModal()">
             <span><b>체형 맞춤 운동</b><small id="prof-posture-sub">거울 셀카로 어깨, 골반 기울기를 보고 운동을 골라 드려요</small></span>
             <span class="posture-go">›</span>
@@ -1799,6 +1990,10 @@
       </div>
     </div>
 
+    <!-- 새 기록 흐름: 알림 배너, 뾰로롱 안내 -->
+    <button type="button" id="ci-banner" onclick="openCiBanner()"></button>
+    <div id="ci-toast" role="status" aria-live="polite"></div>
+
     <!-- NAV -->
     <div id="nav" style="display:none">
       <div class="ni on" onclick="navTo(this,'s-home')" id="nav-home"><svg viewBox="0 0 24 24" fill="none"
@@ -1827,6 +2022,13 @@
     </div>
 
     <!-- MODALS -->
+    <div class="mov" id="mod-checkin">
+      <div class="msh"><div id="ci-body"></div></div>
+    </div>
+    <div class="mov" id="mod-ci-report">
+      <div class="msh"><div id="ci-report-body"></div></div>
+    </div>
+
     <div class="mov" id="mod-day-detail">
       <div class="msh">
         <div class="mh"></div>
@@ -2267,6 +2469,7 @@
   <script src="/js/recipe-categories.js"></script>
   <script src="/js/coupang-links.js"></script>
   <script src="/js/posture.js"></script>
+  <script src="/js/checkin.js"></script>
   <script src="/js/data-foods.js"></script>
   <script src="/js/data-foods-basic.js"></script>
   <script src="/js/data-foods-extra.js"></script>
@@ -2363,7 +2566,7 @@
       ],
       weights: [{ d: '04/19', w: 52.3 }, { d: '04/20', w: 52.1 }, { d: '04/21', w: 52.0 }, { d: '04/22', w: 52.0 }],
       initWeight: 52, goalWeight: 48, goalDays: 90, goalDate: null,
-      rFilters: { time: null, type: null, cost: null, cal: null },
+      rFilters: { ing: [], time: null, type: null, cost: null, cal: null }, favFoods: [],
       avatar: '🦋',
       streakDays: 0, gapDays: 0, totalLoggedDays: 0,
       friendCode: '', friends: [],
@@ -2414,7 +2617,7 @@
       // rFilters는 화면 탐색용 UI 상태일 뿐 사용자 데이터가 아니므로 세션마다 초기화한다.
       // (예전에 필터 칩을 눌렀던 기기는 새로고침해도 계속 필터가 걸려 있어
       //  레시피 목록이 사람마다 다르게 보이는 것처럼 보였던 원인)
-      S.rFilters = { time: null, type: null, cost: null, cal: null };
+      S.rFilters = { ing: [], time: null, type: null, cost: null, cal: null };
       S._schemaVersion = SCHEMA_VERSION;
     } catch (e) { }
     ensureFreshDay();
@@ -2578,6 +2781,7 @@
       const navMap = { 's-home': 'nav-home', 's-dash': 'nav-dash', 's-diet': 'nav-diet', 's-profile': 'nav-profile' };
       if (navMap[id]) { document.querySelectorAll('.ni').forEach(n => n.classList.remove('on')); document.getElementById(navMap[id])?.classList.add('on'); }
       if (id === 's-dash') renderDash(); if (id === 's-diet') renderRecipes(); updateHome(); updateProfileHeader();
+      if (id === 's-profile' && typeof renderMyCi === 'function') renderMyCi().catch(e => console.error('[renderMyCi]', e));
     }
     function navTo(el, id) {
       document.querySelectorAll('.ni').forEach(n => n.classList.remove('on')); el.classList.add('on');
@@ -2715,6 +2919,7 @@
       setTxt('pi-goal-cal', goalCalTxt);
       setTxt('prof-goalcal-btn-val', goalCalTxt);
       const rBtn = document.getElementById('prof-report-btn'); if (rBtn) rBtn.classList.toggle('report-ready', S.reportGeneratedDate === todayISOLocal() && !!S._todayReport);
+      if (typeof renderCiHome === 'function') { try { renderCiHome(); } catch (e) { console.error('[renderCiHome]', e); } }
       saveState();
     }
 
@@ -2931,6 +3136,7 @@
       const t = _pendingRoute; _pendingRoute = null;
       if (t && t.type === 'hormone') goH(t.hid);
       else go(t && t.id && t.id !== 's-login' && t.id !== 's-onboard' ? t.id : 's-home');
+      if (typeof maybeAutoCheckin === 'function') setTimeout(maybeAutoCheckin, 900);
     }
 
 
@@ -4821,22 +5027,10 @@
     // 일정 개수만 보여준 뒤 "더 보기"로 이어서 불러온다.
     const RCP_PAGE_SIZE = 24;
     function renderRecipes(reset = true) {
-      renderRecipeCategoryChips();
+      if (typeof renderRecipeFilters === 'function') renderRecipeFilters(); else renderRecipeCategoryChips();
       if (reset) S.rcpShowCount = RCP_PAGE_SIZE;
       const g = document.getElementById('rcp-grid'); if (!g) return;
-      const f = RCPS.filter(r => {
-        if (S.rFilters.time) {
-          if (S.rFilters.time > 0 && r.t > S.rFilters.time) return false;
-          if (S.rFilters.time < 0 && r.t < -S.rFilters.time) return false;
-        }
-        if (S.rFilters.type && r.tp !== S.rFilters.type) return false;
-        if (S.rFilters.cost && r.cost > S.rFilters.cost) return false;
-        if (S.rFilters.cal) {
-          const band = CAL_BANDS.find(b => b.key === S.rFilters.cal);
-          if (r.cal == null || r.cal < band.min || r.cal >= band.max) return false;
-        }
-        return true;
-      });
+      const f = RCPS.filter(r => typeof recipePassFilters === 'function' ? recipePassFilters(r) : true);
       const shown = f.slice(0, S.rcpShowCount || RCP_PAGE_SIZE);
       const costLabel = c => `~${(c / 1000).toFixed(0)}천원`;
       const cardsHtml = shown.map(r => `<div class="recipe-card" onclick="showRecipeDetail(${RCPS.indexOf(r)})">
@@ -5072,7 +5266,7 @@
 
     // ═══════════════════════ 오늘 달성률 · Lv./연속기록 ═══════════════════════
     function updateProfileHeader() {
-      setTxt('prof-today-pct', `오늘 달성률 ${overallPct()}%`);
+      setTxt('prof-today-pct', typeof ciScore === 'function' ? `오늘 목표 달성률 ${ciScore().total}점` : `오늘 달성률 ${overallPct()}%`);
 
       const total = S.totalLoggedDays || 0;
       const level = 1 + Math.floor(total / 5);
