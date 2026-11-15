@@ -1304,6 +1304,12 @@
     .rcpd-list .rcpd-step:last-child { border-bottom: 0 !important; }
     .rcpd-step-num { background: var(--accent-weak) !important; color: var(--accent-ink) !important; }
     .rcpd-tag { background: var(--accent-weak) !important; color: var(--accent-ink) !important; border: 0 !important; }
+
+    .rcpd-hero.loading .rcpd-gen { position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; font-size: 12px; color: var(--accent-ink); font-weight: 600; }
+    .rcpd-hero:not(.loading) .rcpd-gen { display: none; }
+    .rcpd-hero.icon { position: relative; }
+    .rcpd-hero { cursor: default; }
+    .rcpd-ai { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.5); color: #fff; font-size: 10.5px; padding: 3px 7px; border-radius: 6px; }
   </style>
 </head>
 
@@ -4835,7 +4841,7 @@
       const costLabel = c => `~${(c / 1000).toFixed(0)}천원`;
       const cardsHtml = shown.map(r => `<div class="recipe-card" onclick="showRecipeDetail(${RCPS.indexOf(r)})">
     <div style="display:flex;align-items:center;gap:12px">
-      ${r.vid ? `<img class="rcp-thumb" loading="lazy" src="https://i.ytimg.com/vi/${r.vid}/mqdefault.jpg" alt="" onerror="this.style.visibility='hidden'">` : (typeof recipeIconHtml === 'function' ? recipeIconHtml(r, 32) : r.img)}
+      ${typeof recipeIconHtml === 'function' ? recipeIconHtml(r, 32) : r.img}
       <div style="flex:1;min-width:0">
         <div style="font-size:11px;color:var(--accent-ink);font-weight:700">${r.tp}</div>
         <div style="font-size:14.5px;font-weight:700;color:var(--text);line-height:1.35">${r.n}</div>
@@ -4883,22 +4889,60 @@
       const k = r.cal && macroKcal > 0 ? Math.min(5, Math.max(.2, r.cal / macroKcal)) : 1;
       return (r._mac = { kcal: Math.round(r.cal || kcal), p: Math.round(p * k), c: Math.round(c * k), f: Math.round(f * k), hit, total: (r.ingredients || []).length });
     }
-    function playRecipeVideo(vid) {
+    // ── 레시피 대표 사진: AI로 만든 음식 사진 ──
+    // 처음 연 레시피만 서버(/api/recipe-image)에서 만들고, 640px JPEG로 줄여 Firestore recipe_images/{key}에 저장한다.
+    // 다음부터는 누구든 저장본을 읽어서 보여 준다(생성 비용은 레시피당 한 번).
+    const _rcpImgMem = new Map();
+    function recipeImageKey(r) { let h = 0x811c9dc5; for (const ch of String(r.n || '')) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return 'r' + h.toString(36); }
+    function _shrinkToJpeg(src, maxW) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => { const s = Math.min(1, maxW / img.naturalWidth); const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); resolve(c.toDataURL('image/jpeg', 0.78)); };
+        img.onerror = reject; img.src = src;
+      });
+    }
+    function _genQuotaOk() {
+      try { const t = todayISOLocal(); const q = JSON.parse(localStorage.getItem('bellamona_img_quota') || '{}'); if (q.d !== t) return true; return (q.n || 0) < 20; } catch (e) { return true; }
+    }
+    function _genQuotaUse() {
+      try { const t = todayISOLocal(); const q = JSON.parse(localStorage.getItem('bellamona_img_quota') || '{}'); localStorage.setItem('bellamona_img_quota', JSON.stringify({ d: t, n: (q.d === t ? q.n || 0 : 0) + 1 })); } catch (e) { }
+    }
+    async function loadRecipeImage(r) {
+      const key = recipeImageKey(r);
+      if (_rcpImgMem.has(key)) return _rcpImgMem.get(key);
+      const p = (async () => {
+        try {
+          const snap = await FB.db.collection('recipe_images').doc(key).get();
+          if (snap.exists && snap.data().data) return snap.data().data;
+        } catch (e) { /* 규칙이 아직 없으면 읽기가 막힐 수 있다 → 생성으로 넘어감 */ }
+        const user = FB && FB.auth && FB.auth.currentUser; if (!user || !_genQuotaOk()) return null;
+        const token = await user.getIdToken();
+        const res = await fetch('/api/recipe-image', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ name: r.n, ingredients: (r.ingredients || []).slice(0, 6) }) });
+        if (!res.ok) return null;
+        const j = await res.json();
+        _genQuotaUse();
+        const small = await _shrinkToJpeg(`data:${j.mime};base64,${j.data}`, 640);
+        FB.db.collection('recipe_images').doc(key).set({ data: small, name: String(r.n).slice(0, 80), by: user.uid, at: Date.now() }).catch(e => console.warn('[recipe image save]', e));
+        return small;
+      })().catch(e => { console.warn('[recipe image]', e); return null; });
+      _rcpImgMem.set(key, p);
+      const out = await p; if (!out) _rcpImgMem.delete(key);
+      return out;
+    }
+    async function fillRecipeHero(r) {
       const box = document.getElementById('rcpd-hero'); if (!box) return;
-      box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&playsinline=1&rel=0" title="레시피 영상" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+      const src = await loadRecipeImage(r);
+      const now = document.getElementById('rcpd-hero');
+      if (!now || now.dataset.key !== recipeImageKey(r)) return; // 그 사이 다른 레시피를 열었으면 무시
+      if (src) { now.classList.remove('icon', 'loading'); now.innerHTML = `<img src="${src}" alt="${String(r.n).replace(/"/g, '')} 예시 사진"><span class="rcpd-ai">AI로 만든 예시 사진</span>`; }
+      else now.classList.remove('loading');
     }
     function showRecipeDetail(idx) {
       const r = RCPS[idx]; if (!r) return;
       const mac = estimateRecipeMacros(r);
       const ICON = d => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
       const FLAME = ICON('<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>');
-      const hero = r.vid
-        ? `<div class="rcpd-hero" id="rcpd-hero" onclick="playRecipeVideo('${r.vid}')">
-            <img src="https://i.ytimg.com/vi/${r.vid}/hqdefault.jpg" alt="${r.n} 영상" onerror="this.parentElement.classList.add('noimg')">
-            <span class="rcpd-play"><svg viewBox="0 0 24 24" width="26" height="26" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span>
-          </div>
-          <div class="rcpd-credit">영상: ${r.ch ? r.ch.replace(/</g, '&lt;') + ' · ' : ''}<a href="https://www.youtube.com/watch?v=${r.vid}" target="_blank" rel="noopener">YouTube에서 보기</a></div>`
-        : `<div class="rcpd-hero icon">${typeof recipeIconHtml === 'function' ? recipeIconHtml(r, 64) : r.img}</div>`;
+      const hero = `<div class="rcpd-hero icon loading" id="rcpd-hero" data-key="${recipeImageKey(r)}">${typeof recipeIconHtml === 'function' ? recipeIconHtml(r, 64) : r.img}<span class="rcpd-gen">사진 준비 중…</span></div>`;
       document.getElementById('recipe-detail-body').innerHTML = `
     ${hero}
     <div class="rcpd-disclose">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
@@ -4925,6 +4969,7 @@
     ${r.tip ? `<div class="rcpd-sec">팁</div><div class="rcpd-tipbox">${r.tip}</div>` : ''}
     <button class="btn btn-o" style="margin-top:14px" onclick="closeMod('mod-recipe-detail')">닫기</button>`;
       openMod('mod-recipe-detail');
+      fillRecipeHero(r);
     }
 
     // ═══════════════════════ 칼로리 구간별 예시 식단 ═══════════════════════
