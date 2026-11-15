@@ -874,6 +874,9 @@ async function restoreFromServer() {
       if (d.profile.start_date) S.startDate = new Date(d.profile.start_date).getTime();
       if (d.profile.goal_date) S.goalDate = new Date(d.profile.goal_date).getTime();
       if (d.profile.gender) S.gender = d.profile.gender;
+      // 체형(어깨, 골반 기울기) 분석 결과. 사진은 저장하지 않고 각도 숫자만 남긴다.
+      if (d.profile.posture !== undefined) S.posture = d.profile.posture || null;
+      if (d.profile.posture_skipped !== undefined) S.postureSkipped = !!d.profile.posture_skipped;
       // 세이브(치팅) 칼로리는 서버가 로그인/새로고침마다 전날까지 정산해서 내려주는 값이 항상 정답이라
       // 로컬 값과 병합하지 않고 그대로 덮어쓴다.
       S.savedTotal = Number(d.profile.saved_total_kcal || 0);
@@ -916,7 +919,8 @@ async function restoreFromServer() {
     if (d.workoutHistory) {
       S.workoutLogs = d.workoutHistory.filter(w => w.intensity).map(w => ({
         id: w.id, serverId: w.id, date: (w.performed_date + '').slice(0, 10), time: (w.logged_time || '00:00').slice(0, 5),
-        intensity: w.intensity, durationMin: w.duration_min, exerciseType: w.exercise_type
+        intensity: w.intensity, durationMin: w.duration_min, exerciseType: w.exercise_type,
+        bodyPart: w.body_part || undefined, routineName: w.routine_name || undefined, kcal: w.kcal != null ? Number(w.kcal) : undefined
       }));
     }
     if (d.sleepLogs && d.sleepLogs.length) {
@@ -1010,6 +1014,14 @@ function saveProfileRow() {
       supplements: S.routines.oxytocin || []
     })
   }).catch(e => console.error('[saveProfileRow]', e));
+}
+
+// 체형 분석 결과(각도만) 저장. 사진은 이 기기에서만 분석하고 어디에도 올리지 않는다.
+async function savePostureRow() {
+  try {
+    if (!FB || !_authUser) return;
+    await _sub('profile').doc('main').set({ posture: S.posture || null, posture_skipped: !!S.postureSkipped }, { merge: true });
+  } catch (e) { console.error('[savePostureRow]', e); }
 }
 
 function saveWeightRow(entry) {
