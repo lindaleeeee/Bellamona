@@ -188,6 +188,7 @@ function renderCheckin() {
         <textarea id="ci-diary" class="ci-ta" placeholder="오늘 있었던 일이나 기분을 편하게 적어 보세요" oninput="if(CI)CI.diary=this.value">${_ciEsc(CI.diary)}</textarea>
         <div class="ci-hint">마이페이지 기록에 일기로 남아요</div>`;
     }
+    h += `<button type="button" class="ci-link" onclick="closeCheckin();goH('growth')">근력, 스트레칭, 내 몸 맞춤 운동 보러 가기</button>`;
     h += `<div class="ci-q">영양제는 챙겨 먹었어요?</div><div class="ci-row">${_ciChips([{ v: true, l: '먹었어요' }, { v: false, l: '못 먹었어요' }], 'supp')}</div>`;
   }
   const showEtc = isMeal || (s === 'workout' && CI.opt && CI.opt !== 'none');
@@ -447,6 +448,7 @@ function renderCiHome() {
     nx.innerHTML = next ? `<span class="nh-bell"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><span class="nh-nt">${ciNextText(next)}</span><button type="button" onclick="openCheckin('${next}', false)">지금 기록</button>` : '';
   }
   setTxt('nh-cheat', `${_ciFmt(S.savedTotal || 0)}kcal`);
+  setTxt('nh-ex-custom', S.posture ? '내 몸 기반 추천' : '사진으로 추천');
 }
 
 // ── 리포트 화면 ──
@@ -516,7 +518,7 @@ function ciWeekAnswers(days) {
 async function renderCiReport() {
   const box = document.getElementById('ci-report-body'); if (!box) return;
   const tab = _ciRepTab;
-  const tabs = `<div class="cr-tabs"><button type="button" class="${tab === 'day' ? 'on' : ''}" onclick="setCiRepTab('day')">오늘</button><button type="button" class="${tab === 'week' ? 'on' : ''}" onclick="setCiRepTab('week')">주간</button></div>`;
+  const tabs = `<div class="cr-tabs"><button type="button" class="${tab === 'day' ? 'on' : ''}" onclick="setCiRepTab('day')">오늘</button><button type="button" class="${tab === 'week' ? 'on' : ''}" onclick="setCiRepTab('week')">주간</button><button type="button" class="${tab === 'month' ? 'on' : ''}" onclick="setCiRepTab('month')">월간 달력</button></div>`;
   const head = `<div class="cr-head"><b>리포트</b><button type="button" class="ci-x" onclick="closeMod('mod-ci-report')" aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`;
   if (tab === 'day') {
     const sc = ciScore(), rep = ciReport(), pct = ciFillPct(), d = sc.data, c = ciGet();
@@ -543,6 +545,7 @@ async function renderCiReport() {
       <div class="cr-card cr-rows">${rows.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>`;
     return;
   }
+  if (tab === 'month') { box.innerHTML = head + tabs + await ciMonthHtml(); return; }
   box.innerHTML = head + tabs + `<div class="cr-card" style="text-align:center;color:var(--muted)">불러오는 중…</div>`;
   const h = await ciLoadHistory();
   if (_ciRepTab !== 'week') return;
@@ -571,6 +574,67 @@ async function renderCiReport() {
       ${cmp('수면', now && now.sleepH, prev && prev.sleepH, '시간', false)}
       ${cmp('운동', now ? now.workoutMin : null, prev && prev.any ? prev.workoutMin : null, '분', false)}
       ${cmp('달성률', now ? now.score : null, prev && prev.any ? prev.score : null, '점', false)}</div>`;
+}
+
+// ── 월간 달력: 날짜별 목표 달성률, 누르면 그날 기록과 리포트 ──
+let _ciMon = null, _ciSelDay = null, _ciMonCache = {};
+async function ciLoadMonth(y, m) {
+  const key = `${y}-${m}`;
+  if (_ciMonCache[key] && Date.now() - _ciMonCache[key].at < 60000) return _ciMonCache[key].h;
+  try {
+    const from = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+    const r = await fetchApi(apiUrl('/api/data/history?from=' + from), { credentials: 'include' });
+    if (!r.ok) return null;
+    const h = await r.json(); _ciMonCache[key] = { at: Date.now(), h }; return h;
+  } catch (e) { console.error('[ci month]', e); return null; }
+}
+function ciMonMove(d) {
+  const n = new Date(_ciMon.y, _ciMon.m + d, 1);
+  _ciMon = { y: n.getFullYear(), m: n.getMonth() }; _ciSelDay = null; renderCiReport();
+}
+function ciPickDay(iso) { _ciSelDay = iso; renderCiReport(); }
+async function ciMonthHtml() {
+  if (!_ciMon) { const t = new Date(); _ciMon = { y: t.getFullYear(), m: t.getMonth() }; }
+  const { y, m } = _ciMon;
+  const h = await ciLoadMonth(y, m);
+  const days = h ? ciDays(h) : {};
+  const today = todayISOLocal();
+  const first = new Date(y, m, 1).getDay(), total = new Date(y, m + 1, 0).getDate();
+  const iso = d => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  let cells = '일월화수목금토'.split('').map(d => `<div class="dw">${d}</div>`).join('');
+  for (let i = 0; i < first; i++) cells += '<div></div>';
+  const scores = [];
+  for (let d = 1; d <= total; d++) {
+    const k = iso(d), x = days[k], future = k > today;
+    const sc = x && x.any ? x.score : null;
+    if (sc != null) scores.push(sc);
+    const cls = sc == null ? '' : sc >= 70 ? 'hi' : sc >= 40 ? 'mid' : 'lo';
+    cells += `<button type="button" class="${cls}${k === _ciSelDay ? ' sel' : ''}${k === today ? ' today' : ''}" ${future ? 'disabled' : ''} onclick="ciPickDay('${k}')" aria-label="${m + 1}월 ${d}일${sc != null ? ' ' + sc + '점' : ''}"><span>${d}</span><b>${sc != null ? sc : ''}</b></button>`;
+  }
+  const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+  let detail = '';
+  const sel = _ciSelDay && days[_ciSelDay];
+  if (_ciSelDay) {
+    const dd = new Date(_ciSelDay + 'T12:00:00');
+    const c = (sel && sel.checks) || {}, ci = c.ci || {}, rep = ci.report;
+    const w = ci.workout;
+    detail = `<div class="cr-card"><div class="cr-t">${dd.getMonth() + 1}월 ${dd.getDate()}일 (${CI_DAYS[dd.getDay()]})${sel && sel.any ? ` · 달성률 ${sel.score}점` : ''}</div>` + (sel && sel.any ? `
+      <div class="cr-rows" style="padding:0">
+        <div><span>먹은 칼로리</span><b>${_ciFmt(sel.eaten)}kcal</b></div>
+        <div><span>운동</span><b>${sel.workoutMin ? sel.workoutMin + '분' : w && w.opt === 'none' ? '못 했어요 · ' + _ciEsc(w.reason || '') : '기록 없음'}</b></div>
+        <div><span>수면</span><b>${sel.sleepH != null ? sel.sleepH + '시간' : '기록 없음'}</b></div>
+        <div><span>영양제</span><b>${(w && w.supp) || c.suppAll ? '먹었어요' : w ? '못 먹었어요' : '기록 없음'}</b></div>
+      </div>
+      ${rep && rep.insight ? `<div class="cr-k">그날 알게 된 것</div><div class="cr-v">${_ciEsc(rep.insight)}</div><div class="cr-k">다음 날 바꿔볼 행동</div><div class="cr-v">${_ciEsc(rep.action)}</div>` : ''}
+      ${w && w.diary ? `<div class="cr-k">그날 일기</div><div class="cr-v" style="font-weight:500">${_ciEsc(w.diary)}</div>` : ''}`
+      : '<div class="my-empty">이날은 기록이 없어요</div>') + '</div>';
+  }
+  return `<div class="cr-card">
+      <div class="cr-mhead"><button type="button" onclick="ciMonMove(-1)" aria-label="이전 달">‹</button><b>${y}년 ${m + 1}월</b><button type="button" onclick="ciMonMove(1)" aria-label="다음 달">›</button></div>
+      <div class="cr-note2">${h ? (avg != null ? `기록한 ${scores.length}일 평균 달성률 ${avg}점 · 날짜를 누르면 그날 리포트가 보여요` : '이번 달 기록이 아직 없어요') : '기록을 불러오지 못했어요'}</div>
+      <div class="cr-cal">${cells}</div>
+      <div class="cr-legend"><span><i style="background:var(--accent-ink)"></i>70점 이상</span><span><i style="background:var(--accent-weak)"></i>40~69점</span><span><i style="background:#efedf2"></i>40점 미만</span></div>
+    </div>${detail}`;
 }
 
 // ── 마이페이지: 내일 바꿔볼 행동, 자주 먹는 음식, 운동 못 한 날 ──

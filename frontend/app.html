@@ -1485,6 +1485,27 @@
     .my-empty { font-size: 13px; color: var(--muted); }
     .my-fav-g { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; font-weight: 700; color: var(--text); }
     .my-fav-g small { font-weight: 500; color: var(--muted); font-size: 12px; }
+    .nh-ex { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .nh-ex button { min-height: 64px; border: 1px solid var(--bdr); border-radius: 14px; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font: inherit; cursor: pointer; color: var(--text); }
+    .nh-ex b { font-size: 14px; font-weight: 800; }
+    .nh-ex small { font-size: 11.5px; color: var(--muted); }
+    .cr-mhead { display: flex; justify-content: space-between; align-items: center; }
+    .cr-mhead b { font-size: 16px; color: var(--text); }
+    .cr-mhead button { width: 36px; height: 36px; border: 1px solid var(--bdr); border-radius: 10px; background: var(--surf); color: var(--muted); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+    .cr-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+    .cr-cal .dw { text-align: center; font-size: 11.5px; color: var(--muted); padding: 4px 0; }
+    .cr-cal button { aspect-ratio: 1 / 1.15; border: 1px solid transparent; border-radius: 10px; background: var(--card2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font: inherit; cursor: pointer; color: var(--text); padding: 0; }
+    .cr-cal button span { font-size: 12px; }
+    .cr-cal button b { font-size: 11px; font-weight: 800; min-height: 13px; }
+    .cr-cal button.hi { background: var(--accent-ink); color: #fff; }
+    .cr-cal button.mid { background: var(--accent-weak); color: var(--accent-ink); }
+    .cr-cal button.lo { background: #efedf2; color: var(--muted); }
+    .cr-cal button.sel { border-color: var(--text); }
+    .cr-cal button.today span { text-decoration: underline; }
+    .cr-cal button:disabled { background: transparent; cursor: default; color: var(--muted); }
+    .cr-legend { display: flex; gap: 12px; font-size: 11.5px; color: var(--muted); }
+    .cr-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+    .ci-link { align-self: flex-start; border: 0; background: transparent; color: var(--accent-ink); font: inherit; font-size: 13px; font-weight: 700; padding: 6px 0; cursor: pointer; text-decoration: underline; }
     .rf-g { margin-bottom: 10px; }
     .rf-l { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
     .rf-row { display: flex; gap: 6px; overflow-x: auto; margin: 0 -14px; padding: 0 14px 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -1688,23 +1709,6 @@
             <div id="nh-cards"></div>
             <div id="nh-nextcard"></div>
           </section>
-          <div class="nh-two">
-            <button type="button" onclick="navTo(document.getElementById('nav-profile'),'s-profile');setTimeout(()=>document.getElementById('prof-scoreboard')?.scrollIntoView({behavior:'smooth',block:'center'}),200)"><small>친구랑 비교</small><b>점수판 보기</b></button>
-            <button type="button" onclick="openMod('mod-cheat')"><small>치팅데이 칼로리</small><b id="nh-cheat">0kcal</b></button>
-          </div>
-          <!-- 다른 기록 -->
-          <section class="card">
-            <div class="sec-title">직접 기록하기</div>
-            <div class="quick-grid">
-              <button class="quick" onclick="goH('growth')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>운동</span><small id="hq-gro">기록하기</small></button>
-              <button class="quick" onclick="goH('cortisol')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>수면·일기</span><small id="hq-cor">기록하기</small></button>
-              <button class="quick" onclick="goH('oxytocin')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg><span id="hq-oxy-label">영양제</span><small id="hq-oxy">기록하기</small></button>
-              <button class="quick" onclick="openWtModal()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.9 1.5L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.9-2.5L19.4 9.5A2 2 0 0 0 17.5 8Z"/></svg><span>체중</span><small id="hq-wt">기록하기</small></button>
-            </div>
-          </section>
-
-          <!-- 예전 홈 요소: 다른 코드가 참조하는 id를 그대로 두기 위해 숨겨서 남겨 둔다 -->
-          <div style="display:none" aria-hidden="true">
           <!-- 오늘 남은 칼로리 -->
           <section class="card hero">
             <div class="hero-label">오늘 남은 칼로리</div>
@@ -1720,11 +1724,34 @@
 
           <!-- 끼니 기록 -->
           <section class="card list-card">
-            <div class="sec-title">오늘 먹은 것</div>
+            <div class="sec-title">오늘 먹은 것 <small style="font-weight:500;color:var(--muted);font-size:12px">끼니를 누르면 음식 검색</small></div>
             <div id="h-meal-list"></div>
           </section>
 
+          <!-- 운동: 근력, 스트레칭, 내 몸 맞춤 운동 -->
+          <section class="card">
+            <div class="sec-title">오늘 운동</div>
+            <div class="nh-ex">
+              <button type="button" onclick="_gTab='strength';goH('growth')"><b>근력</b><small>부위별 운동</small></button>
+              <button type="button" onclick="_gTab='stretch';goH('growth')"><b>스트레칭</b><small>부위별 스트레칭</small></button>
+              <button type="button" onclick="if(S.posture){_gTab='custom';goH('growth')}else{openPostureModal()}"><b>맞춤 운동</b><small id="nh-ex-custom">내 몸 기반 추천</small></button>
+            </div>
+          </section>
+          <div class="nh-two">
+            <button type="button" onclick="navTo(document.getElementById('nav-profile'),'s-profile');setTimeout(()=>document.getElementById('prof-scoreboard')?.scrollIntoView({behavior:'smooth',block:'center'}),200)"><small>친구랑 비교</small><b>점수판 보기</b></button>
+            <button type="button" onclick="openMod('mod-cheat')"><small>치팅데이 칼로리</small><b id="nh-cheat">0kcal</b></button>
           </div>
+          <!-- 다른 기록 -->
+          <section class="card">
+            <div class="sec-title">직접 기록하기</div>
+            <div class="quick-grid">
+              <button class="quick" onclick="goH('growth')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>운동</span><small id="hq-gro">기록하기</small></button>
+              <button class="quick" onclick="goH('cortisol')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>수면·일기</span><small id="hq-cor">기록하기</small></button>
+              <button class="quick" onclick="goH('oxytocin')"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg><span id="hq-oxy-label">영양제</span><small id="hq-oxy">기록하기</small></button>
+              <button class="quick" onclick="openWtModal()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.9 1.5L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.9-2.5L19.4 9.5A2 2 0 0 0 17.5 8Z"/></svg><span>체중</span><small id="hq-wt">기록하기</small></button>
+            </div>
+          </section>
+
         </div>
       </div>
 

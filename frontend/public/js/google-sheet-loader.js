@@ -190,22 +190,10 @@
 
     /* ─── 메인 로더 ─── */
     function loadSheet() {
-        // 캐시 확인
-        try {
-            const cached = sessionStorage.getItem(CACHE_KEY);
-            if (cached) {
-                const { ts, data } = JSON.parse(cached);
-                if (Date.now() - ts < CACHE_TTL && Array.isArray(data) && data.length > 0) {
-                    applyRecipes(data);
-                    console.log(`[구글시트] 캐시에서 ${data.length}개 레시피 로드`);
-                    // 캐시 사용하되 백그라운드에서 새로고침
-                    fetchAndApply(true);
-                    return;
-                }
-            }
-        } catch (_) { /* 캐시 읽기 실패 무시 */ }
-
-        fetchAndApply(false);
+        loadSnapshot().catch(err => {
+            console.warn('[구글시트] 저장본 없음 → 시트를 직접 읽습니다:', err.message);
+            fetchAndApply(false);
+        });
     }
 
     function fetchPage(offset) {
@@ -231,53 +219,52 @@
         return { table: { cols: ok[0].table.cols, rows: ok.flatMap(g => g.table.rows || []) } };
     }
 
+    // 헤더와 행(셀 값 배열)으로 레시피 목록을 만든다(중복 제거, 같은 이름 제목 구분)
+    function buildRecipes(headers, rowCells) {
+        const cm = buildColMap(headers);
+        if (cm.name < 0) { console.warn('[구글시트] "음식이름" 컬럼을 찾을 수 없습니다. 헤더:', headers); return []; }
+        const recipes = [], seen = new Set();
+        for (const cells of rowCells) {
+            const r = rowToRecipe(cells, cm);
+            if (!r) continue;
+            // 이름과 재료 목록이 모두 같은 행만 중복으로 보고 버린다.
+            const key = r.n + '\u0000' + r.ingredients.join('\u0001');
+            if (seen.has(key)) continue;
+            seen.add(key);
+            recipes.push(r);
+        }
+        disambiguateTitles(recipes);
+        return recipes;
+    }
+
+    // 배포할 때 저장해 둔 시트 사본(/data/recipe-sheet.json)을 먼저 읽는다
+    function loadSnapshot() {
+        return fetch('/data/recipe-sheet.json', { cache: 'no-cache' })
+            .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
+            .then(snap => {
+                const recipes = buildRecipes(snap.cols || [], snap.rows || []);
+                if (!recipes.length) throw new Error('사본에 레시피가 없습니다');
+                applyRecipes(recipes);
+                console.log(`[구글시트] 저장본(${snap.at})에서 ${recipes.length}개 레시피 로드`);
+            });
+    }
+
+    // 저장본이 없을 때만 시트를 직접 읽는다
     function fetchAndApply(silent) {
         fetchAllPages()
             .then(gviz => {
-                const cols = gviz.table.cols;
-                const rows = gviz.table.rows;
-                const headers = cols.map(c => (c.label || '').trim());
-
-                const cm = buildColMap(headers);
-                if (cm.name < 0) {
-                    console.warn('[구글시트] "음식이름" 컬럼을 찾을 수 없습니다. 헤더:', headers);
-                    return;
-                }
-
-                const recipes = [];
-                const seen = new Set();
-
-                for (const row of rows) {
-                    const cells = row.c
-                        ? row.c.map(cell => (cell && cell.v != null) ? cell.v : '')
-                        : [];
-
-                    const r = rowToRecipe(cells, cm);
-                    if (!r) continue;
-                    // 이름만 같다고 같은 레시피가 아니다(같은 "봄동 겉절이"라도 재료가 다른 별개 레시피가 많다).
-                    // 이름과 재료 목록이 모두 같은 행만 중복으로 보고 버린다.
-                    const key = r.n + '\u0000' + r.ingredients.join('\u0001');
-                    if (seen.has(key)) continue;
-                    seen.add(key);
-                    recipes.push(r);
-                }
-                disambiguateTitles(recipes);
-
+                const headers = gviz.table.cols.map(c => (c.label || '').trim());
+                const cells = gviz.table.rows.map(row => row.c ? row.c.map(cell => (cell && cell.v != null) ? cell.v : '') : []);
+                const recipes = buildRecipes(headers, cells);
                 if (recipes.length > 0) {
                     applyRecipes(recipes);
-                    // 캐시 저장
-                    try {
-                        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: recipes }));
-                    } catch (_) { /* 초과 시 무시 */ }
                     console.log(`[구글시트] ${recipes.length}개 레시피 로드 완료`);
                 } else if (!silent) {
                     console.warn('[구글시트] 유효한 레시피가 없습니다.');
                 }
             })
             .catch(err => {
-                if (!silent) {
-                    console.warn('[구글시트] 로드 실패 → 정적 데이터 사용:', err.message);
-                }
+                if (!silent) console.warn('[구글시트] 로드 실패 → 정적 데이터 사용:', err.message);
             });
     }
 

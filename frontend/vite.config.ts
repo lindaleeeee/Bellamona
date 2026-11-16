@@ -5,6 +5,8 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 // @ts-ignore — 순수 JS 빌드 스크립트
 import { buildRecipePages } from './tools/build_recipe_pages.mjs';
+// @ts-ignore — 순수 JS 빌드 스크립트
+import { snapshotRecipeSheet } from './tools/snapshot_recipe_sheet.mjs';
 
 // 주소 구조:  /            → index.html (소개 페이지, 로그인 불필요)
 //            앱 주소들     → app.html   (SPA. 화면 전환/로그인 가드는 app.html 안에서 처리)
@@ -29,7 +31,7 @@ function bellamonaRoutes(): Plugin {
         configureServer(server) { server.middlewares.use(rewrite); },
         configurePreviewServer(server) { server.middlewares.use(rewrite); },
         // 빌드가 끝난 뒤, 환경변수 치환까지 끝난 dist/app.html을 주소별 파일로 복사한다.
-        closeBundle() {
+        async closeBundle() {
             if (config.command !== 'build') return;
             const src = resolve(config.root, config.build.outDir, 'app.html');
             if (!existsSync(src)) throw new Error('dist/app.html을 찾지 못했습니다');
@@ -37,6 +39,9 @@ function bellamonaRoutes(): Plugin {
             // 로그인 없이 열리는 레시피 공개 페이지(/recipe, /recipe/r-xxxx)와 sitemap.xml, robots.txt
             const n = buildRecipePages(config.root, resolve(config.root, config.build.outDir));
             console.log(`[recipe pages] ${n}개 생성`);
+            // 레시피 구글 시트를 읽어 dist/data/recipe-sheet.json 으로 저장(앱이 먼저 이 파일을 읽는다)
+            const rows = await snapshotRecipeSheet(resolve(config.root, config.build.outDir));
+            if (rows) console.log(`[recipe sheet] ${rows}행 저장`);
         },
     };
 }
