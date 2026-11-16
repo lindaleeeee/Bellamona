@@ -15,8 +15,11 @@
     //   F 카테고리 · G 음식이름 · H 시간 · I 가격 · J 맛 · K 주재료 · L 부재료 · M 양념 · N 순서 · O 팁 · P 칼로리
     // (채널명, 영상링크는 저작권 문제로 앱에 보여 주지 않으므로 받지 않는다)
     const GVIZ_QUERY = 'select F,G,H,I,J,K,L,M,N,O,P where G is not null';
-    const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&tq=${encodeURIComponent(GVIZ_QUERY)}`;
-    const CACHE_KEY = 'bellamona_sheet_recipes_v8'; // 시트/쿼리/중복 규칙을 바꾸면 이전 캐시를 쓰지 않도록 키를 올린다
+    // 한 번에 다 받으면 시트가 커질수록 구글 쪽 응답 한도에 걸려 통째로 실패한다. 4,000행씩 나눠 받는다.
+    const PAGE_ROWS = 4000;
+    const FIRST_PAGES = 8;   // 처음에 동시에 받는 묶음 수(32,000행). 마지막 묶음이 꽉 차 있으면 이어서 더 받는다.
+    const gvizUrl = (offset) => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&tq=${encodeURIComponent(`${GVIZ_QUERY} limit ${PAGE_ROWS} offset ${offset}`)}`;
+    const CACHE_KEY = 'bellamona_sheet_recipes_v9'; // 시트/쿼리/중복 규칙을 바꾸면 이전 캐시를 쓰지 않도록 키를 올린다
     const CACHE_TTL = 1000 * 60 * 10;             // 10분 캐시
 
     /* ─── 카테고리 → 이모지 ─── */
@@ -205,14 +208,32 @@
         fetchAndApply(false);
     }
 
-    function fetchAndApply(silent) {
-        fetch(GVIZ_URL)
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.text();
-            })
+    function fetchPage(offset) {
+        return fetch(gvizUrl(offset))
+            .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.text(); })
             .then(text => {
-                const gviz = parseGviz(text);
+                const g = parseGviz(text);
+                if (!g || g.status === 'error' || !g.table) throw new Error((g && g.errors && g.errors[0] && (g.errors[0].detailed_message || g.errors[0].message)) || '응답 형식 오류');
+                return g;
+            });
+    }
+
+    async function fetchAllPages() {
+        const pages = await Promise.all(Array.from({ length: FIRST_PAGES }, (_, i) =>
+            fetchPage(i * PAGE_ROWS).catch(err => { console.warn(`[구글시트] ${i * PAGE_ROWS}행부터 받기 실패:`, err.message); return null; })));
+        let offset = FIRST_PAGES * PAGE_ROWS;
+        while (pages[pages.length - 1] && pages[pages.length - 1].table.rows.length >= PAGE_ROWS && offset < 200000) {
+            pages.push(await fetchPage(offset).catch(() => null));
+            offset += PAGE_ROWS;
+        }
+        const ok = pages.filter(Boolean);
+        if (!ok.length) throw new Error('모든 묶음 받기 실패');
+        return { table: { cols: ok[0].table.cols, rows: ok.flatMap(g => g.table.rows || []) } };
+    }
+
+    function fetchAndApply(silent) {
+        fetchAllPages()
+            .then(gviz => {
                 const cols = gviz.table.cols;
                 const rows = gviz.table.rows;
                 const headers = cols.map(c => (c.label || '').trim());
