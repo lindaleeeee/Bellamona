@@ -195,10 +195,12 @@ function _ciChips(list, key, cls) {
 function renderCheckin() {
   const box = document.getElementById('ci-body'); if (!box || !CI) return;
   const s = CI.slot, isMeal = !!CI_MEAL_OPTS[s];
-  const pastHead = { dinner: '어제 저녁은\n어떻게 드셨나요?', workout: '어제 운동\n하셨나요?' };
-  let h = `<div class="ci-top"><span>${CI.date ? `어제 기록 채우기 · ${CI_TITLE[s]}` : `${_ciHM(Date.now())} · ${CI_TITLE[s]}`}</span><button type="button" class="ci-x" onclick="closeCheckin()" aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  const isY = CI.date && CI.date === _ciAddDays(todayISOLocal(), -1);
+  const dLabel = CI.date ? (isY ? '어제' : `${Number(CI.date.slice(5, 7))}월 ${Number(CI.date.slice(8))}일`) : '';
+  const pastHead = { dinner: `${dLabel} 저녁은\n어떻게 드셨나요?`, workout: `${dLabel} 운동\n하셨나요?` };
+  let h = `<div class="ci-top"><span>${CI.date ? `${dLabel} 기록 채우기 · ${CI_TITLE[s]}` : `${_ciHM(Date.now())} · ${CI_TITLE[s]}`}</span><button type="button" class="ci-x" onclick="closeCheckin()" aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <h2 class="ci-h">${_ciEsc(CI.date ? pastHead[s] : CI_HEAD[s]).replace(/\n/g, '<br>')}</h2>
-  ${CI.date ? '<div class="ci-hint" style="margin-top:-8px">어제 비어 있던 칸이에요. 하나만 누르면 어제 날짜로 들어가요.</div>' : ''}`;
+  ${CI.date ? `<div class="ci-hint" style="margin-top:-8px">${CI.date === _ciAddDays(todayISOLocal(), -1) ? '어제 비어 있던 칸이에요. 하나만 누르면 어제 날짜로 들어가요.' : `${Number(CI.date.slice(5, 7))}월 ${Number(CI.date.slice(8))}일 날짜로 들어가요.`}</div>` : ''}`;
   if (s === 'morning') {
     h += `<div class="ci-q">어떻게 잤어요?</div><div class="ci-row">${_ciChips(CI_SLEEP_Q, 'sq')}</div>
       <div class="ci-q">몇 시간 잤어요?</div><div class="ci-row ci-row5">${_ciChips(CI_SLEEP_H.map(x => ({ v: x.h, l: x.l })), 'sh')}</div>
@@ -361,9 +363,15 @@ function _ciNextPast() {
   else if (y) { try { localStorage.setItem(_ciYKey(y), '1'); } catch (e) { } }
 }
 function ciSkipPast() { _ciNextPast(); }
-function ciSubmitPast() {
+async function ciSubmitPast() {
   const s = CI.slot, date = CI.date, text = (CI.text || '').trim();
-  const day = _ciYday && _ciYday.date === date ? _ciYday.data : { checks: {} };
+  // 그날 체크 문서를 통째로 다시 쓰므로, 먼저 그날 기록을 읽어 와서 합친다
+  if (!(_ciYday && _ciYday.date === date)) {
+    try { const r = await fetchApi(apiUrl('/api/data/day?date=' + date), { credentials: 'include' }); if (!r.ok) throw new Error('HTTP ' + r.status); _ciYday = { date, data: await r.json() }; }
+    catch (e) { console.error('[ci past load]', e); alert('그날 기록을 불러오지 못했어요. 잠시 후 다시 해 주세요.'); return; }
+  }
+  if (!CI) return;
+  const day = _ciYday.data;
   const checks = Object.assign({}, day.checks || {});
   const ci = Object.assign({}, checks.ci || {});
   const at = new Date(date + 'T21:00:00').getTime();
@@ -396,8 +404,11 @@ function ciSubmitPast() {
   fetchApi(apiUrl('/api/data/checks'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ check_date: date, checks }) })
     .catch(e => console.error('[ci past checks]', e));
   _ciHist = null; _ciMonCache = {};
-  showCiToast(null, null, s === 'workout' ? '어제 운동까지 채웠어요' : '어제 저녁을 채웠어요', '어제 기록을 채웠어요');
+  const isY = date === _ciAddDays(todayISOLocal(), -1);
+  showCiToast(null, null, s === 'workout' ? '운동과 영양제를 저장했어요' : '저녁을 저장했어요', isY ? '어제 기록을 채웠어요' : `${Number(date.slice(5, 7))}월 ${Number(date.slice(8))}일 기록을 채웠어요`);
   _ciNextPast();
+  // 날짜별 상세가 열려 있으면 새로 그린다
+  if (document.querySelector('.mov.open') && typeof showDayDetail === 'function' && document.getElementById('day-weight-input')) setTimeout(() => showDayDetail(date), 600);
 }
 
 // ── 뾰로롱 안내, 알림 배너 ──

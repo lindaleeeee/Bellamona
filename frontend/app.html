@@ -1312,6 +1312,7 @@
     .rcpd-ai { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.5); color: #fff; font-size: 10.5px; padding: 3px 7px; border-radius: 6px; }
 
     /* ── 새 기록 흐름: 체크인, 새 홈, 리포트, 마이 (2026-11) ── */
+    #mod-checkin, #mod-ci-report { z-index: 650; }
     #mod-checkin .msh, #mod-ci-report .msh { max-height: 100%; height: 100%; border-radius: 0; border-top: 0; padding: 8px 20px 0; display: flex; flex-direction: column; background: var(--bg); }
     #ci-body, #ci-report-body { display: flex; flex-direction: column; gap: 14px; min-height: 100%; }
     .ci-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: var(--accent-ink); }
@@ -4773,22 +4774,10 @@
       <button class="btn btn-p" style="width:auto;padding:8px 14px;margin:0" onclick="saveDayWeight()">저장</button>
     </div>
     <div class="card" style="margin-bottom:12px">
-      <div class="cap" style="margin-bottom:6px">🍽 식사 체크</div>
-      ${S.routines.insulin.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--sky2)')).join('')}
-      <div class="cap" style="margin:10px 0 6px">식사 추가</div>
+      <div class="cap" style="margin-bottom:6px">식사 추가</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">${mealAddBtns}</div>
-    </div>
-    <div class="card" style="margin-bottom:12px">
-      <div class="cap" style="margin-bottom:6px">💪 운동 체크</div>
-      ${S.routines.growth.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--gro)')).join('')}
-    </div>
-    <div class="card" style="margin-bottom:12px">
-      <div class="cap" style="margin-bottom:6px">🧘 마음 체크</div>
-      ${S.routines.cortisol.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--cor)')).join('')}
-    </div>
-    <div class="card" style="margin-bottom:12px">
-      <div class="cap" style="margin-bottom:6px">💊 ${hormoneScreenLabel()} 체크</div>
-      ${(S.routines.oxytocin || []).length ? S.routines.oxytocin.map(r => dayCheckHtml(r.id, r.label, r.sub, 'var(--rose)')).join('') : `<div style="font-size:12px;color:var(--muted);padding:4px 0">마이페이지에서 영양제를 먼저 추가해주세요</div>`}
+      <div class="cap" style="margin:12px 0 6px">운동 추가</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button onclick="openCheckin('workout', false, '${dateStr}')" style="background:var(--sky3);border:1.5px solid rgba(149,117,205,.3);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--sky2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">+ 운동, 영양제</button></div>
     </div>`;
 
       body.innerHTML = `
