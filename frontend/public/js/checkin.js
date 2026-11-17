@@ -36,12 +36,19 @@ const CI_MEAL_OPTS = {
     { id: 'k900', label: '900kcal 이상', kcal: 900, ex: '치킨과 맥주, 삼겹살과 밥' }
   ]
 };
+// 운동 종류와 강도(MET). 근거: Compendium of Physical Activities 2011
 const CI_WORKOUTS = [
   { id: 'none', label: '오늘은 못 했어요' },
-  { id: 'walk', label: '걷기', intensity: 'low', met: 3.5 },
-  { id: 'strength', label: '근력 운동', intensity: 'high', met: 5 },
-  { id: 'stretch', label: '스트레칭, 요가', intensity: 'low', met: 2.5 }
+  { id: 'walk', label: '걷기', levels: [['아주 천천히 · 시속 3km', 2.8], ['천천히 · 시속 4km', 3.0], ['보통 · 시속 5km', 3.5], ['빠르게 · 시속 5.6km', 4.3], ['아주 빠르게 · 시속 6.4km', 5.0]], def: 2, slopes: true },
+  { id: 'strength', label: '근력 운동', levels: [['가볍게 · 가벼운 무게, 여러 동작', 3.5], ['보통 · 스쿼트, 런지 같은 큰 동작', 5.0], ['힘들게 · 무거운 무게, 쉬는 시간 짧게', 6.0]], def: 1 },
+  { id: 'pilates', label: '필라테스', levels: [['가볍게 · 매트 기초', 3.0], ['보통 · 리포머(기구)', 3.5], ['힘들게 · 쉬는 시간 짧게', 4.5]], def: 1 },
+  { id: 'stretch', label: '스트레칭, 요가', levels: [['가볍게 · 스트레칭', 2.3], ['보통 · 요가', 2.5], ['힘들게 · 파워 요가', 4.0]], def: 1 }
 ];
+const CI_SLOPES = [['평지', 0], ['완만한 오르막', 1.8], ['가파른 오르막', 4.5]];
+function ciWorkoutMet(w, lvl, slope) {
+  const L = w.levels[lvl != null ? lvl : w.def];
+  return Math.round((L[1] + (w.slopes ? CI_SLOPES[slope || 0][1] : 0)) * 10) / 10;
+}
 const CI_MINS = [10, 20, 30, 60];
 const CI_REASONS = ['피곤해서', '어제 해서', '그냥 귀찮아서', '기타'];
 const CI_SLEEP_Q = ['푹 잤어요', '보통이에요', '잘 못 잤어요'];
@@ -90,6 +97,7 @@ function maybeAutoCheckin() {
     if (document.querySelector('.mov.open')) return;
     const slot = ciDueSlots()[0];
     if (slot) openCheckin(slot, true);
+    else if (new Date().getHours() < 14 && ciDone('morning')) ciMaybeYesterday();
   } catch (e) { console.error('[ci auto]', e); }
 }
 document.addEventListener('visibilitychange', () => {
@@ -99,14 +107,16 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ── 체크인 열기 ──
-function openCheckin(slot, auto) {
-  const c = ciGet()[slot] || {};
-  const sl = slot === 'morning' ? ciTodaySleep() : null;
+function openCheckin(slot, auto, date) {
+  const past = date && date !== todayISOLocal();
+  const c = past ? {} : (ciGet()[slot] || {});
+  const sl = slot === 'morning' && !past ? ciTodaySleep() : null;
   CI = {
     slot, auto: !!auto,
     opt: c.opt || null, text: c.text || '', kcal: c.kcal != null ? c.kcal : null, save: true,
     sq: c.sq || null, sh: c.sh || (sl ? Math.min(9, Math.max(5, Math.round(sl.hours))) : null),
-    min: c.min || 30, reason: c.reason || null, diary: c.diary || '', supp: c.supp != null ? c.supp : null
+    min: c.min || 30, reason: c.reason || null, diary: c.diary || '', supp: c.supp != null ? c.supp : null,
+    lvl: c.lvl != null ? c.lvl : null, slope: c.slope || 0, date: past ? date : null
   };
   _ciSug = [];
   hideCiBanner();
@@ -117,7 +127,12 @@ function closeCheckin() {
   if (CI && CI.auto && !ciGet()[CI.slot]) ciDismiss(CI.slot);
   closeMod('mod-checkin'); CI = null;
 }
-function ciSet(k, v) { if (!CI) return; CI[k] = v; if (k === 'opt' && CI_MEAL_OPTS[CI.slot]) CI.kcal = null; renderCheckin(); }
+function ciSet(k, v) {
+  if (!CI) return; CI[k] = v;
+  if (k === 'opt' && CI_MEAL_OPTS[CI.slot]) CI.kcal = null;
+  if (k === 'opt' && CI.slot === 'workout') { CI.lvl = null; CI.slope = 0; }
+  renderCheckin();
+}
 function ciNearest(opts, kcal) { return opts.reduce((b, x) => Math.abs(x.kcal - kcal) < Math.abs(b.kcal - kcal) ? x : b, opts[0]); }
 function ciPickFav(i) {
   const f = (S.favFoods || [])[i]; if (!f || !CI) return;
@@ -180,8 +195,10 @@ function _ciChips(list, key, cls) {
 function renderCheckin() {
   const box = document.getElementById('ci-body'); if (!box || !CI) return;
   const s = CI.slot, isMeal = !!CI_MEAL_OPTS[s];
-  let h = `<div class="ci-top"><span>${_ciHM(Date.now())} · ${CI_TITLE[s]}</span><button type="button" class="ci-x" onclick="closeCheckin()" aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-  <h2 class="ci-h">${_ciEsc(CI_HEAD[s]).replace(/\n/g, '<br>')}</h2>`;
+  const pastHead = { dinner: '어제 저녁은\n어떻게 드셨나요?', workout: '어제 운동\n하셨나요?' };
+  let h = `<div class="ci-top"><span>${CI.date ? `어제 기록 채우기 · ${CI_TITLE[s]}` : `${_ciHM(Date.now())} · ${CI_TITLE[s]}`}</span><button type="button" class="ci-x" onclick="closeCheckin()" aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <h2 class="ci-h">${_ciEsc(CI.date ? pastHead[s] : CI_HEAD[s]).replace(/\n/g, '<br>')}</h2>
+  ${CI.date ? '<div class="ci-hint" style="margin-top:-8px">어제 비어 있던 칸이에요. 하나만 누르면 어제 날짜로 들어가요.</div>' : ''}`;
   if (s === 'morning') {
     h += `<div class="ci-q">어떻게 잤어요?</div><div class="ci-row">${_ciChips(CI_SLEEP_Q, 'sq')}</div>
       <div class="ci-q">몇 시간 잤어요?</div><div class="ci-row ci-row5">${_ciChips(CI_SLEEP_H.map(x => ({ v: x.h, l: x.l })), 'sh')}</div>
@@ -194,6 +211,12 @@ function renderCheckin() {
   }
   if (s === 'workout') {
     h += `<div class="ci-col">${CI_WORKOUTS.map(o => `<button type="button" class="ci-opt ci-opt1${CI.opt === o.id ? ' on' : ''}" onclick='ciSet("opt", ${JSON.stringify(o.id)})'><b>${_ciEsc(o.label)}</b></button>`).join('')}</div>`;
+    const wsel = CI_WORKOUTS.find(x => x.id === CI.opt);
+    if (wsel && wsel.levels) {
+      if (CI.lvl == null) CI.lvl = wsel.def;
+      h += `<div class="ci-q">${wsel.id === 'walk' ? '얼마나 빠르게 걸었어요?' : '강도는 어땠어요?'}</div><div class="ci-col ci-lvls">${wsel.levels.map((L, i) => `<button type="button" class="ci-chip${CI.lvl === i ? ' on' : ''}" onclick="ciSet('lvl', ${i})">${_ciEsc(L[0])}</button>`).join('')}</div>`;
+      if (wsel.slopes) h += `<div class="ci-q">길은요?</div><div class="ci-row">${CI_SLOPES.map((sl, i) => `<button type="button" class="ci-chip${(CI.slope || 0) === i ? ' on' : ''}" onclick="ciSet('slope', ${i})">${sl[0]}</button>`).join('')}</div>`;
+    }
     if (CI.opt && CI.opt !== 'none') h += `<div class="ci-q">얼마나 했어요?</div><div class="ci-row">${_ciChips(CI_MINS.map(m => ({ v: m, l: m + '분' })), 'min')}</div>`;
     if (CI.opt === 'none') {
       h += `<div class="ci-q">왜 못 했어요?</div><div class="ci-wrap">${_ciChips(CI_REASONS, 'reason', 'ci-chip ci-pill')}</div>`;
@@ -215,7 +238,7 @@ function renderCheckin() {
       <div id="ci-picked" class="ci-hint ci-hint-a">${isMeal && CI.kcal != null && CI.text ? `${_ciEsc(CI.text)}${CI.amt ? ` ${CI.amt}g` : ''} · ${CI.kcal}kcal로 기록돼요` : ''}</div>`;
     if (isMeal) h += `<label id="ci-savefav" class="ci-check" style="display:${CI.text.trim() ? 'flex' : 'none'}"><input type="checkbox" ${CI.save ? 'checked' : ''} onchange="if(CI)CI.save=this.checked"> 자주 먹는 음식으로 저장</label>`;
   }
-  h += `<div class="ci-foot"><button type="button" class="btn btn-p ci-submit" ${ciCanSubmit() ? '' : 'disabled'} onclick="ciSubmit()">기록하기</button></div>`;
+  h += `<div class="ci-foot"><button type="button" class="btn btn-p ci-submit" ${ciCanSubmit() ? '' : 'disabled'} onclick="ciSubmit()">기록하기</button>${CI.date ? '<button type="button" class="btn btn-o" style="margin-top:8px" onclick="ciSkipPast()">기억이 안 나요, 건너뛰기</button>' : ''}</div>`;
   box.innerHTML = h;
 }
 
@@ -229,6 +252,7 @@ function ciUpsertMeal(label, text, kcal) {
 }
 function ciSubmit() {
   if (!ciCanSubmit()) return;
+  if (CI.date) return ciSubmitPast();
   const s = CI.slot, today = todayISOLocal(), now = Date.now(), ci = ciData();
   const before = ciFillPct();
   const text = (CI.text || '').trim();
@@ -262,12 +286,15 @@ function ciSubmit() {
         if (typeof saveDiaryRow === 'function') saveDiaryRow(entry);
       }
     } else {
-      const time = _ciHM(now), type = text || w.label;
-      const kcal = typeof exerciseKcal === 'function' ? exerciseKcal(w.intensity, CI.min, w.met) : Math.round(w.met * 3.5 * 55 / 200 * CI.min);
-      const entry = { id: S.nextWorkoutId++, date: today, time, intensity: w.intensity, durationMin: CI.min, exerciseType: type, met: w.met, kcal };
+      const time = _ciHM(now);
+      const met = ciWorkoutMet(w, CI.lvl, CI.slope);
+      const intensity = met < 3.5 ? 'low' : met < 5 ? 'medium' : 'high';
+      const lvlName = w.levels[CI.lvl != null ? CI.lvl : w.def][0].split(' · ')[0];
+      const kcal = typeof exerciseKcal === 'function' ? exerciseKcal(intensity, CI.min, met) : Math.round(met * 3.5 * 55 / 200 * CI.min);
+      const entry = { id: S.nextWorkoutId++, date: today, time, intensity, durationMin: CI.min, exerciseType: text || `${w.label} (${lvlName}${w.slopes && CI.slope ? ', ' + CI_SLOPES[CI.slope][0] : ''})`, met, kcal };
       S.workoutLogs.push(entry);
       if (typeof saveWorkoutRow === 'function') saveWorkoutRow(entry);
-      Object.assign(rec, { min: CI.min, text, time, type, kcal });
+      Object.assign(rec, { min: CI.min, text, time, type: entry.exerciseType, kcal, lvl: CI.lvl, slope: CI.slope || 0 });
     }
     S.checks.suppAll = !!CI.supp;
     if (CI.supp) (S.routines.oxytocin || []).forEach(r => { S.checks[r.id] = true; });
@@ -296,19 +323,91 @@ function ciSubmit() {
   showCiToast(before, after, sub);
   // 지금 시간에 답할 게 더 남아 있으면 알림처럼 위에 띄운다
   setTimeout(() => {
+    if (s === 'morning') { ciMaybeYesterday(); return; }
     const next = ciDueSlots()[0];
     if (next) showCiBanner(next); else if (before < 100 && after >= 100) showCiBanner('report');
   }, 3200);
 }
 
+// ── 어제 빈칸 채우기: 아침 질문 뒤에 어제 저녁이나 운동이 비어 있으면 한 장씩 더 묻는다 ──
+let _ciYday = null, _ciYGaps = [];
+function _ciYKey(d) { return 'bellamona_ci_yday_' + d; }
+async function ciMaybeYesterday() {
+  try {
+    const y = _ciAddDays(todayISOLocal(), -1);
+    if (localStorage.getItem(_ciYKey(y))) return;
+    if (document.querySelector('.mov.open')) return;
+    const r = await fetchApi(apiUrl('/api/data/day?date=' + y), { credentials: 'include' });
+    if (!r.ok) return;
+    const data = await r.json();
+    // 어제 기록이 하나도 없고 기록한 날도 거의 없으면(막 시작한 사람) 어제를 묻지 않는다
+    const yAny = (data.meals || []).length || (data.workouts || []).length || (data.checks && Object.keys(data.checks).length);
+    if (!yAny && (S.totalLoggedDays || 0) < 2) return;
+    _ciYday = { date: y, data };
+    const meals = data.meals || [], ci = (data.checks && data.checks.ci) || {};
+    const gaps = [];
+    if (!meals.some(m => m.label === '저녁' && (m.description || m.kcal != null)) && !ci.dinner) gaps.push('dinner');
+    if (!(data.workouts || []).length && !ci.workout) gaps.push('workout');
+    if (!gaps.length) { localStorage.setItem(_ciYKey(y), '1'); return; }
+    _ciYGaps = gaps;
+    if (!document.querySelector('.mov.open')) openCheckin(gaps[0], false, y);
+  } catch (e) { console.error('[ci yesterday]', e); }
+}
+function _ciNextPast() {
+  const y = CI && CI.date; const cur = CI && CI.slot;
+  _ciYGaps = _ciYGaps.filter(g => g !== cur);
+  closeMod('mod-checkin'); CI = null;
+  if (_ciYGaps.length && y) setTimeout(() => openCheckin(_ciYGaps[0], false, y), 350);
+  else if (y) { try { localStorage.setItem(_ciYKey(y), '1'); } catch (e) { } }
+}
+function ciSkipPast() { _ciNextPast(); }
+function ciSubmitPast() {
+  const s = CI.slot, date = CI.date, text = (CI.text || '').trim();
+  const day = _ciYday && _ciYday.date === date ? _ciYday.data : { checks: {} };
+  const checks = Object.assign({}, day.checks || {});
+  const ci = Object.assign({}, checks.ci || {});
+  const at = new Date(date + 'T21:00:00').getTime();
+  if (s === 'workout') {
+    const rec = { opt: CI.opt, supp: CI.supp, at };
+    if (CI.opt === 'none') { rec.reason = CI.reason; rec.diary = CI.reason === '기타' ? (CI.diary || '').trim() : ''; }
+    else {
+      const w = CI_WORKOUTS.find(x => x.id === CI.opt);
+      const met = ciWorkoutMet(w, CI.lvl, CI.slope), intensity = met < 3.5 ? 'low' : met < 5 ? 'medium' : 'high';
+      const lvlName = w.levels[CI.lvl != null ? CI.lvl : w.def][0].split(' · ')[0];
+      const kcal = exerciseKcal(intensity, CI.min, met);
+      const entry = { id: S.nextWorkoutId++, date, time: '20:00', intensity, durationMin: CI.min, exerciseType: text || `${w.label} (${lvlName}${w.slopes && CI.slope ? ', ' + CI_SLOPES[CI.slope][0] : ''})`, met, kcal };
+      S.workoutLogs.push(entry);
+      if (typeof saveWorkoutRow === 'function') saveWorkoutRow(entry);
+      Object.assign(rec, { min: CI.min, text, time: '20:00', type: entry.exerciseType, kcal, lvl: CI.lvl, slope: CI.slope || 0 });
+      (day.workouts = day.workouts || []).push({ performed_date: date });
+    }
+    checks.suppAll = !!CI.supp;
+    if (CI.supp) (S.routines.oxytocin || []).forEach(r => { checks[r.id] = true; });
+    ci.workout = rec;
+  } else {
+    const o = CI_MEAL_OPTS[s].find(x => x.id === CI.opt);
+    const kcal = CI.kcal != null ? CI.kcal : o.kcal;
+    ci[s] = { opt: CI.opt, text, kcal, at };
+    if (typeof saveMealRow === 'function') saveMealRow({ label: CI_MEAL_LABEL[s], time: '19:00', text: text || `${o.label} (간편 기록)`, kcal, foods: [] }, date);
+    (day.meals = day.meals || []).push({ label: CI_MEAL_LABEL[s], kcal });
+    if (text && CI.save) ciAddFav({ name: text, kcal });
+  }
+  checks.ci = ci; day.checks = checks;
+  fetchApi(apiUrl('/api/data/checks'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ check_date: date, checks }) })
+    .catch(e => console.error('[ci past checks]', e));
+  _ciHist = null; _ciMonCache = {};
+  showCiToast(null, null, s === 'workout' ? '어제 운동까지 채웠어요' : '어제 저녁을 채웠어요', '어제 기록을 채웠어요');
+  _ciNextPast();
+}
+
 // ── 뾰로롱 안내, 알림 배너 ──
-function showCiToast(from, to, sub) {
+function showCiToast(from, to, sub, title) {
   const el = document.getElementById('ci-toast'); if (!el) return;
   el.innerHTML = `<svg class="ci-spark s1" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/></svg>
     <svg class="ci-spark s2" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/></svg>
     <svg class="ci-spark s3" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/></svg>
-    <div class="ci-t1">내 몸 보고서 <b>${to}%</b> 채워졌어요</div>
-    <div class="ci-bar"><div style="--from:${from}%;width:${to}%"></div></div>
+    ${title ? `<div class="ci-t1">${_ciEsc(title)}</div>` : `<div class="ci-t1">내 몸 보고서 <b>${to}%</b> 채워졌어요</div>
+    <div class="ci-bar"><div style="--from:${from}%;width:${to}%"></div></div>`}
     <div class="ci-t2">${_ciEsc(sub)}</div>`;
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
   clearTimeout(_ciToastT); _ciToastT = setTimeout(() => el.classList.remove('show'), 3000);

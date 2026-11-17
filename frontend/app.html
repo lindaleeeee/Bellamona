@@ -1511,6 +1511,13 @@
     .cr-legend { display: flex; gap: 12px; font-size: 11.5px; color: var(--muted); }
     .cr-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
     .ci-link { align-self: flex-start; border: 0; background: transparent; color: var(--accent-ink); font: inherit; font-size: 13px; font-weight: 700; padding: 6px 0; cursor: pointer; text-decoration: underline; }
+    .burn-tq { margin-top: 22px; font-size: 13px; font-weight: 700; color: var(--muted); text-align: center; }
+    .burn-tiers { display: flex; gap: 8px; margin-top: 8px; }
+    .burn-tiers button { flex: 1; min-height: 44px; border-radius: 12px; border: 1.5px solid var(--bdr); background: var(--surf); color: var(--text); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .burn-tiers button.on { border-color: var(--accent-ink); background: var(--accent-weak); color: var(--accent-ink); }
+    .cs-walk { display: flex; flex-direction: column; gap: 6px; }
+    .cs-walk .cs-level { width: 100%; border: 1.5px solid var(--bdr); background: var(--surf); }
+    .cs-walk .cs-level.on { border-color: var(--accent-ink); background: var(--accent-weak); }
     .rf-g { margin-bottom: 10px; }
     .rf-l { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
     .rf-row { display: flex; gap: 6px; overflow-x: auto; margin: 0 -14px; padding: 0 14px 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -3436,22 +3443,41 @@
     };
     const CARDIO_LEVEL_KO = { low: '저강도', medium: '중강도', high: '고강도' };
     let _cs = { type: 'run', level: 'medium', min: 30 };
+    // 근력 강도 3단계 MET (Compendium of Physical Activities 2011: 여러 동작 가볍게~보통 3.5, 스쿼트류 5.0, 고강도 6.0)
+    const STRENGTH_TIERS = [3.5, 5.0, 6.0];
+    const STRETCH_TIERS = [2.3, 2.5, 4.0]; // 가벼운 스트레칭, 일반 요가, 파워 요가
+    const TIER_KO = ['가볍게', '보통', '힘들게'];
+    const TIER_INT = ['low', 'medium', 'high'];
+    // 동작별 기본 강도: 팔, 어깨, 코어처럼 작은 근육 위주는 가볍게, 하체, 가슴, 등은 보통, 바벨/턱걸이/버피는 힘들게
+    function strengthDefaultTier(r, bp) {
+      const nm = `${r.name || ''} ${r.title || ''}`;
+      if (/바벨|데드리프트|풀업|턱걸이|버피|점프/.test(nm)) return 2;
+      if (['shoulder', 'arms', 'core', 'balance'].includes(bp) && !/프레스|푸시업|딥스/.test(nm)) return 0;
+      return 1;
+    }
+    // 걷기는 속도 5단계 + 오르막 (Compendium 2011: 시속 3.2km 2.8, 4km 3.0, 4.8km 3.5, 5.6km 4.3, 6.4km 5.0 / 오르막 1~5% 5.3, 6~15% 8.0)
+    const WALK_LEVELS = [['아주 천천히', '시속 3km', 2.8], ['천천히', '시속 4km', 3.0], ['보통', '시속 5km', 3.5], ['빠르게', '시속 5.6km', 4.3], ['아주 빠르게', '시속 6.4km', 5.0]];
+    const WALK_SLOPES = [['평지', 0], ['완만한 오르막', 1.8], ['가파른 오르막', 4.5]];
     function openCardioSetup(type) {
-      _cs = { type, level: _cs.type === type ? _cs.level : 'medium', min: _cs.min || 30 };
+      _cs = { type, level: _cs.type === type ? _cs.level : 'medium', min: _cs.min || 30, wl: _cs.type === type && _cs.wl != null ? _cs.wl : 2, slope: _cs.type === type ? (_cs.slope || 0) : 0 };
       renderCardioSetup(); openMod('mod-cardio-setup');
     }
     function renderCardioSetup() {
       const t = CARDIO_TYPES[_cs.type]; const box = document.getElementById('cardio-setup-body'); if (!box || !t) return;
       const levels = ['high', 'medium', 'low'];
       const pos = { high: 0, medium: 1, low: 2 }[_cs.level];
+      const walkHtml = `<div class="cs-sec">걷는 속도</div>
+        <div class="cs-walk">${WALK_LEVELS.map((w, i) => `<button class="cs-level ${i === _cs.wl ? 'on' : ''}" onclick="_cs.wl=${i};renderCardioSetup()"><span class="cs-l1">${w[0]}</span><span class="cs-l2">${w[1]}</span></button>`).join('')}</div>
+        <div class="cs-sec">길</div>
+        <div class="cs-mins">${WALK_SLOPES.map((w, i) => `<button class="${i === _cs.slope ? 'on' : ''}" onclick="_cs.slope=${i};renderCardioSetup()">${w[0]}</button>`).join('')}</div>`;
       box.innerHTML = `
         <div class="cs-head">${t.label}</div>
-        <div class="cs-sec">강도 설정</div>
+        ${_cs.type === 'walk' ? walkHtml : `<div class="cs-sec">강도 설정</div>
         <div class="cs-int">
           <div class="cs-levels">${levels.map(k => `<button class="cs-level ${k === _cs.level ? 'on' : ''}" onclick="_cs.level='${k}';renderCardioSetup()">
             <span class="cs-l1">${CARDIO_LEVEL_KO[k]}</span><span class="cs-l2">${t[k][0]} · ${t[k][1]}</span></button>`).join('')}</div>
           <div class="cs-track"><div class="cs-fill" style="top:${pos * 33.3 + 16}%"></div><div class="cs-knob" style="top:${pos * 33.3 + 16}%"></div></div>
-        </div>
+        </div>`}
         <div class="cs-sec">운동 시간</div>
         <div class="cs-mins">${[15, 30, 60, 90].map(m => `<button class="${m === _cs.min ? 'on' : ''}" onclick="_cs.min=${m};renderCardioSetup()">${m}분</button>`).join('')}</div>
         <div class="cs-input"><input type="number" inputmode="numeric" min="1" max="300" value="${_cs.min}" oninput="_cs.min=Math.max(1,parseInt(this.value)||0);document.querySelectorAll('.cs-mins button').forEach(b=>b.classList.toggle('on',b.textContent===_cs.min+'분'))" /><span>분</span></div>
@@ -3462,8 +3488,16 @@
       const inp = box.querySelector('.cs-input input'); if (inp) inp.addEventListener('input', () => { if (lastBtn) lastBtn.textContent = `이미 했어요, ${_cs.min}분으로 바로 기록`; });
     }
     function _cardioSpec() {
-      const t = CARDIO_TYPES[_cs.type]; const lv = t[_cs.level];
-      return { kind: 'cardio', title: `${t.label} · ${lv[0]}`, exerciseType: `${t.label} (${CARDIO_LEVEL_KO[_cs.level]} · ${lv[0]})`, met: lv[2], intensity: _cs.level, targetMin: _cs.min };
+      const t = CARDIO_TYPES[_cs.type];
+      if (_cs.type === 'walk') {
+        const w = WALK_LEVELS[_cs.wl], sl = WALK_SLOPES[_cs.slope || 0];
+        const label = `${w[0]}(${w[1]})${sl[1] ? ' · ' + sl[0] : ''}`;
+        return { kind: 'cardio', title: `걷기 · ${label}`, exerciseType: `걷기 (${label})`, met: Math.round((w[2] + sl[1]) * 10) / 10, intensity: _cs.wl <= 1 ? 'low' : _cs.wl === 2 ? 'medium' : 'high', targetMin: _cs.min };
+      }
+      const lv = t[_cs.level];
+      // 끝난 뒤 '어땠어요?'로 강도를 다시 고를 수 있게 세 단계 MET를 같이 넘긴다
+      return { kind: 'cardio', title: `${t.label} · ${lv[0]}`, exerciseType: `${t.label} (${CARDIO_LEVEL_KO[_cs.level]} · ${lv[0]})`, met: lv[2], intensity: _cs.level, targetMin: _cs.min,
+        tiers: [t.low[2], t.medium[2], t.high[2]], tier: TIER_INT.indexOf(_cs.level), baseLabel: t.label };
     }
     function startCardioFromSetup() { closeMod('mod-cardio-setup'); startWorkoutTimer(_cardioSpec()); }
     function logCardioFromSetup() {
@@ -3498,7 +3532,9 @@
     function startRoutineTimer(kind, bp, id) {
       const r = routineById(kind, bp, id); if (!r) return;
       closeMod('mod-routine-detail');
-      startWorkoutTimer({ kind, bp, routineId: r.id, routineName: r.name, title: routineTitle(r) });
+      const tiers = kind === 'stretch' ? STRETCH_TIERS : STRENGTH_TIERS;
+      const tier = kind === 'stretch' ? 1 : strengthDefaultTier(r, bp);
+      startWorkoutTimer({ kind, bp, routineId: r.id, routineName: r.name, title: routineTitle(r), tiers, tier });
     }
     function cancelWorkoutTimer() { if (!confirm('기록하지 않고 멈출까요?')) return; setActiveWorkout(null); refreshGrowth(); renderHomeQuick && renderHomeQuick(); }
     // "운동 끝": 타이머를 멈추고 소모 칼로리 화면을 보여 준다. '기록하기'를 눌러야 저장된다.
@@ -3514,8 +3550,9 @@
       const dur = a.durMin || 1;
       const st = new Date(a.startedAt); const time = `${String(st.getHours()).padStart(2, '0')}:${String(st.getMinutes()).padStart(2, '0')}`;
       const date = todayISOLocalFrom(a.startedAt);
-      if (a.kind === 'strength') return { date, time, intensity: 'high', durationMin: dur, exerciseType: a.routineName, met: 6.0, bodyPart: a.bp, routineName: a.routineName };
-      if (a.kind === 'stretch') return { date, time, intensity: 'low', durationMin: dur, exerciseType: `스트레칭 · ${a.title}`, met: 2.5 };
+      const ti = a.tiers && a.tier != null ? a.tier : null;
+      if (a.kind === 'strength') return { date, time, intensity: ti != null ? TIER_INT[ti] : 'high', durationMin: dur, exerciseType: a.routineName, met: ti != null ? a.tiers[ti] : 6.0, bodyPart: a.bp, routineName: a.routineName };
+      if (a.kind === 'stretch') return { date, time, intensity: 'low', durationMin: dur, exerciseType: `스트레칭 · ${a.title}`, met: ti != null ? a.tiers[ti] : 2.5 };
       return { date, time, intensity: a.intensity || 'medium', durationMin: dur, exerciseType: a.exerciseType || a.title, met: a.met };
     }
     function openBurnSheet() {
@@ -3529,9 +3566,16 @@
         <div class="burn-t2"><span id="burn-kcal">${kcal.toLocaleString()}</span> kcal 태웠어요
           <button class="burn-edit" onclick="editBurnKcal()" aria-label="칼로리 고치기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button></div>
         <div class="burn-sub">${a.title} · ${e.durationMin}분</div>
-        <button class="btn btn-p" style="margin-top:28px" onclick="commitBurn()">기록하기</button>
+        ${a.tiers ? `<div class="burn-tq">어땠어요?</div><div class="burn-tiers">${TIER_KO.map((l, i) => `<button class="${i === a.tier ? 'on' : ''}" onclick="setBurnTier(${i})">${l}</button>`).join('')}</div>` : ''}
+        <button class="btn btn-p" style="margin-top:${a.tiers ? 18 : 28}px" onclick="commitBurn()">기록하기</button>
         <button class="btn btn-o" style="margin-top:8px" onclick="discardBurn()">기록하지 않기</button>`;
       openMod('mod-burn');
+    }
+    function setBurnTier(i) {
+      const a = getActiveWorkout(); if (!a || !a.tiers) return;
+      const upd = { ...a, tier: i, kcalEdited: null };
+      if (a.kind === 'cardio') { upd.met = a.tiers[i]; upd.intensity = TIER_INT[i]; }
+      setActiveWorkout(upd); openBurnSheet();
     }
     function editBurnKcal() {
       const a = getActiveWorkout(); if (!a) return;
@@ -3927,7 +3971,8 @@
       } else {
         const now = new Date();
         const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        const entry = { id: S.nextWorkoutId++, date: t, time, intensity: 'high', durationMin: routine.estMin, exerciseType: routine.name, met: 6.0, bodyPart: bp, routineName: routine.name, kcal: exerciseKcal('high', routine.estMin, 6.0) };
+        const ti = strengthDefaultTier(routine, bp), met = STRENGTH_TIERS[ti];
+        const entry = { id: S.nextWorkoutId++, date: t, time, intensity: TIER_INT[ti], durationMin: routine.estMin, exerciseType: routine.name, met, bodyPart: bp, routineName: routine.name, kcal: exerciseKcal(TIER_INT[ti], routine.estMin, met) };
         S.workoutLogs.push(entry);
         if (typeof saveWorkoutRow === 'function') saveWorkoutRow(entry);
       }
