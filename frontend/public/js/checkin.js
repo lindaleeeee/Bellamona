@@ -571,6 +571,7 @@ function renderCiHome() {
     nx.innerHTML = next ? `<span class="nh-bell"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><span class="nh-nt">${ciNextText(next)}</span><button type="button" onclick="openCheckin('${next}', false)">지금 기록</button>` : '';
   }
   setTxt('nh-cheat', `${_ciFmt(S.savedTotal || 0)}kcal`);
+  ciRenderAction('nh-action');
   setTxt('nh-ex-custom', S.posture ? '내 몸 기반 추천' : '사진으로 추천');
 }
 
@@ -659,9 +660,8 @@ async function renderCiReport() {
       <div class="cr-hero"><div><small>${new Date().getMonth() + 1}월 ${new Date().getDate()}일 · 보고서 ${pct}%</small><b>${headline}</b></div><div class="cr-score"><b>${sc.total}</b><small>달성률</small></div></div>
       <div class="cr-card"><div class="cr-tag">AI 리포트</div>
         <div class="cr-k">오늘 알게 된 것</div><div class="cr-v">${_ciEsc(rep.insight)}</div>
-        <div class="cr-line"></div>
-        <div class="cr-k">내일 바꿔볼 행동 하나</div><div class="cr-v">${_ciEsc(rep.action)}</div>
-        <div class="cr-note">마이페이지에 띄워 뒀어요</div></div>
+        </div>
+      ${ciActionCardHtml({ action: rep.action }, '내일 바꿔볼 행동 하나', '홈과 마이에도 띄워요')}
       <div class="cr-card"><div class="cr-t">목표 달성률 점수</div>
         ${sc.items.map(it => `<div class="cr-sr"><span>${it.k}</span><div class="nh-mbar"><i style="width:${Math.round(it.got / it.max * 100)}%"></i></div><b>${it.v}</b></div>`).join('')}
         <div class="cr-note2">칼로리는 먹은 칼로리에서 운동 칼로리를 뺀 NET 칼로리를 목표와 비교해요. 칼로리 40점, 운동 30점, 수면 15점, 영양제 15점이에요.</div></div>
@@ -760,27 +760,37 @@ async function ciMonthHtml() {
     </div>${detail}`;
 }
 
-// ── 마이페이지: 내일 바꿔볼 행동, 자주 먹는 음식, 운동 못 한 날 ──
-let _myFavQ = '', _myYesterdayRep = undefined;
-async function renderMyCi() {
-  const act = document.getElementById('my-action');
-  if (act) {
-    let rep = ciGet().report;
-    let from = '오늘 리포트';
-    if (!rep || !rep.action) {
-      if (_myYesterdayRep === undefined) {
-        _myYesterdayRep = null;
-        try {
-          const r = await fetchApi(apiUrl('/api/data/day?date=' + _ciAddDays(todayISOLocal(), -1)), { credentials: 'include' });
-          if (r.ok) { const j = await r.json(); _myYesterdayRep = (j.checks && j.checks.ci && j.checks.ci.report) || null; }
-        } catch (e) { }
-      }
-      rep = _myYesterdayRep; from = '어제 리포트';
-    }
-    act.innerHTML = rep && rep.action
-      ? `<div class="my-a-top"><b>내일 바꿔볼 행동</b><small>${from}에서 가져왔어요</small></div><div class="my-a-v">${_ciEsc(rep.action)}</div>${rep.insight ? `<div class="my-a-why">이유: ${_ciEsc(rep.insight)}</div>` : ''}`
-      : `<div class="my-a-top"><b>내일 바꿔볼 행동</b></div><div class="my-a-v my-a-empty">오늘 질문에 답하면 리포트가 내일 해볼 행동을 여기에 띄워 드려요.</div>`;
+// ── 행동 지침 카드(홈, 마이, 리포트 공용) ──
+const CI_TARGET_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>';
+function ciActionCardHtml(rep, label, from) {
+  if (!rep || !rep.action) return `<div class="act-card empty"><div class="act-top"><span class="act-ic">${CI_TARGET_SVG}</span><b>${label}</b></div><div class="act-v">오늘 질문에 답하면 리포트가 해볼 행동 하나를 여기에 띄워 드려요.</div></div>`;
+  return `<div class="act-card"><div class="act-top"><span class="act-ic">${CI_TARGET_SVG}</span><b>${label}</b>${from ? `<small>${from}</small>` : ''}</div>
+    <div class="act-v">${_ciEsc(rep.action)}</div>${rep.insight ? `<div class="act-why"><b>왜요?</b>${_ciEsc(rep.insight)}</div>` : ''}</div>`;
+}
+// 오늘 리포트가 있으면 '내일 바꿔볼 행동', 없으면 어제 리포트의 행동을 '오늘 해볼 행동'으로
+let _myYesterdayRep = undefined;
+async function ciLatestAction() {
+  const today = ciGet().report;
+  if (today && today.action && ciFillPct() > 0) return { rep: today, label: '내일 바꿔볼 행동', from: '오늘 리포트' };
+  if (_myYesterdayRep === undefined) {
+    _myYesterdayRep = null;
+    try {
+      const r = await fetchApi(apiUrl('/api/data/day?date=' + _ciAddDays(todayISOLocal(), -1)), { credentials: 'include' });
+      if (r.ok) { const j = await r.json(); _myYesterdayRep = (j.checks && j.checks.ci && j.checks.ci.report) || null; }
+    } catch (e) { }
   }
+  return { rep: _myYesterdayRep, label: '오늘 해볼 행동', from: _myYesterdayRep ? '어제 리포트' : '' };
+}
+async function ciRenderAction(id) {
+  const el = document.getElementById(id); if (!el) return;
+  const a = await ciLatestAction();
+  el.innerHTML = ciActionCardHtml(a.rep, a.label, a.from);
+}
+
+// ── 마이페이지: 내일 바꿔볼 행동, 자주 먹는 음식, 운동 못 한 날 ──
+let _myFavQ = '';
+async function renderMyCi() {
+  await ciRenderAction('my-action');
   renderMyFav();
   const sk = document.getElementById('my-skip');
   if (sk) {

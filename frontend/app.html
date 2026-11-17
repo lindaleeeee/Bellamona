@@ -1467,7 +1467,18 @@
     .cr-cmp em.good { color: #2f7d4f; background: #e6f4ea; }
     #mod-ci-report .msh > div:last-child { padding-bottom: 32px; }
     .my-ci { margin-bottom: 10px; }
-    #my-action { background: var(--accent-weak); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    #my-action { margin-bottom: 2px; }
+    .act-card { background: var(--accent-ink); color: #fff; border-radius: 20px; padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 8px 24px rgba(126, 95, 196, .28); margin-bottom: 12px; }
+    .act-top { display: flex; align-items: center; gap: 8px; }
+    .act-ic { width: 28px; height: 28px; border-radius: 50%; background: rgba(255, 255, 255, .2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .act-top b { font-size: 13.5px; font-weight: 800; letter-spacing: .2px; }
+    .act-top small { margin-left: auto; font-size: 11px; opacity: .85; }
+    .act-v { font-size: 19px; font-weight: 800; line-height: 1.45; letter-spacing: -.4px; word-break: keep-all; }
+    .act-why { font-size: 13px; line-height: 1.55; background: rgba(255, 255, 255, .14); border-radius: 12px; padding: 10px 12px; word-break: keep-all; }
+    .act-why b { font-weight: 800; margin-right: 6px; }
+    .act-card.empty { background: var(--accent-weak); color: var(--text); box-shadow: none; }
+    .act-card.empty .act-ic { background: var(--surf); color: var(--accent-ink); }
+    .act-card.empty .act-v { font-size: 14.5px; font-weight: 600; color: var(--muted); }
     .my-a-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .my-a-top b { font-size: 13px; font-weight: 800; color: var(--accent-ink); }
     .my-a-top small { font-size: 11px; color: var(--muted); }
@@ -1701,6 +1712,8 @@
           </div>
         </div>
         <div class="sc" style="padding-top:12px" id="nh-root">
+          <!-- 행동 지침(리포트가 정한 행동 하나) -->
+          <div id="nh-action"></div>
           <!-- 오늘의 내 몸 보고서 -->
           <section class="card nh-prog">
             <div class="nh-ring" id="nh-ring"><span id="nh-pct">0%</span></div>
