@@ -127,21 +127,34 @@ function ciPickFav(i) {
 function ciPickSug(i) {
   const f = _ciSug[i]; if (!f || !CI) return;
   CI.text = f.name; _ciSug = [];
-  // 1인분 정보가 있는 음식만 칼로리를 그대로 쓴다. 100g 기준만 있는 음식은 고른 칼로리 구간으로 기록한다.
-  if (f.per100) { CI.kcal = null; CI.note100 = f; }
-  else { CI.kcal = f.kcal; CI.opt = ciNearest(CI_MEAL_OPTS[CI.slot], f.kcal).id; CI.note100 = null; }
+  CI.food = f; ciSetAmt(f.sg);
+}
+// 고른 음식의 양: 인분이나 g으로. 칼로리를 다시 계산하고 칼로리 구간도 맞춘다.
+function ciSetAmt(g) {
+  if (!CI || !CI.food) return;
+  g = Math.max(1, Math.round(Number(g) || 0));
+  CI.amt = g; CI.kcal = Math.round(CI.food.k100 * g / 100);
+  if (CI_MEAL_OPTS[CI.slot]) CI.opt = ciNearest(CI_MEAL_OPTS[CI.slot], CI.kcal).id;
   renderCheckin();
+}
+function ciAmtHtml(f, cur, fn) {
+  const serv = [0.5, 1, 1.5, 2].map(k => { const g = Math.round(f.sg * k); return `<button type="button" class="ci-chip ci-pill${cur === g ? ' on' : ''}" onclick="${fn}(${g})">${k}인분</button>`; }).join('');
+  const gs = [100, 200, 300].map(g => `<button type="button" class="ci-chip ci-pill${cur === g ? ' on' : ''}" onclick="${fn}(${g})">${g}g</button>`).join('');
+  return `<div class="ci-amt"><div class="ci-hint">인분으로 <small>(${_ciEsc(f.unit)}${f.est ? ', 추정' : ''})</small></div><div class="ci-wrap">${serv}</div>
+    <div class="ci-hint">g으로</div><div class="ci-wrap">${gs}<label class="ci-g"><input type="number" min="1" inputmode="numeric" value="${cur || ''}" placeholder="직접" onchange="${fn}(this.value)">g</label></div></div>`;
 }
 // 음식 DB 검색: 1인분 단위가 있으면 그 칼로리, 없으면 100g 기준
 function ciFoodSearch(q, n) {
   if (typeof searchFoods !== 'function' || !String(q).trim()) return [];
-  return searchFoods(q, n || 5).map(f => ({
-    name: f.n, kcal: Math.round(f.u ? f.kcal * f.u[1] / 100 : f.kcal), unit: f.u ? f.u[0] : '100g', per100: !f.u, k100: f.kcal
-  }));
+  return searchFoods(q, n || 5).map(f => {
+    const sv = typeof foodServing === 'function' ? foodServing(f) : { label: f.u ? f.u[0] : '100g', g: f.u ? f.u[1] : 100, est: !f.u };
+    return { name: f.n, k100: f.kcal, sg: sv.g, est: sv.est, unit: sv.est ? `1인분 약 ${sv.g}g` : `${sv.label} ${sv.g}g`, kcal: Math.round(f.kcal * sv.g / 100) };
+  });
 }
 function ciOnText(v) {
   if (!CI) return;
-  CI.text = v; CI.kcal = null; CI.note100 = null;
+  CI.text = v; CI.kcal = null; CI.food = null; CI.amt = null;
+  const am = document.getElementById('ci-amt-box'); if (am) am.innerHTML = '';
   _ciSug = CI_MEAL_OPTS[CI.slot] ? ciFoodSearch(v, 5) : [];
   const box = document.getElementById('ci-sug'); if (box) box.innerHTML = ciSugHtml();
   const pk = document.getElementById('ci-picked'); if (pk) pk.textContent = '';
@@ -198,8 +211,8 @@ function renderCheckin() {
     h += `<label class="ci-q ci-q-s" for="ci-text">${lbl}</label>
       <input id="ci-text" class="ci-in" type="text" autocomplete="off" value="${_ciEsc(CI.text)}" placeholder="${ph}" oninput="ciOnText(this.value)">
       <div id="ci-sug">${ciSugHtml()}</div>
-      <div id="ci-picked" class="ci-hint ci-hint-a">${isMeal && CI.kcal != null && CI.text ? `${_ciEsc(CI.text)} · ${CI.kcal}kcal로 기록돼요`
-        : isMeal && CI.note100 && CI.text === CI.note100.name ? `${_ciEsc(CI.text)}은(는) 100g 기준 ${CI.note100.kcal}kcal예요. ${CI.opt ? '칼로리는 위에서 고른 구간으로 기록할게요' : '위에서 칼로리 구간을 골라 주세요'}` : ''}</div>`;
+      <div id="ci-amt-box">${isMeal && CI.food && CI.text === CI.food.name ? ciAmtHtml(CI.food, CI.amt, 'ciSetAmt') : ''}</div>
+      <div id="ci-picked" class="ci-hint ci-hint-a">${isMeal && CI.kcal != null && CI.text ? `${_ciEsc(CI.text)}${CI.amt ? ` ${CI.amt}g` : ''} · ${CI.kcal}kcal로 기록돼요` : ''}</div>`;
     if (isMeal) h += `<label id="ci-savefav" class="ci-check" style="display:${CI.text.trim() ? 'flex' : 'none'}"><input type="checkbox" ${CI.save ? 'checked' : ''} onchange="if(CI)CI.save=this.checked"> 자주 먹는 음식으로 저장</label>`;
   }
   h += `<div class="ci-foot"><button type="button" class="btn btn-p ci-submit" ${ciCanSubmit() ? '' : 'disabled'} onclick="ciSubmit()">기록하기</button></div>`;
@@ -694,20 +707,21 @@ function myFavSearch(v) {
   _ciSug = res;
   box.innerHTML = res.length ? res.map((f, i) => `<div class="my-fav-r"><span>${_ciEsc(f.name)} <small>${_ciEsc(f.unit)}</small></span><b>${f.kcal}kcal</b><button type="button" onclick="myFavAdd(${i})">추가</button></div>`).join('') : (v.trim() ? '<div class="my-empty">검색 결과가 없어요</div>' : '');
 }
-let _myFavPending = null;
+let _myFavPending = null, _myFavAmt = null;
 function myFavAdd(i) {
   const f = _ciSug[i]; if (!f) return;
-  if (f.per100) { _myFavPending = f; renderMyFavPending(); return; }
-  ciAddFav(f); _myFavQ = ''; renderMyFav();
+  _myFavPending = f; _myFavAmt = f.sg; renderMyFavPending();
 }
+function myFavSetAmt(g) { _myFavAmt = Math.max(1, Math.round(Number(g) || 0)); renderMyFavPending(); }
 function renderMyFavPending() {
   const box = document.getElementById('my-fav-res'); const f = _myFavPending; if (!box || !f) return;
-  box.innerHTML = `<div class="my-fav-g"><div>${_ciEsc(f.name)} 한 번에 얼마나 먹어요? <small>100g 기준 ${f.kcal}kcal</small></div>
-    <div class="ci-wrap">${[100, 200, 300, 400].map(g => `<button type="button" class="ci-chip ci-pill" onclick="myFavAddG(${g})">${g}g · ${Math.round(f.k100 * g / 100)}kcal</button>`).join('')}</div></div>`;
+  const kcal = Math.round(f.k100 * _myFavAmt / 100);
+  box.innerHTML = `<div class="my-fav-g"><div>${_ciEsc(f.name)} 한 번에 얼마나 먹어요?</div>${ciAmtHtml(f, _myFavAmt, 'myFavSetAmt')}
+    <button type="button" class="btn btn-p" onclick="myFavConfirm()">${_myFavAmt}g · ${kcal}kcal로 추가</button></div>`;
 }
-function myFavAddG(g) {
+function myFavConfirm() {
   const f = _myFavPending; if (!f) return;
-  ciAddFav({ name: f.name, kcal: Math.round(f.k100 * g / 100) }); _myFavPending = null; _myFavQ = ''; renderMyFav();
+  ciAddFav({ name: f.name, kcal: Math.round(f.k100 * _myFavAmt / 100) }); _myFavPending = null; _myFavQ = ''; renderMyFav();
 }
 function renderMyFav() {
   const box = document.getElementById('my-fav'); if (!box) return;
