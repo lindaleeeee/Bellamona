@@ -68,9 +68,13 @@
       .ex-photo{position:relative;width:100%;max-width:300px;aspect-ratio:4/3;margin:0 auto 10px;border-radius:16px;overflow:hidden;background:var(--card2);border:1.5px solid var(--bdr)}
       .ex-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
       .ex-photo img.ex-b{animation:exFlip 2.4s infinite}
+      .ex-thumb{position:relative;width:56px;height:56px;border-radius:12px;overflow:hidden;background:#eee;flex-shrink:0}
+      .ex-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+      .ex-thumb img.ex-b{animation:exFlip 2.4s infinite}
+      .g-timer .ex-photo{margin:6px auto 4px}
       .ex-photo .ex-tag{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px}
       @keyframes exFlip{0%,42%{opacity:0}50%,92%{opacity:1}100%{opacity:0}}
-      @media (prefers-reduced-motion: reduce){.ex-photo img.ex-b{animation:none;opacity:0}}`;
+      @media (prefers-reduced-motion: reduce){.ex-photo img.ex-b,.ex-thumb img.ex-b{animation:none;opacity:0}}`;
     document.head.appendChild(st);
   }
 
@@ -83,6 +87,16 @@
     return `<div class="ex-photo"><img src="${base}/0.jpg" alt="시작 자세" loading="lazy"><img class="ex-b" src="${base}/1.jpg" alt="끝 자세" loading="lazy"><span class="ex-tag">시작 ↔ 끝 동작</span></div>`;
   }
 
+  // 목록 줄 왼쪽에 넣는 작은 움직이는 사진(시작↔끝 자세)
+  function exercisePhotoThumbHtml(routineId) {
+    const id = EXERCISE_PHOTOS[routineId];
+    if (!id) return '';
+    ensureStyle();
+    const base = `/images/exercises/${id}`;
+    return `<div class="ex-thumb" aria-hidden="true"><img src="${base}/0.jpg" alt="" loading="lazy"><img class="ex-b" src="${base}/1.jpg" alt="" loading="lazy"></div>`;
+  }
+
   window.EXERCISE_PHOTOS = EXERCISE_PHOTOS;
+  window.exercisePhotoThumbHtml = exercisePhotoThumbHtml;
   window.exercisePhotoHtml = exercisePhotoHtml;
 })();

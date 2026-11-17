@@ -3575,6 +3575,7 @@
       </div>`;
       if (a) return `<div class="card g-timer on">
         <div class="hero-label">${a.title} 하는 중</div>
+        ${a.routineId && typeof exercisePhotoHtml === 'function' ? exercisePhotoHtml(a.routineId) : ''}
         <div class="g-clock" id="wk-clock">${fmtClock(Date.now() - a.startedAt)}</div>
         ${a.targetMin ? `<div class="g-target"><div class="g-target-bar"><div id="wk-target-fill" style="width:${Math.min(100, (Date.now() - a.startedAt) / (a.targetMin * 600))}%"></div></div><span id="wk-target-txt">목표 ${a.targetMin}분</span></div>` : ''}
         <div class="g-timer-btns"><button class="btn btn-p" onclick="finishWorkoutTimer()">운동 끝</button><button class="btn btn-o" onclick="cancelWorkoutTimer()">취소</button></div>
@@ -3597,7 +3598,7 @@
         const sub = kind === 'stretch' ? `${r.holdSec}초 유지 · ${r.reps}` : `${r.sets}세트 × ${r.reps} · 약 ${r.estMin}분`;
         const detail = kind === 'stretch' ? `openStretchDetail('${bp}','${r.id}')` : `openRoutineDetail('${bp}','${r.id}')`;
         return `<div class="g-row">
-          <div class="g-row-info" onclick="${detail}"><div class="g-row-title">${routineTitle(r)}</div><div class="g-row-sub">${sub}${isDone ? ' · <b style="color:var(--accent-ink)">오늘 완료</b>' : ''}</div></div>
+          ${typeof exercisePhotoThumbHtml === 'function' ? `<div onclick="${detail}" style="cursor:pointer">${exercisePhotoThumbHtml(r.id)}</div>` : ''}<div class="g-row-info" onclick="${detail}"><div class="g-row-title">${routineTitle(r)}</div><div class="g-row-sub">${sub}${isDone ? ' · <b style="color:var(--accent-ink)">오늘 완료</b>' : ''}</div></div>
           ${running ? '<span class="g-run">진행 중</span>' : `<button class="g-start" onclick="startRoutineTimer('${kind}','${bp}','${r.id}')">시작</button>`}
         </div>`;
       }).join('') || '<div class="muted-sm" style="padding:12px 0;text-align:center">이 부위 운동이 아직 없어요</div>';
@@ -3608,7 +3609,7 @@
         return `<div class="g-posture">${postureSummary(S.posture).map(t => `<div>${t}</div>`).join('')}
           <a href="javascript:void(0)" onclick="openPostureModal()">다시 분석하기</a></div>
           ${items.length ? items.map(x => { const running = a && a.routineName === x.routine.name && a.bp === x.bp; return `<div class="g-row">
-            <div class="g-row-info" onclick="${x.kind === 'stretch' ? `openStretchDetail('${x.bp}','${x.id}')` : `openRoutineDetail('${x.bp}','${x.id}')`}">
+            ${typeof exercisePhotoThumbHtml === 'function' ? exercisePhotoThumbHtml(x.id) : ''}<div class="g-row-info" onclick="${x.kind === 'stretch' ? `openStretchDetail('${x.bp}','${x.id}')` : `openRoutineDetail('${x.bp}','${x.id}')`}">
               <div class="g-row-title"><span class="g-kind">${x.kind === 'stretch' ? '스트레칭' : '근력'}</span>${routineTitle(x.routine)}</div>
               <div class="g-row-sub">${x.why}</div></div>
             ${running ? '<span class="g-run">진행 중</span>' : `<button class="g-start" onclick="startRoutineTimer('${x.kind}','${x.bp}','${x.id}')">시작</button>`}
