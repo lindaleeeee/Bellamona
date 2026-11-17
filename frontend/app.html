@@ -4794,18 +4794,10 @@
       body.innerHTML = `
     <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px">📅 ${label}</div>
     <div class="card" style="margin-bottom:12px">
-      <div class="cap">그날의 저속노화 점수</div>
-      <div style="font-size:26px;font-weight:800;color:var(--text)">${overall}<span style="font-size:12px;color:var(--muted);font-weight:600">/100</span></div>
-    </div>
-    <div class="card" style="margin-bottom:12px">
       <div class="cap">칼로리</div>
       <div style="font-size:26px;font-weight:800;color:${netKcal > 0 ? 'var(--warn)' : 'var(--ok)'};margin-bottom:6px">${netKcal > 0 ? '+' : ''}${netKcal}<span style="font-size:12px;color:var(--muted);font-weight:600"> net kcal</span></div>
       <div style="font-size:12px;color:var(--text);font-weight:600">🍽 섭취 ${mealsKcal}kcal · 🔥 운동 소모 ${workoutsKcal}kcal</div>
       <div style="font-size:10px;color:var(--muted);font-weight:600;margin-top:4px">이날 목표 ${dayGoalCal}kcal (${dayPhase.name})</div>
-    </div>
-    <div class="card" style="margin-bottom:12px">
-      <div class="cap" style="margin-bottom:8px">호르몬별 점수</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;justify-items:center">${donuts}</div>
     </div>
     ${!day.hasAnyRecord ? `<div style="text-align:center;padding:8px 0;color:var(--muted);font-size:12px;font-weight:600">이 날은 아직 기록이 없어요 — 아래에서 소급 기록할 수 있어요.</div>` : ''}
     ${editSection}
