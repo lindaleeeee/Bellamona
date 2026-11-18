@@ -204,21 +204,34 @@ function _dayNetVsGoal(mealsByDate, workoutsByDate, profile, periods, date) {
   return { netKcal, dayGoal, met: netKcal >= dayGoal };
 }
 // 어제까지 정산 안 된 날짜의 "목표보다 덜 먹은 만큼"을 치팅데이 세이브 칼로리에 적립한다.
+// 제대로 기록한 날(점심과 저녁을 모두 기록한 날)만 센다. 아침만 적은 날까지 세면
+// 덜 먹은 것처럼 계산돼 세이브 칼로리가 실제보다 크게 쌓이기 때문이다.
+const SAVED_TOTAL_RULE = 2;
+function _dayFullyLogged(mealsByDate, date) {
+  const labels = new Set((mealsByDate[date] || []).filter(m => m.description || m.kcal != null).map(m => m.label));
+  return labels.has('점심') && labels.has('저녁');
+}
 async function _rolloverSavedTotal(profile, periods) {
   if (!profile || profile.daily_kcal_target == null) return profile ? (profile.saved_total_kcal || 0) : 0;
   const yesterday = _addDays(todayISO(), -1);
   const earliest = _addDays(yesterday, -59); // 최대 60일까지만 소급
-  let cursor = profile.saved_total_computed_through ? _addDays(profile.saved_total_computed_through, 1) : (profile.start_date || earliest);
+  // 예전 규칙(식사 하나만 있어도 셈)으로 쌓인 값은 새 규칙으로 처음부터 다시 계산한다(쓴 만큼은 뺀다)
+  const recompute = profile.saved_total_rule !== SAVED_TOTAL_RULE;
+  let cursor = !recompute && profile.saved_total_computed_through ? _addDays(profile.saved_total_computed_through, 1) : (profile.start_date || earliest);
   if (cursor < earliest) cursor = earliest;
-  if (cursor > yesterday) return profile.saved_total_kcal || 0;
-  const { mealsByDate, workoutsByDate } = await _dailyMealsWorkouts(cursor, yesterday);
+  if (cursor > yesterday && !recompute) return profile.saved_total_kcal || 0;
   let delta = 0;
-  for (let d = cursor; d <= yesterday; d = _addDays(d, 1)) {
-    const info = _dayNetVsGoal(mealsByDate, workoutsByDate, profile, periods, d);
-    if (info && !info.met) delta += (info.dayGoal - info.netKcal);
+  if (cursor <= yesterday) {
+    const { mealsByDate, workoutsByDate } = await _dailyMealsWorkouts(cursor, yesterday);
+    for (let d = cursor; d <= yesterday; d = _addDays(d, 1)) {
+      if (!_dayFullyLogged(mealsByDate, d)) continue;
+      const info = _dayNetVsGoal(mealsByDate, workoutsByDate, profile, periods, d);
+      if (info && !info.met) delta += (info.dayGoal - info.netKcal);
+    }
   }
-  const newTotal = (profile.saved_total_kcal || 0) + delta;
-  await _sub('profile').doc('main').set({ saved_total_kcal: newTotal, saved_total_computed_through: yesterday }, { merge: true });
+  const base = recompute ? -(profile.saved_total_spent || 0) : (profile.saved_total_kcal || 0);
+  const newTotal = Math.max(0, Math.round(base + delta));
+  await _sub('profile').doc('main').set({ saved_total_kcal: newTotal, saved_total_computed_through: yesterday, saved_total_rule: SAVED_TOTAL_RULE }, { merge: true });
   return newTotal;
 }
 
@@ -423,7 +436,8 @@ async function _route(method, url, rawBody) {
         const s = await tx.get(ref);
         if (!s.exists) return null;
         const v = Math.max((s.data().saved_total_kcal || 0) - amount, 0);
-        tx.set(ref, { saved_total_kcal: v }, { merge: true });
+        // 쓴 양도 따로 모아 둔다(규칙을 바꿔 다시 계산할 때 빼기 위해)
+        tx.set(ref, { saved_total_kcal: v, saved_total_spent: (s.data().saved_total_spent || 0) + amount }, { merge: true });
         return v;
       });
       if (total == null) return _resp(404, { error: 'profile_not_found' });

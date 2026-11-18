@@ -94,7 +94,7 @@ function maybeAutoCheckin() {
   try {
     if (typeof _onboarded !== 'undefined' && !_onboarded) return;
     const home = document.getElementById('s-home'); if (!home || !home.classList.contains('on')) return;
-    if (document.querySelector('.mov.open')) return;
+    if (document.querySelector('.mov.open') || document.querySelector('#wk-focus.open')) return;
     const slot = ciDueSlots()[0];
     if (slot) openCheckin(slot, true);
     else if (new Date().getHours() < 14 && ciDone('morning')) ciMaybeYesterday();
