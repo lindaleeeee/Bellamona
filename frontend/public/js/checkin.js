@@ -572,6 +572,8 @@ function renderCiHome() {
   }
   setTxt('nh-cheat', `${_ciFmt(S.savedTotal || 0)}kcal`);
   ciRenderAction('nh-action');
+  if (typeof renderPeriodCard === 'function') renderPeriodCard();
+  renderWhatsNew();
   setTxt('nh-ex-custom', S.posture ? '내 몸 기반 추천' : '사진으로 추천');
 }
 
@@ -898,3 +900,24 @@ function renderRecipeFilters() {
     row('비용', RF_COST.map(x => chip(f.cost === x.k, 'cost', x.k, x.l)).join('')) +
     (any ? `<button type="button" class="rf-clear" onclick="rfClear()">필터 해제</button>` : '');
 }
+
+// ── 이번에 바뀐 점: 업데이트가 있을 때 홈 맨 위에 한 번 보여주고, 확인을 누르면 다음 업데이트까지 숨긴다 ──
+const WHATS_NEW = {
+  ver: '2026-11-20',
+  items: [
+    '생리 기록은 시작일만 고르면 돼요. 다음 예정일은 자동으로 계산해 달력에 점선으로 보여줘요',
+    '예정일이 되면 "시작했어요" 한 번으로 실제 날짜를 맞출 수 있어요',
+    '대시보드에서 몸무게 변화를 맨 위로 올렸어요',
+    '운동 타이머를 시작하면 전체 화면으로 바뀌어 운동에만 집중할 수 있어요',
+    '치팅데이 칼로리는 점심과 저녁을 모두 기록한 날만 쌓여요'
+  ]
+};
+function renderWhatsNew() {
+  const el = document.getElementById('nh-news'); if (!el) return;
+  let seen = null; try { seen = localStorage.getItem('bellamona_news_seen'); } catch (e) { }
+  // 오늘 처음 가입한 사람에게는 "바뀐 점"이 의미가 없으니 본 것으로 처리
+  if (seen !== WHATS_NEW.ver && S.startDate && Date.now() - S.startDate < 86400000) { try { localStorage.setItem('bellamona_news_seen', WHATS_NEW.ver); } catch (e) { } seen = WHATS_NEW.ver; }
+  if (seen === WHATS_NEW.ver) { el.innerHTML = ''; return; }
+  el.innerHTML = `<section class="card nh-news"><div class="nh-news-t">✨ 이번에 바뀐 점</div><ul>${WHATS_NEW.items.map(t => `<li>${_ciEsc(t)}</li>`).join('')}</ul><button onclick="closeWhatsNew()">확인했어요</button></section>`;
+}
+function closeWhatsNew() { try { localStorage.setItem('bellamona_news_seen', WHATS_NEW.ver); } catch (e) { } const el = document.getElementById('nh-news'); if (el) el.innerHTML = ''; }

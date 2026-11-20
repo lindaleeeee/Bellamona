@@ -512,6 +512,13 @@ async function _route(method, url, rawBody) {
       return _resp(200, { success: true });
     }
 
+    if (method === 'DELETE' && path.startsWith('/api/data/periods/')) {
+      const start = decodeURIComponent(path.slice('/api/data/periods/'.length));
+      const snap = await _sub('periods').where('start_date', '==', start).get();
+      await Promise.all(snap.docs.map(d => d.ref.delete()));
+      return _resp(200, { success: true });
+    }
+
     if (method === 'POST' && path === '/api/data/diaries') {
       const date = body.written_date || today;
       await _sub('diaries').doc(date).set({ written_date: date, content: body.content || '' });
@@ -901,8 +908,9 @@ async function restoreFromServer() {
       S.weights = d.weights.map(w => ({ d: fmtDateShort(w.logged_date), w: Number(w.weight_kg), t: new Date(w.logged_date).getTime() }));
     }
 
-    if (d.periods && d.periods.length) {
-      S.periods = d.periods.map(p => ({ start: (p.start_date + '').slice(0, 10), days: p.duration_days }));
+    // 서버에 기록이 없으면 빈 목록으로 맞춘다(예전엔 기기에 남은 기본값이 그대로 보여 입력한 적 없는 생리기가 떴다)
+    if (Array.isArray(d.periods)) {
+      S.periods = d.periods.map(p => ({ start: (p.start_date + '').slice(0, 10), days: p.duration_days, created: p.created_at || null, seed: !!p.seed }));
     }
 
     if (typeof ensureFreshDay === 'function') ensureFreshDay(); // 날짜가 바뀌었으면 옛 날짜의 체크를 먼저 비우고 서버 값을 채운다

@@ -879,6 +879,41 @@
       background: rgba(244, 143, 177, .12)
     }
 
+    .cday.per.pred { background: rgba(244, 143, 177, .08); outline: 1.5px dashed rgba(236, 64, 122, .55); }
+    #dash-period:empty { display: none }
+    #dash-period { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bdr) }
+    .per-row { display: flex; align-items: center; gap: 10px }
+    .per-txt { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0 }
+    .per-txt b { font-size: 13px; color: var(--text); font-weight: 800 }
+    .per-txt span { font-size: 11px; color: var(--muted); font-weight: 600 }
+    .per-txt span.per-warn { color: #d84315 }
+    .per-next { margin-top: 6px; font-size: 11.5px; color: var(--muted); font-weight: 600 }
+    .per-next b { color: var(--rose2) }
+    .per-btn { flex-shrink: 0; border: 1.5px solid rgba(244, 143, 177, .4); background: #fff; color: var(--rose2); border-radius: 999px; padding: 7px 13px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer }
+    .per-btn-p { background: linear-gradient(135deg, #f48fb1, #ec407a); border-color: transparent; color: #fff }
+    .per-due { margin-top: 10px; padding: 12px; border-radius: 14px; background: rgba(244, 143, 177, .1) }
+    .per-home .per-due { margin: 0; padding: 0; background: none }
+    .per-due-t { font-size: 14px; font-weight: 800; color: var(--text) }
+    .per-due-s { font-size: 11.5px; color: var(--muted); margin-top: 3px; font-weight: 600 }
+    .per-due-b { display: flex; gap: 8px; margin-top: 10px }
+    .per-sh-t { font-size: 16px; font-weight: 800; color: var(--text) }
+    .per-sh-s { font-size: 12px; color: var(--muted); margin: 4px 0 14px; font-weight: 600 }
+    .per-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px }
+    .per-chip { border: 1.5px solid var(--bdr); background: var(--card2); border-radius: 14px; padding: 10px 4px; font: inherit; font-size: 14px; font-weight: 800; color: var(--text); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px }
+    .per-chip small { font-size: 10.5px; color: var(--muted); font-weight: 600 }
+    .per-chip.on { border-color: #ec407a; background: rgba(244, 143, 177, .14) }
+    .per-date { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1.5px solid var(--bdr); border-radius: 12px; padding: 8px 12px; font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 12px }
+    .per-date.on { border-color: #ec407a; color: var(--text) }
+    .per-date input { border: 0; background: none; font: inherit; color: var(--text) }
+    .per-days { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 16px }
+    .per-days button { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--bdr); background: var(--card2); font-size: 16px; cursor: pointer; color: var(--text) }
+    .per-days span { font-size: 11px; color: var(--muted); font-weight: 600 }
+    .per-del { display: block; margin: 10px auto 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer }
+    .nh-news { position: relative; background: linear-gradient(135deg, var(--sky3), var(--lav3)); border: 1.5px solid rgba(149, 117, 205, .25) }
+    .nh-news-t { font-size: 13.5px; font-weight: 800; color: var(--text); margin-bottom: 6px }
+    .nh-news ul { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.6; color: var(--text) }
+    .nh-news button { margin-top: 10px; border: 0; border-radius: 999px; padding: 7px 14px; font: inherit; font-size: 12px; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--sky2), var(--lav2)); cursor: pointer }
+
     .cday.full {
       background: rgba(102, 187, 106, .12)
     }
@@ -1729,7 +1764,9 @@
         </div>
         <div class="sc" style="padding-top:12px" id="nh-root">
           <!-- 행동 지침(리포트가 정한 행동 하나) -->
+          <div id="nh-news"></div>
           <div id="nh-action"></div>
+          <div id="nh-period"></div>
           <!-- 오늘의 내 몸 보고서 -->
           <section class="card nh-prog">
             <div class="nh-ring" id="nh-ring"><span id="nh-pct">0%</span></div>
@@ -1812,6 +1849,16 @@
           </div>
         </div>
         <div class="sc" style="padding-top:10px">
+          <!-- 몸무게 -->
+          <section class="card">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+              <div class="sec-title" style="margin:0">몸무게 변화</div>
+              <span class="muted-sm" id="h-wt-remain"></span>
+            </div>
+            <div id="wt-mini-chart" style="width:100%;height:84px;position:relative;overflow:hidden">
+              <svg id="wt-svg" width="100%" height="100%" preserveAspectRatio="none"></svg>
+            </div>
+          </section>
           <div class="card" style="background:linear-gradient(135deg,var(--sky3),var(--lav3))">
             <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">
               <div class="rw"><svg width="82" height="82" style="transform:rotate(-90deg)">
@@ -1870,9 +1917,6 @@
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
               <div class="cap" style="margin-bottom:0" id="cal-lbl">4월 달력</div>
-              <button class="female-only" onclick="openMod('mod-period')"
-                style="background:rgba(244,143,177,.1);border:1.5px solid rgba(244,143,177,.3);border-radius:8px;padding:3px 9px;font-size:11px;color:var(--rose2);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700">🌸
-                생리기 입력</button>
             </div>
             <div class="cg" id="dash-cal"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
@@ -1882,23 +1926,17 @@
                 </div>생리기
               </div>
               <div class="female-only" style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);font-weight:600">
+                <div style="width:9px;height:9px;border-radius:2px;background:rgba(244,143,177,.08);outline:1.5px dashed rgba(236,64,122,.55);outline-offset:-1px"></div>생리 예정
+              </div>
+              <div class="female-only" style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);font-weight:600">
                 <div style="width:9px;height:9px;border-radius:2px;background:rgba(244,143,177,.12)"></div>배란기
               </div>
               <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);font-weight:600">
                 <div style="width:9px;height:9px;border-radius:2px;background:rgba(102,187,106,.12)"></div>완벽 달성
               </div>
             </div>
+            <div id="dash-period" class="female-only"></div>
           </div>
-          <!-- 몸무게 -->
-          <section class="card">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
-              <div class="sec-title" style="margin:0">몸무게 변화</div>
-              <span class="muted-sm" id="h-wt-remain"></span>
-            </div>
-            <div id="wt-mini-chart" style="width:100%;height:84px;position:relative;overflow:hidden">
-              <svg id="wt-svg" width="100%" height="100%" preserveAspectRatio="none"></svg>
-            </div>
-          </section>
         </div>
       </div>
 
@@ -2124,11 +2162,7 @@
     <div class="mov" id="mod-period">
       <div class="msh">
         <div class="mh"></div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">🌸 생리기 입력</div>
-        <div class="cap" style="margin-bottom:5px">시작일</div><input class="input" type="date" id="per-start"
-          style="margin-bottom:10px" />
-        <div class="cap" style="margin-bottom:5px">지속 일수</div><input class="input" type="number" id="per-days" value="5"
-          style="margin-bottom:14px" /><button class="btn btn-p" onclick="savePeriod()">저장</button>
+        <div id="per-body"></div>
       </div>
     </div>
 
@@ -2541,6 +2575,7 @@
   <script src="/js/coupang-links.js"></script>
   <script src="/js/posture.js"></script>
   <script src="/js/checkin.js"></script>
+  <script src="/js/period.js"></script>
   <script src="/js/data-foods.js"></script>
   <script src="/js/data-foods-basic.js"></script>
   <script src="/js/data-foods-extra.js"></script>
@@ -2620,7 +2655,7 @@
       reportGeneratedDate: null, _todayReport: null,
       savedTotal: 0, calMon: { y: 2026, m: 3 },
       gender: 'female',
-      periods: [{ start: '2026-04-01', days: 5 }], cycleLen: 28,
+      periods: [], cycleLen: 28,
       checks: { i1: false, i2: false, i3: false, i4: false, g1: false, g2: false, g3: false, c1: false, c2: false, c3: false, c4: false },
       checksDate: null, // 마지막으로 S.checks가 채워진 "오늘" 날짜(로컬). 날짜가 바뀌면 ensureFreshDay()가 리셋한다.
       meals: [
@@ -3157,7 +3192,7 @@
         const pe = document.getElementById('ob-period-end')?.value;
         if (ps) {
           const days = pe ? Math.max(1, Math.round((new Date(pe) - new Date(ps)) / 86400000)) + 1 : 5;
-          S.periods = [{ start: ps, days: days }];
+          S.periods = [{ start: ps, days: days, created: Date.now() }];
         } else {
           S.periods = [];
         }
@@ -4600,12 +4635,12 @@
       let d = new Date(last.start); d.setDate(d.getDate() + S.cycleLen);
       while (d <= untilDate) {
         const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        windows.push({ start: ds, days: last.days });
+        windows.push({ start: ds, days: last.days, pred: true });
         d = new Date(d); d.setDate(d.getDate() + S.cycleLen);
       }
       return windows;
     }
-    function getPDays(y, m) { if (isMale()) return []; const r = []; allPeriodWindows(new Date(y, m + 1, 0)).forEach(p => { const s = new Date(p.start); for (let i = 0; i < p.days; i++) { const d = new Date(s); d.setDate(d.getDate() + i); if (d.getFullYear() === y && d.getMonth() === m) r.push(d.getDate()); } }); return r; }
+    function getPDays(y, m, pred) { if (isMale()) return []; const r = []; allPeriodWindows(new Date(y, m + 1, 0)).filter(p => !!p.pred === !!pred).forEach(p => { const s = new Date(p.start); for (let i = 0; i < p.days; i++) { const d = new Date(s); d.setDate(d.getDate() + i); if (d.getFullYear() === y && d.getMonth() === m) r.push(d.getDate()); } }); return r; }
     function getODays(y, m) { if (isMale()) return []; const r = []; allPeriodWindows(new Date(y, m + 1, 0)).forEach(p => { const s = new Date(p.start); const os = new Date(s); os.setDate(os.getDate() + S.cycleLen - 18); const oe = new Date(s); oe.setDate(oe.getDate() + S.cycleLen - 10); const c = new Date(os); while (c <= oe) { if (c.getFullYear() === y && c.getMonth() === m) r.push(c.getDate()); c.setDate(c.getDate() + 1); } }); return r; }
 
     // 대시보드는 앱을 열 때마다 이번 달로 시작한다(마지막에 보던 달이 저장돼 남아 있지 않게)
@@ -4616,10 +4651,10 @@
 
     async function renderDash() {
       const { y, m } = S.calMon; setTxt('d-title', `${y}년 ${m + 1}월 성과`); setTxt('cal-lbl', `${m + 1}월 달력`);
-      const g = document.getElementById('dash-cal'); if (!g) return; g.innerHTML = '';
-      ['일', '월', '화', '수', '목', '금', '토'].forEach(d => { const e = document.createElement('div'); e.className = 'cdow'; e.textContent = d; g.appendChild(e); });
+      const g = document.getElementById('dash-cal'); if (!g) return;
+      const tok = (renderDash._tok = (renderDash._tok || 0) + 1); // 겹쳐 호출돼도 마지막 호출만 달력을 그린다(달력이 두 번 붙던 문제)
       const first = new Date(y, m, 1).getDay(); const total = new Date(y, m + 1, 0).getDate();
-      const perDays = getPDays(y, m); const ovDays = getODays(y, m);
+      const realPer = getPDays(y, m); const predPer = getPDays(y, m, true); const perDays = realPer.concat(predPer); const ovDays = getODays(y, m);
 
       const today = new Date(); const isCur = y === today.getFullYear() && m === today.getMonth(); const todayDate = today.getDate();
 
@@ -4628,6 +4663,9 @@
         const res = await fetchApi(apiUrl(`/api/data/month-summary?year=${y}&month=${m + 1}`), { credentials: 'include' });
         if (res.ok) { const j = await res.json(); monthDays = j.days || []; }
       } catch (e) { console.error('[renderDash month-summary]', e); }
+      if (tok !== renderDash._tok) return;
+      g.innerHTML = '';
+      ['일', '월', '화', '수', '목', '금', '토'].forEach(d => { const e = document.createElement('div'); e.className = 'cdow'; e.textContent = d; g.appendChild(e); });
 
       const dayPctByDate = {};
       monthDays.forEach(dh => {
@@ -4647,7 +4685,7 @@
       for (let i = 0; i < first; i++) { const e = document.createElement('div'); g.appendChild(e); }
       for (let d = 1; d <= total; d++) {
         const e = document.createElement('div'); e.className = 'cday'; const isP = perDays.includes(d); const isO = ovDays.includes(d);
-        if (isCur && d === todayDate) e.classList.add('today'); else if (isP) e.classList.add('per'); else if (isO) e.classList.add('ovul'); else if (goodDays.includes(d)) e.classList.add('full');
+        if (isCur && d === todayDate) e.classList.add('today'); else if (isP) { e.classList.add('per'); if (!realPer.includes(d)) e.classList.add('pred'); } else if (isO) e.classList.add('ovul'); else if (goodDays.includes(d)) e.classList.add('full');
         let inner = `<span>${d}</span>`;
         // 실제 서버 데이터를 기반으로 dot을 표시한다 (하드코딩 4dot 버그 수정)
         const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
