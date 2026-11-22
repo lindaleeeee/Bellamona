@@ -426,6 +426,7 @@ function showCiToast(from, to, sub, title) {
 function showCiBanner(slot) {
   const el = document.getElementById('ci-banner'); if (!el) return;
   if (document.querySelector('.mov.open')) return;
+  if (typeof recoveryAlarmShown === 'function' && recoveryAlarmShown()) return;
   _ciBannerSlot = slot;
   const [t, b] = CI_BANNER[slot];
   el.innerHTML = `<span class="ci-bn-ic">B</span><span class="ci-bn-tx"><small>벨라모나 · 지금</small><b>${_ciEsc(t)}</b><span>${_ciEsc(b)}</span></span>`;
@@ -574,6 +575,7 @@ function renderCiHome() {
   ciRenderAction('nh-action');
   if (typeof renderPeriodCard === 'function') renderPeriodCard();
   renderWhatsNew();
+  if (typeof maybeRecoveryAlarm === 'function') setTimeout(() => maybeRecoveryAlarm(), 1500);
   setTxt('nh-ex-custom', S.posture ? '내 몸 기반 추천' : '사진으로 추천');
 }
 
@@ -957,8 +959,9 @@ function rfApply() {
 
 // ── 이번에 바뀐 점: 업데이트가 있을 때 홈 맨 위에 한 번 보여주고, 확인을 누르면 다음 업데이트까지 숨긴다 ──
 const WHATS_NEW = {
-  ver: '2026-11-22',
+  ver: '2026-11-23',
   items: [
+    '목표보다 많이 먹은 날엔 내 기록(자주 한 운동, 가볍게 먹었던 식사)으로 만회 행동을 하나씩 알려드려요',
     '대시보드에서 ‹ › 로 지난 달 기록을 볼 수 있어요. 날짜 아래 숫자가 그날 목표 달성률이에요',
     '대시보드 달력 위 "생리 기록" 버튼으로 생리 시작일을 바로 넣을 수 있어요',
     '레시피 필터는 오른쪽 위 필터 버튼 하나로 모았어요',
