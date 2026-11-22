@@ -866,8 +866,8 @@ function recipeHasIng(r, g) {
   if (r._ingc == null) r._ingc = (r.ingredients || []).map(l => String(l).replace(/\s+/g, '').replace(/달걀/g, '계란')).join('|');
   return r._ingc.includes(g);
 }
-function recipePassFilters(r) {
-  const f = rfState();
+function recipePassFilters(r, f) {
+  f = f || rfState();
   if (f.ing.length && !f.ing.every(g => recipeHasIng(r, g))) return false;
   const pick = (list, k) => k ? list.find(x => x.k === k) : null;
   const tf = pick(RF_TIME, f.time), cf = pick(RF_CAL, f.cal), wf = pick(RF_COST, f.cost);
@@ -884,34 +884,87 @@ function rfToggle(key, v) {
   renderRecipes();
 }
 function rfClear() { S.rFilters = { ing: [], time: null, type: null, cost: null, cal: null }; renderRecipes(); }
+// 레시피 화면: 필터는 오른쪽 위 버튼 하나, 누르면 팝업에서 고른다. 화면에는 고른 조건만 작게 보여준다.
+const RF_TONES = {
+  '한식': ['#ffeee3', '#c4622d'], '중식': ['#ffe9e6', '#c0473a'], '아시안': ['#fff4d9', '#a8780f'],
+  '양식': ['#efe9ff', '#7e62b8'], '샐러드': ['#e6f6ea', '#3f8a57'], '샌드위치': ['#fbefdc', '#a06a2c'],
+  '에피타이저': ['#e7f2fc', '#3d74a8'], '디저트': ['#fde8f1', '#b8487a'], '음료': ['#e2f6f5', '#2f8784']
+};
+function recipeTone(tp) { return RF_TONES[tp] || ['#f3eeff', '#7e62b8']; }
+function recipeFilterCount(f) { f = f || rfState(); return (f.ing ? f.ing.length : 0) + ['time', 'cal', 'cost', 'type'].filter(k => f[k]).length; }
+function _rfLabel(key, v) {
+  const list = { time: RF_TIME, cal: RF_CAL, cost: RF_COST }[key];
+  if (list) { const x = list.find(i => i.k === v); return x ? (key === 'cal' ? `${x.l} kcal` : x.l) : v; }
+  return v;
+}
 function renderRecipeFilters() {
   const box = document.getElementById('rcp-filters'); if (!box) return;
+  const f = rfState(), n = recipeFilterCount(f);
+  const btn = document.getElementById('rcp-fbtn'); if (btn) btn.classList.toggle('on', n > 0);
+  setTxt('rcp-fbadge', n ? String(n) : '');
+  if (!n) { box.innerHTML = ''; return; }
+  const chip = (key, v) => `<button type="button" onclick='rfToggle(${JSON.stringify(key)}, ${JSON.stringify(v)})'>${_ciEsc(_rfLabel(key, v))}<i>×</i></button>`;
+  box.innerHTML = `<div class="rcp-active">${f.ing.map(g => chip('ing', g)).join('')}${['type', 'time', 'cal', 'cost'].filter(k => f[k]).map(k => chip(k, f[k])).join('')}<button type="button" class="rcp-reset" onclick="rfClear()">모두 해제</button></div>`;
+}
+
+let _rfDraft = null;
+function openRecipeFilter() {
   const f = rfState();
-  const present = new Set((typeof RCPS !== 'undefined' ? RCPS : []).map(r => r.tp));
+  _rfDraft = { ing: [...f.ing], time: f.time || null, cal: f.cal || null, cost: f.cost || null, type: f.type || null };
+  renderRecipeFilterSheet();
+  if (typeof openMod === 'function') openMod('mod-rcp-filter');
+}
+function renderRecipeFilterSheet() {
+  const box = document.getElementById('rfs-body'); if (!box || !_rfDraft) return;
+  const d = _rfDraft;
+  const all = typeof RCPS !== 'undefined' ? RCPS : [];
+  const present = new Set(all.map(r => r.tp));
   const cats = (typeof RECIPE_CATS !== 'undefined' ? RECIPE_CATS : [...present]).filter(c => present.has(c));
-  const row = (label, items) => `<div class="rf-g"><div class="rf-l">${label}</div><div class="rf-row">${items}</div></div>`;
-  const chip = (on, key, v, l) => `<button type="button" class="chip${on ? ' on' : ''}" onclick='rfToggle(${JSON.stringify(key)}, ${JSON.stringify(v)})'>${_ciEsc(l)}</button>`;
-  const any = f.ing.length || f.time || f.cal || f.cost || f.type;
-  box.innerHTML =
-    row('재료', RF_ING.map(g => chip(f.ing.includes(g), 'ing', g, g)).join('')) +
-    row('조리시간', RF_TIME.map(x => chip(f.time === x.k, 'time', x.k, x.l)).join('')) +
-    row('칼로리', RF_CAL.map(x => chip(f.cal === x.k, 'cal', x.k, x.l)).join('')) +
-    row('카테고리', cats.map(c => chip(f.type === c, 'type', c, c)).join('')) +
-    row('비용', RF_COST.map(x => chip(f.cost === x.k, 'cost', x.k, x.l)).join('')) +
-    (any ? `<button type="button" class="rf-clear" onclick="rfClear()">필터 해제</button>` : '');
+  const emo = typeof RECIPE_CAT_EMOJI !== 'undefined' ? RECIPE_CAT_EMOJI : {};
+  const count = all.filter(r => recipePassFilters(r, d)).length;
+  const chip = (on, key, v, l) => `<button type="button" class="${on ? 'on' : ''}" onclick='rfDraftToggle(${JSON.stringify(key)}, ${JSON.stringify(v)})'>${_ciEsc(l)}</button>`;
+  const group = (label, hint, items) => `<div class="rfs-g"><div class="rfs-l">${label}${hint ? `<small>${hint}</small>` : ''}</div><div class="rfs-chips">${items}</div></div>`;
+  const scroll = box.querySelector('.rfs-scroll'); const top = scroll ? scroll.scrollTop : 0;
+  box.innerHTML = `
+    <div class="rfs-top"><div class="mh"></div><div class="rfs-hd"><b>필터</b><button type="button" class="rfs-x" onclick="closeMod('mod-rcp-filter')" aria-label="닫기">×</button></div></div>
+    <div class="rfs-scroll">
+      ${group('재료', '여러 개 고르면 모두 들어간 레시피', RF_ING.map(g => chip(d.ing.includes(g), 'ing', g, g)).join(''))}
+      ${group('카테고리', '', cats.map(c => chip(d.type === c, 'type', c, `${emo[c] ? emo[c] + ' ' : ''}${c}`)).join(''))}
+      ${group('조리시간', '', RF_TIME.map(x => chip(d.time === x.k, 'time', x.k, x.l)).join(''))}
+      ${group('칼로리', '1인분', RF_CAL.map(x => chip(d.cal === x.k, 'cal', x.k, x.l)).join(''))}
+      ${group('비용', '', RF_COST.map(x => chip(d.cost === x.k, 'cost', x.k, x.l)).join(''))}
+    </div>
+    <div class="rfs-foot">
+      <button type="button" class="rfs-reset" onclick="rfDraftClear()">초기화</button>
+      <button type="button" class="rfs-apply" onclick="rfApply()" ${count ? '' : 'disabled'}>${count ? `레시피 ${count.toLocaleString()}개 보기` : '맞는 레시피가 없어요'}</button>
+    </div>`;
+  const sc2 = box.querySelector('.rfs-scroll'); if (sc2) sc2.scrollTop = top;
+}
+function rfDraftToggle(key, v) {
+  const d = _rfDraft; if (!d) return;
+  if (key === 'ing') d.ing = d.ing.includes(v) ? d.ing.filter(x => x !== v) : [...d.ing, v];
+  else d[key] = d[key] === v ? null : v;
+  renderRecipeFilterSheet();
+}
+function rfDraftClear() { _rfDraft = { ing: [], time: null, cal: null, cost: null, type: null }; renderRecipeFilterSheet(); }
+function rfApply() {
+  if (!_rfDraft) return;
+  S.rFilters = Object.assign(rfState(), _rfDraft, { ing: [..._rfDraft.ing] });
+  if (typeof closeMod === 'function') closeMod('mod-rcp-filter');
+  renderRecipes();
+  const sc = document.querySelector('#s-diet .sc'); if (sc) sc.scrollTop = 0;
 }
 
 // ── 이번에 바뀐 점: 업데이트가 있을 때 홈 맨 위에 한 번 보여주고, 확인을 누르면 다음 업데이트까지 숨긴다 ──
 const WHATS_NEW = {
-  ver: '2026-11-20',
+  ver: '2026-11-22',
   items: [
-    '생리 기록은 시작일만 고르면 돼요. 다음 예정일은 자동으로 계산해 달력에 점선으로 보여줘요',
-    '예정일이 되면 "시작했어요" 한 번으로 실제 날짜를 맞출 수 있어요',
-    '대시보드에서 몸무게 변화를 맨 위로 올렸어요',
-    '운동 타이머를 시작하면 전체 화면으로 바뀌어 운동에만 집중할 수 있어요',
-    '치팅데이 칼로리는 점심과 저녁을 모두 기록한 날만 쌓여요'
+    '대시보드에서 ‹ › 로 지난 달 기록을 볼 수 있어요. 날짜 아래 숫자가 그날 목표 달성률이에요',
+    '대시보드 달력 위 "생리 기록" 버튼으로 생리 시작일을 바로 넣을 수 있어요',
+    '레시피 필터는 오른쪽 위 필터 버튼 하나로 모았어요',
+    '레시피 목록을 사진 카드처럼 보기 좋게 바꿨어요'
   ]
-};
+}
 function renderWhatsNew() {
   const el = document.getElementById('nh-news'); if (!el) return;
   let seen = null; try { seen = localStorage.getItem('bellamona_news_seen'); } catch (e) { }

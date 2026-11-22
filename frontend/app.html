@@ -879,6 +879,18 @@
       background: rgba(244, 143, 177, .12)
     }
 
+
+    .dc-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px }
+    .dc-nav { width: 32px; height: 32px; border-radius: 10px; border: 1.5px solid var(--bdr); background: var(--card2); color: var(--text); font-size: 18px; line-height: 1; cursor: pointer; flex-shrink: 0 }
+    .dc-title { font-size: 15px; font-weight: 800; color: var(--text); min-width: 78px; text-align: center }
+    .dc-today { border: 0; background: var(--lav3); color: var(--sky2); border-radius: 999px; padding: 6px 10px; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; flex-shrink: 0 }
+    .dc-per { margin-left: auto; border: 1.5px solid rgba(244, 143, 177, .35); background: rgba(244, 143, 177, .1); color: var(--rose2); border-radius: 999px; padding: 6px 10px; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; flex-shrink: 0 }
+    .dc-note { font-size: 11px; color: var(--muted); font-weight: 600; margin: 2px 0 8px }
+    .cday .dsc { font-size: 9px; font-weight: 800; margin-top: 1px; color: var(--sky2) }
+    .cday.today .dsc { color: #fff }
+    .cday.sc-hi { background: rgba(149, 117, 205, .32) }
+    .cday.sc-mid { background: rgba(149, 117, 205, .15) }
+    .cday.sc-lo { background: #f1eff4 }
     .cday.per.pred { background: rgba(244, 143, 177, .08); outline: 1.5px dashed rgba(236, 64, 122, .55); }
     #dash-period:empty { display: none }
     #dash-period { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bdr) }
@@ -969,6 +981,59 @@
       border-radius: 99px
     }
 
+
+    /* ── 레시피 화면 ── */
+    .rcp-head { padding: 14px 16px 12px; flex-shrink: 0; background: var(--surf); border-bottom: 1px solid var(--bdr); display: flex; align-items: center; justify-content: space-between; gap: 12px }
+    .rcp-title { font-size: 20px; font-weight: 700; color: var(--text) }
+    .rcp-count { font-size: 11.5px; color: var(--muted); font-weight: 600; margin-top: 2px }
+    .rcp-fbtn { position: relative; display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--bdr); background: var(--surf); color: var(--text); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; flex-shrink: 0; transition: border-color .15s, background .15s }
+    .rcp-fbtn.on { border-color: var(--sky2); background: var(--lav3); color: var(--sky2) }
+    .rcp-fbtn b { display: none; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--sky2); color: #fff; font-size: 11px; line-height: 18px; text-align: center }
+    .rcp-fbtn.on b { display: inline-block }
+    .rcp-sc { padding-top: 12px }
+    .rcp-ad { font-size: 10px; color: #a29bad; line-height: 1.4; font-weight: 500; padding: 0 2px 10px }
+    .rcp-active { display: flex; gap: 6px; overflow-x: auto; margin: 0 -14px 10px; padding: 0 14px 2px; scrollbar-width: none }
+    .rcp-active::-webkit-scrollbar { display: none }
+    .rcp-active button { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; padding: 6px 10px 6px 12px; font: inherit; font-size: 12px; font-weight: 700; background: var(--lav3); color: var(--sky2); cursor: pointer; white-space: nowrap }
+    .rcp-active button i { font-style: normal; font-size: 14px; line-height: 1; opacity: .7 }
+    .rcp-active .rcp-reset { background: transparent; color: var(--muted); text-decoration: underline; padding: 6px 4px }
+    .rc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+    .rc { display: flex; flex-direction: column; text-align: left; border: 0; padding: 0; background: var(--surf); border-radius: 20px; overflow: hidden; box-shadow: 0 1px 2px rgba(45, 31, 78, .06), 0 6px 18px rgba(45, 31, 78, .06); cursor: pointer; font: inherit; color: var(--text); transition: transform .15s, box-shadow .15s; animation: rcIn .3s ease both }
+    .rc:active { transform: scale(.98) }
+    @keyframes rcIn { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+    .rc-tile { position: relative; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; background: var(--tile, #f3eeff) }
+    .rc-emoji { font-size: 46px; line-height: 1; filter: drop-shadow(0 4px 6px rgba(45, 31, 78, .12)) }
+    .rc-label { font-size: 20px; font-weight: 800; color: var(--tile-ink, #7e62b8); letter-spacing: -.02em }
+    .rc-kcal { position: absolute; left: 8px; bottom: 8px; background: rgba(255, 255, 255, .92); color: var(--text); border-radius: 999px; padding: 3px 8px; font-size: 11px; font-weight: 800 }
+    .rc-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1 }
+    .rc-cat { font-size: 10.5px; font-weight: 800; color: var(--tile-ink, var(--sky2)) }
+    .rc-name { font-size: 14px; font-weight: 800; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.7em }
+    .rc-meta { display: flex; gap: 8px; font-size: 11px; color: var(--muted); font-weight: 700; margin-top: auto }
+    .rc-meta span { display: inline-flex; align-items: center; gap: 3px }
+    .rc-more { display: block; width: 100%; margin-top: 14px; border: 1.5px solid var(--bdr); background: var(--surf); border-radius: 16px; padding: 13px; font: inherit; font-size: 13px; font-weight: 800; color: var(--sky2); cursor: pointer }
+    .rc-end { text-align: center; color: var(--muted); font-size: 11px; padding: 14px 0 4px; font-weight: 600 }
+    .rc-empty { text-align: center; padding: 48px 16px; color: var(--muted); font-size: 13px; font-weight: 600 }
+    .rc-empty div { font-size: 38px; margin-bottom: 10px }
+    .rc-empty button { margin-top: 14px; border: 0; border-radius: 999px; padding: 9px 16px; font: inherit; font-size: 13px; font-weight: 800; color: #fff; background: var(--sky2); cursor: pointer }
+    /* 필터 팝업 */
+    #mod-rcp-filter .msh.rfs { display: flex; flex-direction: column; padding: 0; overflow: hidden; max-height: 86% }
+    .rfs-top { padding: 14px 18px 8px; flex-shrink: 0 }
+    .rfs-top .mh { margin-bottom: 12px }
+    .rfs-hd { display: flex; align-items: center; justify-content: space-between }
+    .rfs-hd b { font-size: 18px; font-weight: 800; color: var(--text) }
+    .rfs-x { border: 0; background: var(--card2); width: 32px; height: 32px; border-radius: 50%; font-size: 18px; line-height: 1; color: var(--muted); cursor: pointer }
+    .rfs-scroll { overflow-y: auto; padding: 4px 18px 8px; flex: 1 }
+    .rfs-g { padding: 14px 0; border-bottom: 1px solid var(--bdr) }
+    .rfs-g:last-child { border-bottom: 0 }
+    .rfs-l { display: flex; align-items: baseline; gap: 6px; font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 10px }
+    .rfs-l small { font-size: 11px; color: var(--muted); font-weight: 600 }
+    .rfs-chips { display: flex; flex-wrap: wrap; gap: 8px }
+    .rfs-chips button { border: 1.5px solid var(--bdr); background: var(--surf); color: var(--text); border-radius: 999px; padding: 8px 13px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .12s }
+    .rfs-chips button.on { border-color: var(--sky2); background: var(--sky2); color: #fff }
+    .rfs-foot { display: flex; gap: 10px; padding: 12px 18px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--bdr); background: var(--surf); flex-shrink: 0 }
+    .rfs-reset { flex: 0 0 auto; border: 1.5px solid var(--bdr); background: var(--surf); color: var(--muted); border-radius: 14px; padding: 13px 16px; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer }
+    .rfs-apply { flex: 1; border: 0; border-radius: 14px; padding: 13px; font: inherit; font-size: 14px; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--sky2), var(--lav2)); cursor: pointer }
+    .rfs-apply:disabled { opacity: .45; cursor: default }
     .recipe-card {
       background: var(--surf);
       border-radius: 18px;
@@ -1878,14 +1943,14 @@
                 </div>
               </div>
               <div style="flex:1">
-                <div style="font-size:13px;font-weight:700;color:var(--text)">이달 저속노화 점수</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)" id="d-score-title">이달 목표 달성률</div>
                 <div style="font-size:11px;color:var(--ok);margin-top:2px;font-weight:700" id="d-score-sub">기록을 시작하면
                   표시돼요</div>
               </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:5px">
               <div style="display:flex;align-items:center;gap:6px"><span
-                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">🍽 식사</span>
+                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">🍽 식사기록</span>
                 <div class="bar-t" style="flex:1;height:5px">
                   <div class="bar-f" id="d-ins-bar" style="width:0%;background:var(--sky2)"></div>
                 </div><span style="font-size:11px;color:var(--sky2);width:28px;text-align:right;font-weight:700"
@@ -1899,14 +1964,14 @@
                   id="d-gro-pct">0%</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px"><span
-                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">🧘 마음</span>
+                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">😴 수면 7h+</span>
                 <div class="bar-t" style="flex:1;height:5px">
                   <div class="bar-f" id="d-cor-bar" style="width:0%;background:var(--cor)"></div>
                 </div><span style="font-size:11px;color:var(--cor);width:28px;text-align:right;font-weight:700"
                   id="d-cor-pct">0%</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px"><span
-                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">💊 영양</span>
+                  style="width:62px;font-size:11px;color:var(--muted);font-weight:600">💊 영양제</span>
                 <div class="bar-t" style="flex:1;height:5px">
                   <div class="bar-f" id="d-oxy-bar" style="width:0%;background:var(--rose)"></div>
                 </div><span style="font-size:11px;color:var(--rose);width:28px;text-align:right;font-weight:700"
@@ -1915,9 +1980,14 @@
             </div>
           </div>
           <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <div class="cap" style="margin-bottom:0" id="cal-lbl">4월 달력</div>
+            <div class="dc-head">
+              <button type="button" class="dc-nav" onclick="chgMon(-1)" aria-label="이전 달">‹</button>
+              <div class="dc-title" id="cal-lbl">4월 달력</div>
+              <button type="button" class="dc-nav" onclick="chgMon(1)" aria-label="다음 달">›</button>
+              <button type="button" class="dc-today" id="dc-today" onclick="dashThisMonth()" style="display:none">이번 달</button>
+              <button type="button" class="dc-per female-only" onclick="openPeriodSheet('new')">🌸 생리 기록</button>
             </div>
+            <div class="dc-note" id="dc-note"></div>
             <div class="cg" id="dash-cal"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
               <div class="female-only" style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);font-weight:600">
@@ -1932,7 +2002,7 @@
                 <div style="width:9px;height:9px;border-radius:2px;background:rgba(244,143,177,.12)"></div>배란기
               </div>
               <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);font-weight:600">
-                <div style="width:9px;height:9px;border-radius:2px;background:rgba(102,187,106,.12)"></div>완벽 달성
+                <div style="width:9px;height:9px;border-radius:2px;background:rgba(149,117,205,.32)"></div>달성률 70점+
               </div>
             </div>
             <div id="dash-period" class="female-only"></div>
@@ -1959,13 +2029,19 @@
 
       <!-- ════ DIET ════ -->
       <div class="scr" id="s-diet">
-        <div style="padding:14px 14px 8px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr)">
-          <div class="serif" style="font-size:20px;font-weight:700;color:var(--text)">레시피</div>
+        <div class="rcp-head">
+          <div>
+            <div class="serif rcp-title">레시피</div>
+            <div class="rcp-count" id="rcp-count"></div>
+          </div>
+          <button type="button" class="rcp-fbtn" id="rcp-fbtn" onclick="openRecipeFilter()" aria-label="필터">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+            필터<b id="rcp-fbadge"></b>
+          </button>
         </div>
-        <div class="sc" style="padding-top:10px">
+        <div class="sc rcp-sc">
           <div id="rcp-filters"></div>
-          <div style="font-size:10px;color:#999;padding:4px 2px 8px;line-height:1.4;font-weight:500">*이 게시물은 쿠팡 파트너스 활동의
-            일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
+          <div class="rcp-ad">*이 게시물은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
           <div id="rcp-grid"></div>
         </div>
       </div>
@@ -2157,6 +2233,10 @@
           <button class="btn btn-p" style="flex:1" onclick="confirmCalMissReason()">선택 완료</button>
         </div>
       </div>
+    </div>
+
+    <div class="mov" id="mod-rcp-filter" onclick="if (event.target === this) closeMod('mod-rcp-filter')">
+      <div class="msh rfs" id="rfs-body"></div>
     </div>
 
     <div class="mov" id="mod-period">
@@ -3011,8 +3091,7 @@
       const wtPct = Math.min(Math.round(wtLost / Math.max(S.initWeight - S.goalWeight, 0.1) * 100), 100);
       const wtBar = document.getElementById('wt-bar'); if (wtBar) wtBar.style.width = wtPct + '%';
       renderWtMiniChart();
-      // Dashboard sync
-      ['ins', 'gro', 'cor', 'oxy'].forEach((k, i) => { const hids = ['insulin', 'growth', 'cortisol', 'oxytocin']; const p = hormonePct(hids[i]); const db = document.getElementById('d-' + k + '-bar'); if (db) db.style.width = p + '%'; setTxt('d-' + k + '-pct', p + '%'); });
+      // 대시보드 막대는 renderDash()가 그달 기록으로 채운다(예전 체크 목록 기준 값으로 덮어쓰지 않음)
       // Profile
       const pmb = document.getElementById('prof-me-bar'); if (pmb) pmb.style.width = op + '%'; setTxt('prof-me-pct', op + '%');
       const pname = document.getElementById('prof-me-name'); if (pname) pname.textContent = S.name + '님 (나)';
@@ -4658,60 +4737,53 @@
 
       const today = new Date(); const isCur = y === today.getFullYear() && m === today.getMonth(); const todayDate = today.getDate();
 
-      let monthDays = [];
+      // 그달 기록(식사, 운동, 수면, 체크인)을 읽어 날짜별 목표 달성률을 계산한다(리포트 월간 달력과 같은 점수)
+      let days = {};
       try {
-        const res = await fetchApi(apiUrl(`/api/data/month-summary?year=${y}&month=${m + 1}`), { credentials: 'include' });
-        if (res.ok) { const j = await res.json(); monthDays = j.days || []; }
-      } catch (e) { console.error('[renderDash month-summary]', e); }
+        const h = typeof ciLoadMonth === 'function' ? await ciLoadMonth(y, m) : null;
+        if (h && typeof ciDays === 'function') days = ciDays(h);
+      } catch (e) { console.error('[renderDash month]', e); }
       if (tok !== renderDash._tok) return;
       g.innerHTML = '';
       ['일', '월', '화', '수', '목', '금', '토'].forEach(d => { const e = document.createElement('div'); e.className = 'cdow'; e.textContent = d; g.appendChild(e); });
 
-      const dayPctByDate = {};
-      monthDays.forEach(dh => {
-        dayPctByDate[dh.date] = overallPctForChecks(dh.checks || {});
-      });
-      const goodDays = monthDays.filter(dh => (dayPctByDate[dh.date] || 0) >= 100).map(dh => parseInt(dh.date.split('-')[2], 10));
-
-      // 이달 저속노화 점수 = 이번 달 "전체 날짜 수" 대비 평균. 기록 안 한 날은 0점으로 취급한다.
-      // (예전엔 기록된 날만의 평균이라 30일 중 하루만 기록해도 그 하루 점수가 그대로 월간 점수로 떴다.)
-      const pctVals = Object.values(dayPctByDate);
-      const monthAvg = pctVals.length ? Math.round(pctVals.reduce((a, b) => a + b, 0) / total) : null;
+      const iso = d => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const todayIso = todayISOLocal();
+      const rec = [];
+      for (let d = 1; d <= total; d++) { const x = days[iso(d)]; if (x && x.any && iso(d) <= todayIso) rec.push(x); }
+      const pct = f => rec.length ? Math.round(rec.filter(f).length / rec.length * 100) : 0;
+      const avg = rec.length ? Math.round(rec.reduce((a, x) => a + x.score, 0) / rec.length) : null;
       const ring = document.getElementById('d-score-ring');
-      if (ring) { const circ = 207; ring.setAttribute('stroke-dasharray', `${monthAvg != null ? Math.round(monthAvg / 100 * circ) : 0} ${circ}`); }
-      setTxt('d-score-val', monthAvg != null ? monthAvg : '-');
-      setTxt('d-score-sub', monthAvg != null ? `이번 달 ${pctVals.length}/${total}일 기록 · ${total}일 기준 ${monthAvg}점` : '기록을 시작하면 표시돼요');
+      if (ring) { const circ = 207; ring.setAttribute('stroke-dasharray', `${avg != null ? Math.round(avg / 100 * circ) : 0} ${circ}`); }
+      setTxt('d-score-val', avg != null ? avg : '-');
+      setTxt('d-score-sub', avg != null ? `${m + 1}월에 ${rec.length}일 기록 · 기록한 날 평균` : `${m + 1}월 기록이 없어요`);
+      const bars = [
+        ['ins', pct(x => x.labels.has('점심') && x.labels.has('저녁'))],
+        ['gro', pct(x => x.workoutMin > 0)],
+        ['cor', pct(x => x.sleepH != null && x.sleepH >= 7)],
+        ['oxy', pct(x => { const c = x.checks || {}; return !!((c.ci && c.ci.workout && c.ci.workout.supp) || c.suppAll); })]
+      ];
+      bars.forEach(([k, v]) => { const el = document.getElementById(`d-${k}-bar`); if (el) el.style.width = v + '%'; setTxt(`d-${k}-pct`, v + '%'); });
+      setTxt('dc-note', rec.length ? `날짜 아래 숫자는 그날 목표 달성률이에요. 날짜를 누르면 그날 기록을 볼 수 있어요` : `${m + 1}월에는 기록이 없어요. ‹ › 로 다른 달을 볼 수 있어요`);
+      const dt = document.getElementById('dc-today'); if (dt) dt.style.display = isCur ? 'none' : '';
 
       for (let i = 0; i < first; i++) { const e = document.createElement('div'); g.appendChild(e); }
       for (let d = 1; d <= total; d++) {
         const e = document.createElement('div'); e.className = 'cday'; const isP = perDays.includes(d); const isO = ovDays.includes(d);
-        if (isCur && d === todayDate) e.classList.add('today'); else if (isP) { e.classList.add('per'); if (!realPer.includes(d)) e.classList.add('pred'); } else if (isO) e.classList.add('ovul'); else if (goodDays.includes(d)) e.classList.add('full');
-        let inner = `<span>${d}</span>`;
-        // 실제 서버 데이터를 기반으로 dot을 표시한다 (하드코딩 4dot 버그 수정)
-        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const dayData = monthDays.find(dh => dh.date === dateStr);
-        if (dayData && dayData.checks && !isP && !isO && !(isCur && d === todayDate)) {
-          const c = dayData.checks;
-          const insOk = ['i1', 'i2', 'i3', 'i4'].some(id => c[id]);
-          const groOk = ['g1', 'g2', 'g3'].some(id => c[id]);
-          const corOk = ['c1', 'c2', 'c3', 'c4'].some(id => c[id]);
-          const oxyOk = (S.routines.oxytocin || []).some(r => c[r.id]);
-          if (insOk || groOk || corOk || oxyOk) {
-            inner += `<div class="dtr">`;
-            if (insOk) inner += `<div class="d4" style="background:var(--sky2)"></div>`;
-            if (groOk) inner += `<div class="d4" style="background:var(--gro)"></div>`;
-            if (corOk) inner += `<div class="d4" style="background:var(--cor)"></div>`;
-            if (oxyOk) inner += `<div class="d4" style="background:var(--rose)"></div>`;
-            inner += `</div>`;
-          }
-        }
-        e.innerHTML = inner;
+        const dateStr = iso(d);
+        const x = days[dateStr]; const sc = x && x.any && dateStr <= todayIso ? x.score : null;
+        if (isCur && d === todayDate) e.classList.add('today');
+        else if (isP) { e.classList.add('per'); if (!realPer.includes(d)) e.classList.add('pred'); }
+        else if (isO) e.classList.add('ovul');
+        else if (sc != null) e.classList.add(sc >= 70 ? 'sc-hi' : sc >= 40 ? 'sc-mid' : 'sc-lo');
+        e.innerHTML = `<span>${d}</span>${sc != null ? `<b class="dsc">${sc}</b>` : ''}`;
         e.style.cursor = 'pointer';
         e.onclick = () => showDayDetail(dateStr);
         g.appendChild(e);
       }
       updateHome();
     }
+    function dashThisMonth() { const t = new Date(); S.calMon = { y: t.getFullYear(), m: t.getMonth() }; renderDash(); }
     function chgMon(d) { S.calMon.m += d; if (S.calMon.m > 11) { S.calMon.m = 0; S.calMon.y++; } if (S.calMon.m < 0) { S.calMon.m = 11; S.calMon.y--; } renderDash(); }
     function savePeriod() { const s = document.getElementById('per-start')?.value; const days = parseInt(document.getElementById('per-days')?.value) || 5; if (s) S.periods.push({ start: s, days }); closeMod('mod-period'); renderDash(); if (typeof savePeriodRow === 'function') savePeriodRow(); }
 
@@ -5234,24 +5306,26 @@
       const g = document.getElementById('rcp-grid'); if (!g) return;
       const f = RCPS.filter(r => typeof recipePassFilters === 'function' ? recipePassFilters(r) : true);
       const shown = f.slice(0, S.rcpShowCount || RCP_PAGE_SIZE);
-      const costLabel = c => `~${(c / 1000).toFixed(0)}천원`;
-      const cardsHtml = shown.map(r => `<div class="recipe-card" onclick="showRecipeDetail(${RCPS.indexOf(r)})">
-    <div style="display:flex;align-items:center;gap:12px">
-      ${typeof recipeIconHtml === 'function' ? recipeIconHtml(r, 32) : r.img}
-      <div style="flex:1;min-width:0">
-        <div style="font-size:11px;color:var(--accent-ink);font-weight:700">${r.tp}</div>
-        <div style="font-size:14.5px;font-weight:700;color:var(--text);line-height:1.35">${r.n}</div>
-        <div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">
-          <span style="font-size:11px;background:var(--card2);color:var(--muted);padding:2px 8px;border-radius:99px;font-weight:600">${r.t}분</span>
-          <span style="font-size:11px;background:var(--card2);color:var(--muted);padding:2px 8px;border-radius:99px;font-weight:600">${costLabel(r.cost)}</span>
-          ${r.cal != null ? `<span style="font-size:11px;background:var(--accent-weak);color:var(--accent-ink);padding:2px 8px;border-radius:99px;font-weight:700">${r.cal}kcal</span>` : ''}
-        </div>
-      </div>
+      const costLabel = c => c >= 10000 ? '1만원+' : `~${Math.max(1, Math.ceil(c / 1000))}천원`;
+      const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+      setTxt('rcp-count', (typeof recipeFilterCount === 'function' && recipeFilterCount()) ? `조건에 맞는 레시피 ${f.length.toLocaleString()}개` : `레시피 ${RCPS.length.toLocaleString()}개`);
+      const cardsHtml = shown.map(r => {
+        const tone = typeof recipeTone === 'function' ? recipeTone(r.tp) : ['#f3eeff', '#7e62b8'];
+        const label = String(r.imgLabel || r.mainIng || r.n || '').replace(/\s+/g, '').slice(0, 3);
+        const art = r.img ? `<span class="rc-emoji">${r.img}</span>` : `<span class="rc-label">${esc(label)}</span>`;
+        return `<button type="button" class="rc" style="--tile:${tone[0]};--tile-ink:${tone[1]}" onclick="showRecipeDetail(${RCPS.indexOf(r)})">
+    <div class="rc-tile">${art}${r.cal != null ? `<span class="rc-kcal">${r.cal}kcal</span>` : ''}</div>
+    <div class="rc-body">
+      <div class="rc-cat">${esc(r.tp)}</div>
+      <div class="rc-name">${esc(r.n)}</div>
+      <div class="rc-meta">${r.t != null ? `<span>⏱ ${esc(r.t)}분</span>` : ''}${r.cost != null ? `<span>₩ ${costLabel(Number(r.cost))}</span>` : ''}</div>
     </div>
-  </div>`).join('');
+  </button>`;
+      }).join('');
       const remain = f.length - shown.length;
-      const moreBtn = remain > 0 ? `<button class="btn btn-o" style="margin-top:8px" onclick="loadMoreRecipes()">더 보기 (${remain}개 더 · 총 ${f.length}개)</button>` : (f.length ? `<div style="text-align:center;color:var(--muted);font-size:11px;padding:8px 0;font-weight:500">${f.length}개 전체를 보여드렸어요</div>` : '');
-      g.innerHTML = cardsHtml + moreBtn;
+      if (!f.length) { g.innerHTML = `<div class="rc-empty"><div>🥄</div>조건에 맞는 레시피가 없어요<br>필터를 조금 줄여 보세요<br><button type="button" onclick="rfClear()">필터 모두 해제</button></div>`; return; }
+      const moreBtn = remain > 0 ? `<button type="button" class="rc-more" onclick="loadMoreRecipes()">더 보기 · ${remain.toLocaleString()}개 남았어요</button>` : `<div class="rc-end">${f.length.toLocaleString()}개 전체를 보여드렸어요</div>`;
+      g.innerHTML = `<div class="rc-grid">${cardsHtml}</div>` + moreBtn;
     }
     function loadMoreRecipes() { S.rcpShowCount = (S.rcpShowCount || RCP_PAGE_SIZE) + RCP_PAGE_SIZE; renderRecipes(false); }
     // "양배추 1/4통", "다진 마늘 1/2큰술" 같은 재료 줄에서 수량/단위를 떼어내 검색어만 남긴다.
