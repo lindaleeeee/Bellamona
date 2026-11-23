@@ -1,4 +1,8 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/__/auth/:path*", "destination": "https://bellamona.firebaseapp.com/__/auth/:path*" },
+    { "source": "/__/firebase/:path*", "destination": "https://bellamona.firebaseapp.com/__/firebase/:path*" }
+  ]
 }
